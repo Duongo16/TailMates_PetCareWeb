@@ -45,7 +45,7 @@ export default function CustomerDashboardPage() {
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <CustomerDashboard onPetSelect={handlePetSelect} />
+        return <CustomerDashboard onPetSelect={handlePetSelect} onTabChange={(tab) => setActiveTab(tab as CustomerTab)} />
       case "pets":
         return (
           <PetProfile selectedPetId={selectedPetId} onSelectPet={setSelectedPetId} onViewMedical={handleViewMedical} />
@@ -63,7 +63,7 @@ export default function CustomerDashboardPage() {
       case "settings":
         return <ProfileSettings user={user} onUpdate={refreshUser} />
       default:
-        return <CustomerDashboard onPetSelect={handlePetSelect} />
+        return <CustomerDashboard onPetSelect={handlePetSelect} onTabChange={(tab) => setActiveTab(tab as CustomerTab)} />
     }
   }
 

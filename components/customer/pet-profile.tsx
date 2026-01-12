@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ImageUpload } from "@/components/ui/image-upload"
 import {
   Cake,
   Weight,
@@ -56,13 +57,13 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
   const { data: pets, isLoading, refetch } = usePets()
   const [showQR, setShowQR] = useState(false)
   const [qrCodeData, setQrCodeData] = useState<any>(null)
-  
+
   // Dialog states
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
+
   // Form state
   const [formData, setFormData] = useState({
     name: "",
@@ -73,6 +74,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
     gender: "MALE",
     sterilized: false,
     image_url: "",
+    image_public_id: "",
   })
 
   const selectedPet = pets?.find((p) => p._id === selectedPetId) || pets?.[0]
@@ -97,6 +99,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
       gender: "MALE",
       sterilized: false,
       image_url: "",
+      image_public_id: "",
     })
   }
 
@@ -111,6 +114,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
         gender: selectedPet.gender || "MALE",
         sterilized: selectedPet.sterilized || false,
         image_url: selectedPet.image?.url || "",
+        image_public_id: selectedPet.image?.public_id || "",
       })
       setShowEditDialog(true)
     }
@@ -121,7 +125,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
       alert("Vui lòng điền đầy đủ thông tin bắt buộc")
       return
     }
-    
+
     setIsSubmitting(true)
     try {
       const petData: any = {
@@ -133,11 +137,14 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
         gender: formData.gender,
         sterilized: formData.sterilized,
       }
-      
+
       if (formData.image_url) {
-        petData.image = { url: formData.image_url, public_id: `pet_${Date.now()}` }
+        petData.image = {
+          url: formData.image_url,
+          public_id: formData.image_public_id || `pet_${Date.now()}`
+        }
       }
-      
+
       const res = await petsAPI.create(petData)
       if (res.success) {
         setShowAddDialog(false)
@@ -159,7 +166,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
       alert("Vui lòng điền tên thú cưng")
       return
     }
-    
+
     setIsSubmitting(true)
     try {
       const updateData: any = {
@@ -171,11 +178,14 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
         gender: formData.gender,
         sterilized: formData.sterilized,
       }
-      
+
       if (formData.image_url) {
-        updateData.image = { url: formData.image_url, public_id: selectedPet.image?.public_id || `pet_${Date.now()}` }
+        updateData.image = {
+          url: formData.image_url,
+          public_id: formData.image_public_id || selectedPet.image?.public_id || `pet_${Date.now()}`
+        }
       }
-      
+
       const res = await petsAPI.update(selectedPet._id, updateData)
       if (res.success) {
         setShowEditDialog(false)
@@ -193,7 +203,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
 
   const handleDeletePet = async () => {
     if (!selectedPet) return
-    
+
     setIsSubmitting(true)
     try {
       const res = await petsAPI.delete(selectedPet._id)
@@ -243,7 +253,20 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
 
   // Pet Form Component (shared between Add and Edit)
   const PetForm = ({ isEdit = false }: { isEdit?: boolean }) => (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Image Upload - TOP */}
+      <ImageUpload
+        label="Hình ảnh thú cưng"
+        value={formData.image_url}
+        onChange={(url, publicId) => {
+          setFormData({
+            ...formData,
+            image_url: url,
+            image_public_id: publicId || formData.image_public_id
+          })
+        }}
+      />
+
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
           <Label>Tên thú cưng *</Label>
@@ -306,7 +329,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-center gap-2 mt-6">
+        <div className="col-span-2 flex items-center gap-2">
           <input
             type="checkbox"
             id="sterilized"
@@ -317,22 +340,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
           <Label htmlFor="sterilized" className="cursor-pointer">Đã triệt sản</Label>
         </div>
       </div>
-      
-      <div>
-        <Label>Hình ảnh (URL)</Label>
-        <Input
-          value={formData.image_url}
-          onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-          placeholder="https://example.com/pet.jpg"
-          className="rounded-xl mt-1"
-        />
-        {formData.image_url && (
-          <div className="mt-2 w-20 h-20 rounded-xl overflow-hidden bg-secondary">
-            <Image src={formData.image_url} alt="Preview" width={80} height={80} className="w-full h-full object-cover" />
-          </div>
-        )}
-      </div>
-      
+
       <Button
         className="w-full rounded-xl"
         onClick={isEdit ? handleUpdatePet : handleAddPet}
@@ -402,11 +410,10 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
           <button
             key={pet._id}
             onClick={() => onSelectPet(pet._id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all whitespace-nowrap ${
-              selectedPet?._id === pet._id
-                ? "bg-primary text-primary-foreground"
-                : "bg-card text-foreground border border-border hover:border-primary"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all whitespace-nowrap ${selectedPet?._id === pet._id
+              ? "bg-primary text-primary-foreground"
+              : "bg-card text-foreground border border-border hover:border-primary"
+              }`}
           >
             <span className="text-lg">{getPetIcon(pet.species)}</span>
             <span className="font-medium">{pet.name}</span>
@@ -675,7 +682,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
                   {selectedPet.ai_analysis?.personality ? (
                     <>
                       <div className="flex flex-wrap gap-2">
-                        {(typeof selectedPet.ai_analysis.personality === 'string' 
+                        {(typeof selectedPet.ai_analysis.personality === 'string'
                           ? [selectedPet.ai_analysis.personality]
                           : selectedPet.ai_analysis.personality
                         ).map((trait: string, index: number) => (

@@ -127,8 +127,8 @@ export function Homepage() {
       name: pkg.name,
       price: new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(pkg.price),
       period: pkg.duration_months === 1 ? "/tháng" : `/${pkg.duration_months} tháng`,
-      features: pkg.features,
-      popular: pkg.price > 0 && pkg.price < 200000, 
+      features: Array.isArray(pkg.features) ? pkg.features : [],
+      popular: pkg.price > 0 && pkg.price < 200000,
       cta: "Bắt đầu ngay",
       role: "CUSTOMER"
     })),
@@ -136,40 +136,38 @@ export function Homepage() {
       name: pkg.name,
       price: new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(pkg.price),
       period: pkg.duration_months === 1 ? "/tháng" : `/${pkg.duration_months} tháng`,
-      features: pkg.features,
+      features: Array.isArray(pkg.features) ? pkg.features : [],
       popular: false,
       cta: "Đăng ký đối tác",
       role: "MERCHANT"
     }))
-  ].sort((a, b) => {
+  ]
+
+  // Fallback if no API data yet (e.g. initial load or empty db)
+  const finalPricingPlans = pricingPlans.length > 0 ? pricingPlans.sort((a, b) => {
     // Basic sorting to keep free/cheaper first, but Merchant usually last
     if (a.role !== b.role) return a.role === "CUSTOMER" ? -1 : 1
     return parseInt(a.price) - parseInt(b.price)
-  })
-
-  // Fallback if no API data yet (e.g. initial load or empty db)
-  if (pricingPlans.length === 0) {
-    pricingPlans.push(
-      {
-        name: "Miễn Phí",
-        price: "0đ",
-        period: "",
-        features: ["Quản lý 1 thú cưng", "Xem sản phẩm", "Đặt dịch vụ cơ bản", "Nhắc lịch tiêm phòng"],
-        popular: false,
-        cta: "Bắt đầu ngay",
-        role: "CUSTOMER"
-      },
-      {
-        name: "Thành Viên",
-        price: "99.000đ",
-        period: "/tháng",
-        features: ["Không giới hạn thú cưng", "AI Tư vấn", "Ưu đãi độc quyền"],
-        popular: true,
-        cta: "Dùng thử 7 ngày",
-        role: "CUSTOMER"
-      }
-    )
-  }
+  }) : [
+    {
+      name: "Miễn Phí",
+      price: "0đ",
+      period: "",
+      features: ["Quản lý 1 thú cưng", "Xem sản phẩm", "Đặt dịch vụ cơ bản", "Nhắc lịch tiêm phòng"],
+      popular: false,
+      cta: "Bắt đầu ngay",
+      role: "CUSTOMER"
+    },
+    {
+      name: "Thành Viên",
+      price: "99.000đ",
+      period: "/tháng",
+      features: ["Không giới hạn thú cưng", "AI Tư vấn", "Ưu đãi độc quyền"],
+      popular: true,
+      cta: "Dùng thử 7 ngày",
+      role: "CUSTOMER"
+    }
+  ]
 
   useEffect(() => {
     setIsVisible(true)
@@ -499,14 +497,13 @@ export function Homepage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {pricingPlans.map((plan, index) => (
+            {finalPricingPlans.map((plan, index) => (
               <Card
                 key={index}
-                className={`relative overflow-hidden transition-all duration-500 hover:-translate-y-2 ${
-                  plan.popular
-                    ? "border-2 border-primary shadow-2xl shadow-primary/20 scale-105 z-10"
-                    : "border-border hover:shadow-xl"
-                }`}
+                className={`relative overflow-hidden transition-all duration-500 hover:-translate-y-2 ${plan.popular
+                  ? "border-2 border-primary shadow-2xl shadow-primary/20 scale-105 z-10"
+                  : "border-border hover:shadow-xl"
+                  }`}
               >
                 {plan.popular && (
                   <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary to-primary/70 text-primary-foreground py-2 text-center text-sm font-bold">
@@ -529,11 +526,10 @@ export function Homepage() {
                   </ul>
                   <Link href="/register">
                     <Button
-                      className={`w-full rounded-xl font-bold py-6 ${
-                        plan.popular
-                          ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25"
-                          : "bg-foreground/10 hover:bg-foreground/20 text-foreground"
-                      }`}
+                      className={`w-full rounded-xl font-bold py-6 ${plan.popular
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25"
+                        : "bg-foreground/10 hover:bg-foreground/20 text-foreground"
+                        }`}
                     >
                       {plan.cta}
                     </Button>
@@ -561,9 +557,8 @@ export function Homepage() {
             {testimonials.map((testimonial, index) => (
               <Card
                 key={index}
-                className={`border-border transition-all duration-500 hover:shadow-xl hover:-translate-y-1 ${
-                  index === activeTestimonial ? "ring-2 ring-primary shadow-xl" : ""
-                }`}
+                className={`border-border transition-all duration-500 hover:shadow-xl hover:-translate-y-1 ${index === activeTestimonial ? "ring-2 ring-primary shadow-xl" : ""
+                  }`}
               >
                 <CardContent className="p-6">
                   <div className="flex gap-1 mb-4">
