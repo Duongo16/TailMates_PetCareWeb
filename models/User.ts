@@ -1,0 +1,128 @@
+import mongoose, { Schema, Document, Model } from "mongoose";
+
+// ==================== Enums ====================
+export enum UserRole {
+  CUSTOMER = "CUSTOMER",
+  MERCHANT = "MERCHANT",
+  MANAGER = "MANAGER",
+  ADMIN = "ADMIN",
+}
+
+// ==================== Sub-Schemas (Embedded) ====================
+interface ICloudinaryImage {
+  url: string;
+  public_id: string;
+}
+
+interface ISubscription {
+  package_id?: mongoose.Types.ObjectId;
+  started_at?: Date;
+  expired_at?: Date;
+  features: string[];
+}
+
+interface IMerchantProfile {
+  shop_name: string;
+  address: string;
+  description?: string;
+  rating: number;
+  revenue_stats: number;
+}
+
+// ==================== Main Interface ====================
+export interface IUser extends Document {
+  _id: mongoose.Types.ObjectId;
+  email: string;
+  password: string;
+  full_name: string;
+  phone_number?: string;
+  role: UserRole;
+  avatar?: ICloudinaryImage;
+  is_active: boolean;
+  subscription?: ISubscription;
+  merchant_profile?: IMerchantProfile;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// ==================== Schema Definition ====================
+const CloudinaryImageSchema = new Schema<ICloudinaryImage>(
+  {
+    url: { type: String, required: true },
+    public_id: { type: String, required: true },
+  },
+  { _id: false }
+);
+
+const SubscriptionSchema = new Schema<ISubscription>(
+  {
+    package_id: { type: Schema.Types.ObjectId, ref: "Package" },
+    started_at: { type: Date },
+    expired_at: { type: Date },
+    features: [{ type: String }],
+  },
+  { _id: false }
+);
+
+const MerchantProfileSchema = new Schema<IMerchantProfile>(
+  {
+    shop_name: { type: String, required: true },
+    address: { type: String, required: true },
+    description: { type: String },
+    rating: { type: Number, default: 0, min: 0, max: 5 },
+    revenue_stats: { type: Number, default: 0 },
+  },
+  { _id: false }
+);
+
+const UserSchema = new Schema<IUser>(
+  {
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      minlength: [6, "Password must be at least 6 characters"],
+    },
+    full_name: {
+      type: String,
+      required: [true, "Full name is required"],
+      trim: true,
+    },
+    phone_number: {
+      type: String,
+      trim: true,
+    },
+    role: {
+      type: String,
+      enum: Object.values(UserRole),
+      default: UserRole.CUSTOMER,
+    },
+    avatar: CloudinaryImageSchema,
+    is_active: {
+      type: Boolean,
+      default: true,
+    },
+    subscription: SubscriptionSchema,
+    merchant_profile: MerchantProfileSchema,
+  },
+  {
+    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
+  }
+);
+
+// ==================== Indexes ====================
+UserSchema.index({ email: 1 });
+UserSchema.index({ role: 1 });
+UserSchema.index({ is_active: 1 });
+
+// ==================== Model Export ====================
+const User: Model<IUser> =
+  mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
+
+export default User;
