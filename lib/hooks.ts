@@ -178,3 +178,19 @@ export function useAdminUsers(params?: { role?: string; status?: string; page?: 
     [params?.role, params?.status, params?.page]
   )
 }
+
+// ==================== Banners Hooks ====================
+export function useBanners(location?: string) {
+  return useFetch<{ banners: any[] }>(
+    () => import("@/lib/api").then(m => m.bannersAPI.list(location)),
+    [location]
+  )
+}
+
+export function useManagerBanners() {
+  // Fetch all banners for manager (no location filter, includes inactive)
+  return useFetch<{ banners: any[] }>(
+    () => import("@/lib/api").then(m => m.bannersAPI.list()),
+    []
+  )
+}

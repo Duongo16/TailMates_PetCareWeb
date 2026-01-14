@@ -363,3 +363,35 @@ export const adminAPI = {
       body: JSON.stringify({ user_id: userId, ...data }),
     }),
 };
+
+// ==================== Banners API ====================
+export const bannersAPI = {
+  list: (location?: string) => {
+    const params = location ? `?location=${location}` : "";
+    return fetchWithAuth<any>(`/banners${params}`);
+  },
+
+  create: (data: {
+    image: { url: string; public_id: string };
+    targetUrl?: string;
+    priority?: number;
+    displayLocation?: string;
+    title?: string;
+    isActive?: boolean;
+  }) =>
+    fetchWithAuth("/banners", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: Record<string, unknown>) =>
+    fetchWithAuth(`/banners/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    fetchWithAuth(`/banners/${id}`, {
+      method: "DELETE",
+    }),
+};

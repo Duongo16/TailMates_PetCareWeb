@@ -28,3 +28,6 @@ export type { IPackage } from "./Package";
 
 export { default as SubscriptionLog, SubscriptionLogStatus } from "./SubscriptionLog";
 export type { ISubscriptionLog } from "./SubscriptionLog";
+
+export { default as Banner, BannerLocation } from "./Banner";
+export type { IBanner } from "./Banner";

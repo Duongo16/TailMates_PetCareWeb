@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import Image from "next/image"
 import { aiAPI } from "@/lib/api"
+import { BannerCarousel } from "@/components/ui/banner-carousel"
 
 interface CustomerDashboardProps {
   onPetSelect: (petId: string) => void
@@ -180,15 +181,18 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
         </Button>
       </div>
 
-      {/* Main Content - 4 Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4" style={{ minHeight: 'calc(100vh - 180px)' }}>
+      {/* Banner Carousel */}
+      <BannerCarousel location="HOME" />
 
-        {/* Left Column - Pet Cards (spans 2 rows) */}
-        <div className="lg:col-span-2 lg:row-span-2">
+      {/* Main Content - Compact Grid Layout for Desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:flex-1" style={{ minHeight: 'auto', maxHeight: 'calc(100vh - 280px)' }}>
+
+        {/* Left Column - Pet Cards (spans 2 columns) */}
+        <div className="lg:col-span-2 lg:row-span-2 lg:max-h-full lg:overflow-hidden">
           <Card className="h-full">
-            <CardContent className="p-4 h-full flex flex-col">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+            <CardContent className="p-3 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-base font-bold text-foreground flex items-center gap-2">
                   <Heart className="w-5 h-5 text-primary" />
                   Thú cưng của bạn
                 </h2>
@@ -227,7 +231,7 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                     <div
                       key={pet._id}
                       onClick={() => onPetSelect(pet._id)}
-                      className={`relative cursor-pointer transition-all duration-300 flex-shrink-0 w-[140px] sm:w-[160px] ${index === currentPetIndex
+                      className={`relative cursor-pointer transition-all duration-300 flex-shrink-0 w-[160px] sm:w-[180px] lg:w-[200px] ${index === currentPetIndex
                         ? "scale-[1.02]"
                         : "hover:scale-[1.01]"
                         }`}
@@ -248,13 +252,13 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                           <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary/10 via-transparent to-accent/10 pointer-events-none" />
                         )}
 
-                        <CardContent className="p-1.5 relative">
-                          <div className="relative aspect-[3/2] rounded-md overflow-hidden mb-1 bg-secondary">
+                        <CardContent className="p-2 relative">
+                          <div className="relative aspect-[4/3] rounded-lg overflow-hidden mb-2 bg-secondary">
                             <Image
                               src={pet.image?.url || "/placeholder.svg"}
                               alt={pet.name}
-                              width={150}
-                              height={100}
+                              width={200}
+                              height={150}
                               className={`w-full h-full object-cover transition-transform duration-500 ${index === currentPetIndex ? "scale-105" : ""
                                 }`}
                             />
@@ -272,24 +276,24 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                             )}
 
                             <div className="absolute top-1 right-1">
-                              <Badge className="bg-green-500 text-white text-[9px] px-1 py-0 leading-tight">Khỏe</Badge>
+                              <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0.5 leading-tight">Khỏe</Badge>
                             </div>
                           </div>
 
-                          <div className="leading-tight">
+                          <div className="leading-tight mt-1">
                             <div className="flex items-center justify-between gap-1">
-                              <h3 className={`font-bold text-xs transition-colors truncate ${index === currentPetIndex ? "text-primary" : "text-foreground"
+                              <h3 className={`font-bold text-sm transition-colors truncate ${index === currentPetIndex ? "text-primary" : "text-foreground"
                                 }`}>
                                 {pet.name}
                               </h3>
-                              <span className="text-[10px] text-foreground/50">
+                              <span className="text-xs text-foreground/50">
                                 {pet.gender === "male" ? "♂" : pet.gender === "female" ? "♀" : ""}
                               </span>
                             </div>
-                            <p className="text-foreground/70 text-[10px] truncate font-medium">
+                            <p className="text-foreground/70 text-xs truncate font-medium">
                               {getSpeciesName(pet.species)} {pet.breed ? `• ${pet.breed}` : ""}
                             </p>
-                            <p className="text-foreground/50 text-[10px] truncate">
+                            <p className="text-foreground/50 text-xs truncate">
                               {formatAge(pet.age_months)} • {pet.weight ? `${pet.weight}kg` : "Chưa cập nhật"}
                             </p>
                           </div>
@@ -304,11 +308,11 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                   ))}
 
                   {/* Add Pet Card */}
-                  <Card 
+                  <Card
                     onClick={() => onTabChange?.("pets")}
-                    className="cursor-pointer transition-all duration-300 border-dashed border-2 hover:border-primary hover:bg-primary/5 flex-shrink-0 w-[140px] sm:w-[160px]"
+                    className="cursor-pointer transition-all duration-300 border-dashed border-2 hover:border-primary hover:bg-primary/5 flex-shrink-0 w-[160px] sm:w-[180px] lg:w-[200px]"
                   >
-                    <CardContent className="p-1.5 h-full flex flex-col items-center justify-center text-foreground/40 hover:text-primary aspect-[3/2]">
+                    <CardContent className="p-2 h-full flex flex-col items-center justify-center text-foreground/40 hover:text-primary aspect-[4/3]">
                       <div className="w-6 h-6 rounded-full border-2 border-dashed border-current flex items-center justify-center mb-0.5">
                         <span className="text-sm">+</span>
                       </div>
@@ -321,15 +325,15 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
           </Card>
         </div>
 
-        {/* Right Top - Quick Actions (Đặt lịch, Mua sắm, Nhắc nhở) */}
+        {/* Right Top - Quick Actions */}
         <div className="lg:col-span-1">
           <Card className="h-full">
-            <CardContent className="p-4 h-full flex flex-col">
+            <CardContent className="p-3 h-full flex flex-col">
               <h3 className="font-bold text-foreground mb-3 flex items-center gap-2 text-sm">
                 <Zap className="w-4 h-4 text-accent" />
                 Thao tác nhanh
               </h3>
-              <div className="grid grid-cols-3 gap-2 flex-1">
+              <div className="grid grid-cols-3 gap-1.5 flex-1">
                 {[
                   {
                     icon: Calendar,
@@ -356,7 +360,7 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                   <div
                     key={index}
                     onClick={() => onTabChange?.(action.tab)}
-                    className="card-hover cursor-pointer group text-center p-3 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors h-full flex flex-col items-center justify-center relative"
+                    className="card-hover cursor-pointer group text-center p-2 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors h-full flex flex-col items-center justify-center relative"
                   >
                     {!!action.count && (
                       <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg">
@@ -379,26 +383,26 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
         {/* Right Bottom - Overview Stats */}
         <div className="lg:col-span-1">
           <Card className="h-full">
-            <CardContent className="p-4 h-full flex flex-col">
+            <CardContent className="p-3 h-full flex flex-col">
               <h3 className="font-bold text-foreground mb-3 flex items-center gap-2 text-sm">
                 <TrendingUp className="w-4 h-4 text-primary" />
                 Tổng quan
               </h3>
-              <div className="grid grid-cols-2 gap-2 flex-1">
-                <div className="bg-secondary/50 rounded-xl p-3 text-center flex flex-col justify-center">
-                  <p className="text-xl font-bold text-foreground">{pets?.length || 0}</p>
+              <div className="grid grid-cols-2 gap-1.5 flex-1">
+                <div className="bg-secondary/50 rounded-xl p-2 text-center flex flex-col justify-center">
+                  <p className="text-lg font-bold text-foreground">{pets?.length || 0}</p>
                   <p className="text-foreground/60 text-xs">Thú cưng</p>
                 </div>
-                <div className="bg-muted/50 rounded-xl p-3 text-center flex flex-col justify-center">
-                  <p className="text-xl font-bold text-foreground">{pendingBookings}</p>
+                <div className="bg-muted/50 rounded-xl p-2 text-center flex flex-col justify-center">
+                  <p className="text-lg font-bold text-foreground">{pendingBookings}</p>
                   <p className="text-foreground/60 text-xs">Lịch hẹn</p>
                 </div>
-                <div className="bg-green-50 rounded-xl p-3 text-center flex flex-col justify-center">
-                  <p className="text-xl font-bold text-green-600">{completedOrders}</p>
+                <div className="bg-green-50 rounded-xl p-2 text-center flex flex-col justify-center">
+                  <p className="text-lg font-bold text-green-600">{completedOrders}</p>
                   <p className="text-foreground/60 text-xs">Đơn hàng</p>
                 </div>
-                <div className="bg-primary/10 rounded-xl p-3 text-center flex flex-col justify-center">
-                  <p className="text-xl font-bold text-primary">
+                <div className="bg-primary/10 rounded-xl p-2 text-center flex flex-col justify-center">
+                  <p className="text-lg font-bold text-primary">
                     {user?.subscription?.features?.length ? "PRO" : "FREE"}
                   </p>
                   <p className="text-foreground/60 text-xs">Gói thành viên</p>

@@ -11,9 +11,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Clock, Star, Sparkles, Search, ChevronLeft, ChevronRight, CheckCircle2, Loader2, MapPin } from "lucide-react"
+import { Calendar, Clock, Star, Search, ChevronLeft, ChevronRight, CheckCircle2, Loader2, MapPin } from "lucide-react"
 import Image from "next/image"
 import { AlertDialog, useAlertDialog } from "@/components/ui/alert-dialog-custom"
+import { BannerCarousel } from "@/components/ui/banner-carousel"
 
 export function ServiceBooking() {
   const { data: servicesData, isLoading: servicesLoading } = useServices()
@@ -53,11 +54,11 @@ export function ServiceBooking() {
     // Basic category filtering based on name keywords if category field missing
     let matchesCategory = true;
     if (filterCategory !== "all") {
-       if (filterCategory === "Y tế") matchesCategory = service.name.toLowerCase().includes("khám") || service.name.toLowerCase().includes("tiêm");
-       else if (filterCategory === "Spa & Grooming") matchesCategory = service.name.toLowerCase().includes("tắm") || service.name.toLowerCase().includes("cắt");
-       else matchesCategory = true; 
+      if (filterCategory === "Y tế") matchesCategory = service.name.toLowerCase().includes("khám") || service.name.toLowerCase().includes("tiêm");
+      else if (filterCategory === "Spa & Grooming") matchesCategory = service.name.toLowerCase().includes("tắm") || service.name.toLowerCase().includes("cắt");
+      else matchesCategory = true;
     }
-    
+
     return matchesSearch && matchesCategory
   })
 
@@ -65,7 +66,7 @@ export function ServiceBooking() {
   const availableTimes = Array.from({ length: 10 }, (_, i) => {
     const hour = i + 9
     return `${hour.toString().padStart(2, '0')}:00`
-  }) 
+  })
 
   const handleBooking = async () => {
     if (!selectedService || !selectedPet || !selectedDate || !selectedTime) return
@@ -149,6 +150,9 @@ export function ServiceBooking() {
         <p className="text-foreground/60">Chọn dịch vụ phù hợp cho bé cưng của bạn</p>
       </div>
 
+      {/* Banner Carousel */}
+      <BannerCarousel location="SERVICE" />
+
       <Tabs defaultValue="services" className="w-full">
         <TabsList className="w-full bg-card rounded-xl p-1">
           <TabsTrigger
@@ -192,21 +196,7 @@ export function ServiceBooking() {
             </div>
           </div>
 
-          {/* AI Recommendations */}
-          {pets && pets.length > 0 && (
-            <Card className="bg-gradient-to-r from-secondary to-muted border-none">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  <span className="font-bold text-foreground">AI Đề xuất cho {pets[0].name}</span>
-                </div>
-                <p className="text-sm text-foreground/70">
-                  Dựa trên độ tuổi và tình trạng sức khỏe, chúng tôi đề xuất dịch vụ spa định kỳ và khám tổng quát mỗi 6
-                  tháng.
-                </p>
-              </CardContent>
-            </Card>
-          )}
+
 
           {/* Services Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -225,12 +215,6 @@ export function ServiceBooking() {
                         fill
                         className="object-cover"
                       />
-                      {service.aiMatch && (
-                        <Badge className="absolute top-2 left-2 bg-primary text-primary-foreground">
-                          <Sparkles className="w-3 h-3 mr-1" />
-                          AI
-                        </Badge>
-                      )}
                     </div>
                     <div className="flex-1 p-4">
                       <div className="flex items-start justify-between mb-1">
@@ -271,20 +255,18 @@ export function ServiceBooking() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div
-                          className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                            booking.status === "CONFIRMED" ? "bg-green-100" : "bg-orange-100"
-                          }`}
+                          className={`w-12 h-12 rounded-xl flex items-center justify-center ${booking.status === "CONFIRMED" ? "bg-green-100" : "bg-orange-100"
+                            }`}
                         >
                           <Calendar
-                            className={`w-6 h-6 ${
-                              booking.status === "CONFIRMED" ? "text-green-600" : "text-orange-600"
-                            }`}
+                            className={`w-6 h-6 ${booking.status === "CONFIRMED" ? "text-green-600" : "text-orange-600"
+                              }`}
                           />
                         </div>
                         <div>
                           <h4 className="font-bold text-foreground">{booking.service_id?.name || "Dịch vụ đã xóa"}</h4>
                           <p className="text-sm text-foreground/60">
-                             {booking.service_id?.merchant_id?.merchant_profile?.shop_name || "Cửa hàng"}
+                            {booking.service_id?.merchant_id?.merchant_profile?.shop_name || "Cửa hàng"}
                           </p>
                           <p className="text-sm text-foreground/70">Cho bé: {booking.pet_id?.name || "Thú cưng"}</p>
                         </div>
@@ -297,19 +279,19 @@ export function ServiceBooking() {
                               : "bg-orange-100 text-orange-700"
                           }
                         >
-                          {booking.status === "CONFIRMED" 
-                             ? "Đã xác nhận" 
-                             : booking.status === "COMPLETED" 
-                               ? "Hoàn thành" 
-                               : booking.status === "CANCELLED"
-                                 ? "Đã hủy"
-                                 : "Chờ xác nhận"}
+                          {booking.status === "CONFIRMED"
+                            ? "Đã xác nhận"
+                            : booking.status === "COMPLETED"
+                              ? "Hoàn thành"
+                              : booking.status === "CANCELLED"
+                                ? "Đã hủy"
+                                : "Chờ xác nhận"}
                         </Badge>
                         <p className="font-bold text-foreground mt-1">
-                           {new Date(booking.booking_time).toLocaleTimeString("vi-VN", {hour: '2-digit', minute:'2-digit'})}
+                          {new Date(booking.booking_time).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
                         </p>
                         <p className="text-sm text-foreground/50">
-                           {new Date(booking.booking_time).toLocaleDateString("vi-VN")}
+                          {new Date(booking.booking_time).toLocaleDateString("vi-VN")}
                         </p>
                       </div>
                     </div>
@@ -332,11 +314,11 @@ export function ServiceBooking() {
       <Dialog
         open={!!selectedService}
         onOpenChange={(open) => {
-           if(!open) {
+          if (!open) {
             setSelectedService(null)
             setBookingStep(1)
             setBookingSuccess(false)
-           }
+          }
         }}
       >
         <DialogContent className="max-w-lg rounded-3xl max-h-[90vh] overflow-y-auto">
@@ -400,28 +382,27 @@ export function ServiceBooking() {
                         <Label className="text-foreground font-medium">Chọn thú cưng</Label>
                         <div className="grid grid-cols-3 gap-2 mt-2">
                           {pets?.map((pet) => (
-                              <button
-                                key={pet._id}
-                                onClick={() => setSelectedPet(pet._id)}
-                                className={`p-3 rounded-xl border-2 transition-all ${
-                                  selectedPet === pet._id
-                                    ? "border-primary bg-primary/5"
-                                    : "border-border hover:border-primary/50"
+                            <button
+                              key={pet._id}
+                              onClick={() => setSelectedPet(pet._id)}
+                              className={`p-3 rounded-xl border-2 transition-all ${selectedPet === pet._id
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
                                 }`}
-                              >
-                                <div className="w-12 h-12 rounded-full overflow-hidden mx-auto mb-2 bg-secondary">
-                                  <Image
-                                    src={pet.image?.url || "/placeholder.svg"}
-                                    alt={pet.name}
-                                    width={48}
-                                    height={48}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <p className="text-sm font-medium text-foreground">{pet.name}</p>
-                                <p className="text-xs text-foreground/50">{pet.species}</p>
-                              </button>
-                            ))}
+                            >
+                              <div className="w-12 h-12 rounded-full overflow-hidden mx-auto mb-2 bg-secondary">
+                                <Image
+                                  src={pet.image?.url || "/placeholder.svg"}
+                                  alt={pet.name}
+                                  width={48}
+                                  height={48}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <p className="text-sm font-medium text-foreground">{pet.name}</p>
+                              <p className="text-xs text-foreground/50">{pet.species}</p>
+                            </button>
+                          ))}
                         </div>
                       </div>
 
@@ -432,11 +413,10 @@ export function ServiceBooking() {
                             <button
                               key={date.full}
                               onClick={() => setSelectedDate(date.full)}
-                              className={`flex-shrink-0 w-16 p-2 rounded-xl border-2 transition-all ${
-                                selectedDate === date.full
-                                  ? "border-primary bg-primary text-primary-foreground"
-                                  : "border-border hover:border-primary/50"
-                              }`}
+                              className={`flex-shrink-0 w-16 p-2 rounded-xl border-2 transition-all ${selectedDate === date.full
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border hover:border-primary/50"
+                                }`}
                             >
                               <p className="text-xs opacity-70">{date.weekday}</p>
                               <p className="text-lg font-bold">{date.day}</p>
@@ -467,11 +447,10 @@ export function ServiceBooking() {
                             <button
                               key={time}
                               onClick={() => setSelectedTime(time)}
-                              className={`p-3 rounded-xl border-2 transition-all ${
-                                selectedTime === time
-                                  ? "border-primary bg-primary text-primary-foreground"
-                                  : "border-border hover:border-primary/50"
-                              }`}
+                              className={`p-3 rounded-xl border-2 transition-all ${selectedTime === time
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border hover:border-primary/50"
+                                }`}
                             >
                               <Clock className="w-4 h-4 mx-auto mb-1" />
                               <p className="font-medium">{time}</p>
@@ -527,8 +506,8 @@ export function ServiceBooking() {
                           <div className="flex justify-between py-2 border-b border-border">
                             <span className="text-foreground/60">Địa điểm</span>
                             <span className="font-medium text-foreground flex items-center gap-1">
-                               <MapPin className="w-3 h-3" />
-                               {selectedService.merchant_id?.merchant_profile?.shop_name}
+                              <MapPin className="w-3 h-3" />
+                              {selectedService.merchant_id?.merchant_profile?.shop_name}
                             </span>
                           </div>
                           {notes && (
@@ -549,7 +528,7 @@ export function ServiceBooking() {
                         disabled={isSubmitting}
                         className="w-full rounded-xl py-6 bg-green-600 hover:bg-green-700"
                       >
-                         {isSubmitting ? (
+                        {isSubmitting ? (
                           <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                         ) : (
                           <CheckCircle2 className="w-5 h-5 mr-2" />

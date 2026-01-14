@@ -1,17 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { useProducts, useServices, usePets, useAIRecommendProducts } from "@/lib/hooks"
+import { useProducts } from "@/lib/hooks"
 import { useCart } from "@/lib/cart-context"
 import { ordersAPI } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Sparkles, Star, ShoppingCart, Calendar, Loader2, Store, Package, Check, X } from "lucide-react"
+import { Star, ShoppingCart, Loader2, Store, Package, Check } from "lucide-react"
 import Image from "next/image"
 import { AlertDialog, useAlertDialog } from "@/components/ui/alert-dialog-custom"
+import { BannerCarousel } from "@/components/ui/banner-carousel"
 
 export function Marketplace() {
   const { addItem } = useCart()
@@ -21,14 +20,8 @@ export function Marketplace() {
   const [orderSuccess, setOrderSuccess] = useState(false)
   const [addedToCart, setAddedToCart] = useState(false)
   const { alertState, showAlert, closeAlert } = useAlertDialog()
-  
+
   const { data: products, isLoading: productsLoading } = useProducts()
-  const { data: services, isLoading: servicesLoading } = useServices()
-  const { data: pets } = usePets()
-  
-  // Use first pet for recommendations for now
-  const defaultPet = pets && pets.length > 0 ? pets[0] : null
-  const { data: aiRecommendations, isLoading: aiLoading } = useAIRecommendProducts(defaultPet?._id || null)
 
   const handleAddToCart = (product: any) => {
     addItem({
@@ -64,10 +57,10 @@ export function Marketplace() {
         }],
         note: `Đặt hàng nhanh từ Marketplace`,
       }
-      
+
       console.log("🔍 Creating order with data:", orderData)
       console.log("🖼️ Product image URL:", selectedProduct.images?.[0]?.url)
-      
+
       const res = await ordersAPI.create(orderData)
       if (res.success) {
         setOrderSuccess(true)
@@ -94,7 +87,7 @@ export function Marketplace() {
     }
   }
 
-  if (productsLoading || servicesLoading) {
+  if (productsLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -107,8 +100,8 @@ export function Marketplace() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-navy">Mua sắm 🛍️</h1>
-          <p className="text-navy/60">Sản phẩm & dịch vụ cho bé cưng</p>
+          <h1 className="text-2xl font-bold text-navy">Cửa hàng 🛍️</h1>
+          <p className="text-navy/60">Sản phẩm cho bé cưng</p>
         </div>
 
       </div>
@@ -132,94 +125,24 @@ export function Marketplace() {
         </div>
       )}
 
-      {/* AI Recommendations */}
-      {defaultPet && (
-        <Card className="bg-gradient-to-r from-sky to-peach border-none">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5 text-orange" />
-              <span className="font-bold text-navy">AI Gợi ý cho {defaultPet.name}</span>
-            </div>
-            <p className="text-sm text-navy/70">
-              Dựa trên thông tin của {defaultPet.name} ({defaultPet.species}, {defaultPet.age_months} tháng), 
-              chúng tôi đề xuất các sản phẩm và dịch vụ phù hợp nhất.
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Banner Carousel */}
+      <BannerCarousel location="SHOP" />
 
-      <Tabs defaultValue="products" className="w-full">
-        <TabsList className="w-full bg-white rounded-xl p-1">
-          <TabsTrigger
-            value="products"
-            className="flex-1 rounded-lg data-[state=active]:bg-orange data-[state=active]:text-white"
-          >
-            Sản phẩm
-          </TabsTrigger>
-          <TabsTrigger
-            value="services"
-            className="flex-1 rounded-lg data-[state=active]:bg-orange data-[state=active]:text-white"
-          >
-            Dịch vụ
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="products" className="mt-4">
-          {/* AI Matched Products */}
-          {aiRecommendations && aiRecommendations.products && aiRecommendations.products.length > 0 && (
-            <div className="mb-6">
-              <h3 className="font-bold text-navy mb-3 flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-orange" />
-                Đề xuất cho {defaultPet?.name}
-              </h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {aiRecommendations.products.map((product: any) => (
-                  <ProductCard 
-                    key={`rec-${product._id || product.id}`} 
-                    product={{...product, aiMatch: true}} 
-                    onAddToCart={handleAddToCart} 
-                    formatPrice={formatPrice} 
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* All Products */}
-          <div>
-            <h3 className="font-bold text-navy mb-3">Tất cả sản phẩm</h3>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {products?.products?.map((product: any) => (
-                <ProductCard 
-                  key={product._id} 
-                  product={product} 
-                  onAddToCart={handleAddToCart} 
-                  formatPrice={formatPrice}
-                  onView={() => setSelectedProduct(product)}
-                />
-              ))}
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="services" className="mt-4">
-          {/* Recommended Services (Mocking based on pet type for now as backend service recommend endpoint exists but we need to call it if we want strict AI matches) */}
-          {/* For simplicity, we just list all services, or filter locally if needed. Backend recommend-services is available but let's stick to listing all for now unless requested */}
-          
-          <div>
-            <h3 className="font-bold text-navy mb-3">Tất cả dịch vụ</h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {services?.services?.map((service: any) => (
-                <ServiceCard 
-                  key={service._id} 
-                  service={service} 
-                  formatPrice={formatPrice} 
-                />
-              ))}
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+      {/* All Products */}
+      <div>
+        <h3 className="font-bold text-navy mb-3">Tất cả sản phẩm</h3>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {products?.products?.map((product: any) => (
+            <ProductCard
+              key={product._id}
+              product={product}
+              onAddToCart={handleAddToCart}
+              formatPrice={formatPrice}
+              onView={() => setSelectedProduct(product)}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Product Detail Modal */}
       <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
@@ -363,18 +286,12 @@ function ProductCard({
     <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={onView}>
       <CardContent className="p-0">
         <div className="relative aspect-square bg-sky/30">
-          <Image 
-            src={product.images?.[0]?.url || "/placeholder.svg"} 
-            alt={product.name} 
-            fill 
-            className="object-cover" 
+          <Image
+            src={product.images?.[0]?.url || "/placeholder.svg"}
+            alt={product.name}
+            fill
+            className="object-cover"
           />
-          {product.aiMatch && (
-            <Badge className="absolute top-2 right-2 bg-orange text-white">
-              <Sparkles className="w-3 h-3 mr-1" />
-              AI Match
-            </Badge>
-          )}
         </div>
         <div className="p-3">
           <h4 className="font-bold text-navy text-sm line-clamp-1">{product.name}</h4>
@@ -396,74 +313,5 @@ function ProductCard({
         </div>
       </CardContent>
     </Card>
-  )
-}
-
-function ServiceCard({
-  service,
-  formatPrice,
-}: {
-  service: any
-  formatPrice: (price: number) => string
-}) {
-  return (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-      <CardContent className="p-0">
-        <div className="flex">
-          <div className="relative w-32 h-32 bg-sky/30">
-            <Image 
-              src={service.image?.url || "/placeholder.svg"} 
-              alt={service.name} 
-              fill 
-              className="object-cover" 
-            />
-          </div>
-          <div className="flex-1 p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <h4 className="font-bold text-navy">{service.name}</h4>
-                <p className="text-sm text-navy/60">{service.duration_minutes} phút</p>
-              </div>
-              {service.aiMatch && (
-                <Badge className="bg-orange text-white">
-                  <Sparkles className="w-3 h-3" />
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-1 my-2">
-              <MapPinIcon className="w-3 h-3 text-navy/60" />
-              <span className="text-xs text-navy/60">
-                 {service.merchant_id?.merchant_profile?.shop_name || "Phòng khám"}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <p className="font-bold text-orange">{formatPrice(service.price_min)}</p>
-              <Button size="sm" className="bg-[#2B3A98] hover:bg-[#2B3A98]/90 text-white rounded-lg">
-                <Calendar className="w-4 h-4 mr-1" />
-                Đặt lịch
-              </Button>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function MapPinIcon({ className }: { className?: string }) {
-  return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-    >
-      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-      <circle cx="12" cy="10" r="3" />
-    </svg>
   )
 }

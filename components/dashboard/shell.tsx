@@ -104,9 +104,9 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
           {/* User Menu */}
           <div className="flex items-center gap-3">
             {/* Shopping Cart */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="relative"
               onClick={() => setCartOpen(true)}
             >
@@ -192,7 +192,7 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
       </header>
 
       {/* Main Content */}
-      <main className="p-4 lg:p-8 max-w-7xl mx-auto">{children}</main>
+      <main className="p-4 lg:p-8 pb-24 lg:pb-8 max-w-7xl mx-auto">{children}</main>
 
       {/* Mobile Bottom Nav */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border safe-area-inset-bottom">
@@ -217,8 +217,8 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
       </nav>
 
       {/* Cart Modal */}
-      <CartModal 
-        open={cartOpen} 
+      <CartModal
+        open={cartOpen}
         onOpenChange={setCartOpen}
         onCheckout={() => {
           // Navigate to orders tab after checkout
