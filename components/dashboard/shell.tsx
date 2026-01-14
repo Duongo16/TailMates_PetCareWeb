@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Menu, X, LogOut, User, Bell, ShoppingCart, type LucideIcon } from "lucide-react"
+import { Menu, X, LogOut, User, Bell, ShoppingCart, Package, Crown, Settings, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { useCart } from "@/lib/cart-context"
@@ -147,9 +147,17 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
                   <p className="text-sm text-foreground/60">{user?.email}</p>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="w-4 h-4 mr-2" />
-                  Hồ sơ cá nhân
+                <DropdownMenuItem onClick={() => onTabChange("orders")}>
+                  <Package className="w-4 h-4 mr-2" />
+                  Đơn hàng
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onTabChange("subscription")}>
+                  <Crown className="w-4 h-4 mr-2" />
+                  Nâng cấp
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onTabChange("settings")}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Cài đặt
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">

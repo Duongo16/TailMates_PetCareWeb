@@ -11,7 +11,7 @@ import { ProfileSettings } from "@/components/customer/profile-settings"
 import { OrderTracking } from "@/components/customer/order-tracking"
 import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { Home, PawPrint, FileText, ShoppingBag, Calendar, Crown, Settings, Package } from "lucide-react"
+import { Home, PawPrint, FileText, ShoppingBag, Calendar } from "lucide-react"
 
 type CustomerTab = "dashboard" | "pets" | "medical" | "marketplace" | "booking" | "orders" | "subscription" | "settings"
 
@@ -21,9 +21,6 @@ const tabs = [
   { id: "medical" as CustomerTab, label: "Sổ y tế", icon: FileText },
   { id: "booking" as CustomerTab, label: "Đặt lịch", icon: Calendar },
   { id: "marketplace" as CustomerTab, label: "Mua sắm", icon: ShoppingBag },
-  { id: "orders" as CustomerTab, label: "Đơn hàng", icon: Package },
-  { id: "subscription" as CustomerTab, label: "Nâng cấp", icon: Crown },
-  { id: "settings" as CustomerTab, label: "Cài đặt", icon: Settings },
 ]
 
 export default function CustomerDashboardPage() {
@@ -60,9 +57,9 @@ export default function CustomerDashboardPage() {
         return <CustomerDashboard onPetSelect={handlePetSelect} onTabChange={handleTabChange} />
       case "pets":
         return (
-          <PetProfile 
-            selectedPetId={selectedPetId} 
-            onSelectPet={setSelectedPetId} 
+          <PetProfile
+            selectedPetId={selectedPetId}
+            onSelectPet={setSelectedPetId}
             onViewMedical={handleViewMedical}
             shouldOpenAddDialog={shouldOpenAddPet}
             onAddDialogClose={() => setShouldOpenAddPet(false)}

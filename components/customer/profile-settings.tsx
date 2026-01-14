@@ -29,11 +29,6 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
       city: "",
       postal_code: "",
     },
-    emergency_contact: {
-      name: "",
-      phone: "",
-      relationship: "",
-    },
     preferences: {
       language: "vi",
       notifications: {
@@ -60,17 +55,12 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
       setProfileData({
         full_name: user.full_name || "",
         phone_number: user.phone_number || "",
-        avatar_url: user.avatar?.url || "",
+        avatar_url: user.avatar?.url || user.avatar || "",
         avatar_public_id: user.avatar?.public_id || "",
         address: {
           street: user.address?.street || "",
           city: user.address?.city || "",
           postal_code: user.address?.postal_code || "",
-        },
-        emergency_contact: {
-          name: user.emergency_contact?.name || "",
-          phone: user.emergency_contact?.phone || "",
-          relationship: user.emergency_contact?.relationship || "",
         },
         preferences: {
           language: user.preferences?.language || "vi",
@@ -93,8 +83,6 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
       profileData.avatar_url,
       profileData.address.street,
       profileData.address.city,
-      profileData.emergency_contact.name,
-      profileData.emergency_contact.phone,
     ]
     const filled = fields.filter(f => f && f.toString().trim()).length
     return Math.round((filled / fields.length) * 100)
@@ -110,7 +98,6 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
         full_name: profileData.full_name,
         phone_number: profileData.phone_number,
         address: profileData.address,
-        emergency_contact: profileData.emergency_contact,
         preferences: profileData.preferences,
       }
 
@@ -166,15 +153,15 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Cài đặt tài khoản</h1>
-        <p className="text-foreground/60">Quản lý thông tin cá nhân của bạn</p>
+        <h1 className="text-xl lg:text-2xl font-bold text-foreground">Cài đặt tài khoản</h1>
+        <p className="text-foreground/60 text-sm lg:text-base">Quản lý thông tin cá nhân của bạn</p>
       </div>
 
       {/* Profile Completion */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
-        <CardContent className="p-5">
+        <CardContent className="p-4 lg:p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="font-semibold text-foreground">Độ hoàn thiện hồ sơ</p>
@@ -190,8 +177,8 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
       {message && (
         <div
           className={`p-4 rounded-xl flex items-center gap-3 ${message.type === "success"
-              ? "bg-green-100 text-green-700 border border-green-200"
-              : "bg-red-100 text-red-700 border border-red-200"
+            ? "bg-green-100 text-green-700 border border-green-200"
+            : "bg-red-100 text-red-700 border border-red-200"
             }`}
         >
           <AlertCircle className="w-5 h-5" />
@@ -207,8 +194,8 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
             Thông tin cá nhân
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Avatar Upload - TOP */}
+        <CardContent className="space-y-4 lg:space-y-6 p-4 lg:p-6">
+          {/* Avatar Upload */}
           <ImageUpload
             label="Ảnh đại diện"
             value={profileData.avatar_url}
@@ -311,63 +298,6 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
             </div>
           </div>
 
-          <Separator />
-
-          {/* Emergency Contact */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-foreground flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-primary" />
-              Liên hệ khẩn cấp
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Họ tên</Label>
-                <Input
-                  value={profileData.emergency_contact.name}
-                  onChange={(e) => setProfileData({
-                    ...profileData,
-                    emergency_contact: { ...profileData.emergency_contact, name: e.target.value }
-                  })}
-                  placeholder="Nguyễn Văn B"
-                  className="rounded-xl mt-1"
-                />
-              </div>
-              <div>
-                <Label>Số điện thoại</Label>
-                <Input
-                  value={profileData.emergency_contact.phone}
-                  onChange={(e) => setProfileData({
-                    ...profileData,
-                    emergency_contact: { ...profileData.emergency_contact, phone: e.target.value }
-                  })}
-                  placeholder="0987654321"
-                  className="rounded-xl mt-1"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label>Mối quan hệ</Label>
-                <Select
-                  value={profileData.emergency_contact.relationship}
-                  onValueChange={(val) => setProfileData({
-                    ...profileData,
-                    emergency_contact: { ...profileData.emergency_contact, relationship: val }
-                  })}
-                >
-                  <SelectTrigger className="rounded-xl mt-1">
-                    <SelectValue placeholder="Chọn mối quan hệ" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="parent">Cha/Mẹ</SelectItem>
-                    <SelectItem value="spouse">Vợ/Chồng</SelectItem>
-                    <SelectItem value="sibling">Anh/Chị/Em</SelectItem>
-                    <SelectItem value="friend">Bạn bè</SelectItem>
-                    <SelectItem value="other">Khác</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
           <Button className="w-full rounded-xl" onClick={handleUpdateProfile} disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Lưu thay đổi</>}
           </Button>
@@ -382,7 +312,7 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
             Tùy chọn
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-4 lg:space-y-5 p-4 lg:p-6">
           {/* Language */}
           <div>
             <Label>Ngôn ngữ</Label>
@@ -490,7 +420,7 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
             Đổi mật khẩu
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 p-4 lg:p-6">
           <div>
             <Label>Mật khẩu hiện tại</Label>
             <Input
