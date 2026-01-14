@@ -8,8 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Check, Crown, Sparkles, Zap, Loader2 } from "lucide-react"
+import { AlertDialog, useAlertDialog } from "@/components/ui/alert-dialog-custom"
 
 export function Subscription() {
+  const { alertState, showAlert, closeAlert } = useAlertDialog()
   const { data: packages, isLoading } = useCustomerPackages()
   const { user, refreshUser } = useAuth()
   const [processingId, setProcessingId] = useState<string | null>(null)
@@ -20,12 +22,24 @@ export function Subscription() {
       const response = await packagesAPI.subscribeCustomer(packageId)
       if (response.success) {
         await refreshUser()
-        alert("Đăng ký thành công!")
+        showAlert({
+          type: "success",
+          title: "Đăng ký thành công!",
+          message: "Gói dịch vụ của bạn đã được kích hoạt.",
+        })
       } else {
-        alert(response.message || "Đăng ký thất bại")
+        showAlert({
+          type: "error",
+          title: "Đăng ký thất bại",
+          message: response.message || "Không thể đăng ký gói dịch vụ. Vui lòng thử lại.",
+        })
       }
     } catch (error) {
-      alert("Lỗi kết nối")
+      showAlert({
+        type: "error",
+        title: "Lỗi kết nối",
+        message: "Không thể kết nối đến máy chủ. Vui lòng thử lại.",
+      })
     } finally {
       setProcessingId(null)
     }
@@ -173,6 +187,18 @@ export function Subscription() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        open={alertState.open}
+        onOpenChange={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        onConfirm={alertState.onConfirm}
+        showCancel={alertState.showCancel}
+      />
     </div>
   )
 }

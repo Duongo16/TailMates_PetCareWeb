@@ -197,7 +197,13 @@ export const ordersAPI = {
   list: () => fetchWithAuth<any[]>("/orders"),
 
   create: (data: {
-    items: Array<{ product_id: string; quantity: number }>;
+    items: Array<{
+      product_id: string;
+      quantity: number;
+      product_name?: string;
+      price?: number;
+      product_image?: string;
+    }>;
     shipping_address?: string;
     note?: string;
     payment_method?: string;

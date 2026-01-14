@@ -15,9 +15,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Menu, X, LogOut, User, Bell, type LucideIcon } from "lucide-react"
+import { Menu, X, LogOut, User, Bell, ShoppingCart, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
+import { useCart } from "@/lib/cart-context"
+import { CartModal } from "@/components/ui/cart-modal"
 
 interface Tab {
   id: string
@@ -34,8 +36,10 @@ interface DashboardShellProps {
 
 export function DashboardShell({ children, tabs, activeTab, onTabChange }: DashboardShellProps) {
   const { user, logout } = useAuth()
+  const { totalItems } = useCart()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [cartOpen, setCartOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -99,6 +103,22 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
 
           {/* User Menu */}
           <div className="flex items-center gap-3">
+            {/* Shopping Cart */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative"
+              onClick={() => setCartOpen(true)}
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                  {totalItems}
+                </span>
+              )}
+            </Button>
+
+            {/* Notifications */}
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="w-5 h-5" />
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
@@ -195,6 +215,16 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
           })}
         </div>
       </nav>
+
+      {/* Cart Modal */}
+      <CartModal 
+        open={cartOpen} 
+        onOpenChange={setCartOpen}
+        onCheckout={() => {
+          // Navigate to orders tab after checkout
+          onTabChange("orders")
+        }}
+      />
     </div>
   )
 }

@@ -21,6 +21,7 @@ interface IOrderItem {
   product_id: mongoose.Types.ObjectId;
   name: string; // Snapshot
   price: number; // Snapshot
+  product_image?: string; // Snapshot - product image URL
   quantity: number;
 }
 
@@ -45,6 +46,7 @@ const OrderItemSchema = new Schema<IOrderItem>(
     product_id: { type: Schema.Types.ObjectId, ref: "Product", required: true },
     name: { type: String, required: true },
     price: { type: Number, required: true },
+    product_image: { type: String }, // Optional product image URL snapshot
     quantity: { type: Number, required: true, min: 1 },
   },
   { _id: false }

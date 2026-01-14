@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useProducts, useServices, usePets, useAIRecommendProducts } from "@/lib/hooks"
+import { useCart } from "@/lib/cart-context"
 import { ordersAPI } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,13 +11,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Sparkles, Star, ShoppingCart, Calendar, Loader2, Store, Package, Check, X } from "lucide-react"
 import Image from "next/image"
+import { AlertDialog, useAlertDialog } from "@/components/ui/alert-dialog-custom"
 
 export function Marketplace() {
-  const [cart, setCart] = useState<string[]>([])
+  const { addItem } = useCart()
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null)
   const [orderQuantity, setOrderQuantity] = useState(1)
   const [isOrdering, setIsOrdering] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(false)
+  const [addedToCart, setAddedToCart] = useState(false)
+  const { alertState, showAlert, closeAlert } = useAlertDialog()
   
   const { data: products, isLoading: productsLoading } = useProducts()
   const { data: services, isLoading: servicesLoading } = useServices()
@@ -26,9 +30,17 @@ export function Marketplace() {
   const defaultPet = pets && pets.length > 0 ? pets[0] : null
   const { data: aiRecommendations, isLoading: aiLoading } = useAIRecommendProducts(defaultPet?._id || null)
 
-  const addToCart = (productId: string) => {
-    setCart((prev) => [...prev, productId])
-    // In a real app, this would call an API or update global cart state
+  const handleAddToCart = (product: any) => {
+    addItem({
+      product_id: product._id,
+      product_name: product.name,
+      product_image: product.images?.[0]?.url,
+      price: product.price,
+      merchant_id: product.merchant_id?._id,
+      merchant_name: product.merchant_id?.merchant_profile?.shop_name,
+    })
+    setAddedToCart(true)
+    setTimeout(() => setAddedToCart(false), 2000)
   }
 
   const formatPrice = (price: number) => {
@@ -42,10 +54,21 @@ export function Marketplace() {
     if (!selectedProduct) return
     setIsOrdering(true)
     try {
-      const res = await ordersAPI.create({
-        items: [{ product_id: selectedProduct._id, quantity: orderQuantity }],
+      const orderData = {
+        items: [{
+          product_id: selectedProduct._id,
+          quantity: orderQuantity,
+          product_name: selectedProduct.name,
+          price: selectedProduct.price,
+          product_image: selectedProduct.images?.[0]?.url,
+        }],
         note: `Đặt hàng nhanh từ Marketplace`,
-      })
+      }
+      
+      console.log("🔍 Creating order with data:", orderData)
+      console.log("🖼️ Product image URL:", selectedProduct.images?.[0]?.url)
+      
+      const res = await ordersAPI.create(orderData)
       if (res.success) {
         setOrderSuccess(true)
         setTimeout(() => {
@@ -54,10 +77,18 @@ export function Marketplace() {
           setOrderQuantity(1)
         }, 2000)
       } else {
-        alert(res.message || "Lỗi đặt hàng")
+        showAlert({
+          type: "error",
+          title: "Đặt hàng thất bại",
+          message: res.message || "Không thể tạo đơn hàng. Vui lòng thử lại.",
+        })
       }
     } catch {
-      alert("Lỗi đặt hàng")
+      showAlert({
+        type: "error",
+        title: "Lỗi kết nối",
+        message: "Không thể kết nối đến máy chủ. Vui lòng thử lại.",
+      })
     } finally {
       setIsOrdering(false)
     }
@@ -79,15 +110,27 @@ export function Marketplace() {
           <h1 className="text-2xl font-bold text-navy">Mua sắm 🛍️</h1>
           <p className="text-navy/60">Sản phẩm & dịch vụ cho bé cưng</p>
         </div>
-        <Button variant="outline" className="relative rounded-xl border-navy bg-transparent">
-          <ShoppingCart className="w-5 h-5" />
-          {cart.length > 0 && (
-            <span className="absolute -top-2 -right-2 w-5 h-5 bg-orange text-white text-xs rounded-full flex items-center justify-center">
-              {cart.length}
-            </span>
-          )}
-        </Button>
+
       </div>
+
+      {/* Added to Cart Toast */}
+      {addedToCart && (
+        <div className="fixed top-20 right-4 z-50 animate-in slide-in-from-right">
+          <Card className="bg-green-600 border-green-700 shadow-xl">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3 text-white">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <Check className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-bold">Đã thêm vào giỏ hàng!</p>
+                  <p className="text-sm text-white/80">Kiểm tra giỏ hàng ở góc trên</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* AI Recommendations */}
       {defaultPet && (
@@ -134,7 +177,7 @@ export function Marketplace() {
                   <ProductCard 
                     key={`rec-${product._id || product.id}`} 
                     product={{...product, aiMatch: true}} 
-                    onAddToCart={addToCart} 
+                    onAddToCart={handleAddToCart} 
                     formatPrice={formatPrice} 
                   />
                 ))}
@@ -150,7 +193,7 @@ export function Marketplace() {
                 <ProductCard 
                   key={product._id} 
                   product={product} 
-                  onAddToCart={addToCart} 
+                  onAddToCart={handleAddToCart} 
                   formatPrice={formatPrice}
                   onView={() => setSelectedProduct(product)}
                 />
@@ -259,7 +302,7 @@ export function Marketplace() {
                   variant="outline"
                   className="flex-1 rounded-xl"
                   onClick={() => {
-                    addToCart(selectedProduct._id)
+                    handleAddToCart(selectedProduct)
                     setSelectedProduct(null)
                   }}
                 >
@@ -289,6 +332,18 @@ export function Marketplace() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        open={alertState.open}
+        onOpenChange={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        onConfirm={alertState.onConfirm}
+        showCancel={alertState.showCancel}
+      />
     </div>
   )
 }
@@ -300,7 +355,7 @@ function ProductCard({
   onView,
 }: {
   product: any
-  onAddToCart: (id: string) => void
+  onAddToCart: (product: any) => void
   formatPrice: (price: number) => string
   onView?: () => void
 }) {
@@ -331,7 +386,7 @@ function ProductCard({
           <Button
             onClick={(e) => {
               e.stopPropagation()
-              onAddToCart(product._id)
+              onAddToCart(product)
             }}
             size="sm"
             className="w-full mt-2 bg-navy hover:bg-navy/90 text-white rounded-lg"
@@ -383,7 +438,7 @@ function ServiceCard({
             </div>
             <div className="flex items-center justify-between">
               <p className="font-bold text-orange">{formatPrice(service.price_min)}</p>
-              <Button size="sm" className="bg-blue hover:bg-blue/90 text-white rounded-lg">
+              <Button size="sm" className="bg-[#2B3A98] hover:bg-[#2B3A98]/90 text-white rounded-lg">
                 <Calendar className="w-4 h-4 mr-1" />
                 Đặt lịch
               </Button>

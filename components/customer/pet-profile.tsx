@@ -37,6 +37,8 @@ interface PetProfileProps {
   selectedPetId: string | null
   onSelectPet: (id: string) => void
   onViewMedical?: () => void
+  shouldOpenAddDialog?: boolean
+  onAddDialogClose?: () => void
 }
 
 const SPECIES_OPTIONS = [
@@ -53,7 +55,7 @@ const GENDER_OPTIONS = [
   { value: "FEMALE", label: "Cái" },
 ]
 
-export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetProfileProps) {
+export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOpenAddDialog, onAddDialogClose }: PetProfileProps) {
   const { data: pets, isLoading, refetch } = usePets()
   const [showQR, setShowQR] = useState(false)
   const [qrCodeData, setQrCodeData] = useState<any>(null)
@@ -88,6 +90,15 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
       })
     }
   }, [showQR, selectedPet])
+
+  // Auto-open add dialog when triggered from dashboard
+  useEffect(() => {
+    if (shouldOpenAddDialog) {
+      resetForm()
+      setShowAddDialog(true)
+      onAddDialogClose?.()
+    }
+  }, [shouldOpenAddDialog, onAddDialogClose])
 
   const resetForm = () => {
     setFormData({
@@ -384,58 +395,9 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Hồ sơ thú cưng</h1>
-          <p className="text-foreground/60">Thông tin chi tiết về bé cưng của bạn</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="rounded-xl bg-transparent" onClick={openEditDialog}>
-            <Edit className="w-4 h-4 mr-2" />
-            Chỉnh sửa
-          </Button>
-          <Button
-            variant="outline"
-            className="rounded-xl bg-transparent border-destructive text-destructive hover:bg-destructive/10"
-            onClick={() => setShowDeleteConfirm(true)}
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Pet Selector */}
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-        {pets?.map((pet) => (
-          <button
-            key={pet._id}
-            onClick={() => onSelectPet(pet._id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all whitespace-nowrap ${selectedPet?._id === pet._id
-              ? "bg-primary text-primary-foreground"
-              : "bg-card text-foreground border border-border hover:border-primary"
-              }`}
-          >
-            <span className="text-lg">{getPetIcon(pet.species)}</span>
-            <span className="font-medium">{pet.name}</span>
-          </button>
-        ))}
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <button
-              onClick={() => resetForm()}
-              className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-dashed border-border text-foreground/60 hover:border-primary hover:text-primary transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Thêm mới</span>
-            </button>
-          </DialogTrigger>
-          <DialogContent className="rounded-3xl max-w-md">
-            <DialogHeader>
-              <DialogTitle>Thêm thú cưng mới</DialogTitle>
-            </DialogHeader>
-            <PetForm />
-          </DialogContent>
-        </Dialog>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Hồ sơ thú cưng</h1>
+        <p className="text-foreground/60 text-sm">Thông tin chi tiết về bé cưng của bạn</p>
       </div>
 
       {/* Edit Dialog */}
@@ -477,10 +439,10 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
       {selectedPet && (
         <>
           <Card className="overflow-hidden">
-            <div className="bg-gradient-to-r from-secondary to-muted p-6">
-              <div className="flex flex-col lg:flex-row items-center gap-6">
+            <div className="bg-gradient-to-r from-secondary to-muted p-8 sm:p-6">
+              <div className="flex flex-col lg:flex-row items-center gap-4 sm:gap-6">
                 <div className="relative">
-                  <div className="w-36 h-36 lg:w-44 lg:h-44 rounded-3xl overflow-hidden ring-4 ring-card shadow-lg bg-secondary">
+                  <div className="w-32 h-32 sm:w-36 sm:h-36 lg:w-44 lg:h-44 rounded-3xl overflow-hidden ring-4 ring-card shadow-lg bg-secondary">
                     <Image
                       src={selectedPet.image?.url || "/placeholder.svg"}
                       alt={selectedPet.name}
@@ -489,47 +451,110 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical }: PetPro
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <button className="absolute bottom-2 right-2 w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors">
-                    <Camera className="w-5 h-5" />
-                  </button>
                 </div>
-                <div className="text-center lg:text-left flex-1">
-                  <div className="flex items-center justify-center lg:justify-start gap-2 mb-1">
-                    <h1 className="text-3xl font-bold text-foreground">{selectedPet.name}</h1>
-                    <span className="text-2xl">{getPetIcon(selectedPet.species)}</span>
+                <div className="text-center lg:text-left flex-1 w-full">
+                  {/* Pet Name Combobox */}
+                  <div className="flex items-center justify-center lg:justify-start gap-2 mb-2">
+                    <span className="text-xl sm:text-2xl">{getPetIcon(selectedPet.species)}</span>
+                    <Select
+                      value={selectedPet?._id}
+                      onValueChange={(petId) => onSelectPet(petId)}
+                      disabled={!pets || pets.length === 0}
+                    >
+                      <SelectTrigger className="w-auto max-w-[280px] sm:max-w-[350px] font-bold text-2xl sm:text-3xl border-0 bg-transparent focus:ring-0 focus:ring-offset-0 px-0 hover:text-primary transition-colors">
+                        <SelectValue placeholder="Chọn thú cưng">
+                          {selectedPet?.name || "Chọn thú cưng"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {pets?.map((pet) => (
+                          <SelectItem key={pet._id} value={pet._id} className="group">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{getPetIcon(pet.species)}</span>
+                              <span className="font-medium">{pet.name}</span>
+                              <span className="text-xs text-muted-foreground group-focus:text-white group-hover:text-white transition-colors">
+                                {pet.breed || pet.species} • {formatAge(pet.age_months)}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <p className="text-foreground/70 text-lg">{selectedPet.breed || "Không rõ giống"}</p>
-                  <div className="flex flex-wrap justify-center lg:justify-start gap-3 mt-4">
-                    <Badge variant="secondary" className="px-3 py-1">
+                  <p className="text-foreground/70 text-base sm:text-lg mb-3">{selectedPet.breed || "Không rõ giống"}</p>
+                  <div className="flex flex-wrap justify-center lg:justify-start gap-2 sm:gap-3">
+                    <Badge variant="secondary" className="px-2 sm:px-3 py-1 text-xs sm:text-sm">
                       <Cake className="w-3 h-3 mr-1" />
                       {formatAge(selectedPet.age_months)}
                     </Badge>
                     {selectedPet.weight_kg && (
-                      <Badge variant="secondary" className="px-3 py-1">
+                      <Badge variant="secondary" className="px-2 sm:px-3 py-1 text-xs sm:text-sm">
                         <Weight className="w-3 h-3 mr-1" />
                         {selectedPet.weight_kg} kg
                       </Badge>
                     )}
-                    <Badge variant="secondary" className="px-3 py-1">
+                    <Badge variant="secondary" className="px-2 sm:px-3 py-1 text-xs sm:text-sm">
                       {selectedPet.gender === "MALE" || selectedPet.gender === "Đực" ? "♂️ Đực" : "♀️ Cái"}
                     </Badge>
                     {selectedPet.sterilized && (
-                      <Badge variant="secondary" className="px-3 py-1 bg-green-100 text-green-700 hover:bg-green-100">
+                      <Badge variant="secondary" className="px-2 sm:px-3 py-1 text-xs sm:text-sm bg-green-100 text-green-700 hover:bg-green-100">
                         Đã triệt sản
                       </Badge>
                     )}
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <Button
-                    onClick={() => setShowQR(!showQR)}
-                    variant="outline"
-                    className="rounded-xl bg-card/80 hover:bg-card"
-                  >
-                    <QrCode className="w-4 h-4 mr-2" />
-                    Mã QR
-                  </Button>
-                  <Button onClick={onViewMedical} className="rounded-xl">
+                  {/* Action Buttons Row 1: QR, Add, Edit, Delete */}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => setShowQR(!showQR)}
+                      variant="outline"
+                      size="icon"
+                      className="rounded-xl bg-card/80 hover:bg-card flex-shrink-0"
+                      title="Mã QR"
+                    >
+                      <QrCode className="w-4 h-4" />
+                    </Button>
+                    <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="outline"
+                          size="icon"
+                          className="rounded-xl bg-card/80 hover:bg-card flex-shrink-0"
+                          onClick={() => resetForm()}
+                          title="Thêm mới"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="rounded-3xl max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Thêm thú cưng mới</DialogTitle>
+                        </DialogHeader>
+                        <PetForm />
+                      </DialogContent>
+                    </Dialog>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      className="rounded-xl bg-card/80 hover:bg-card flex-shrink-0" 
+                      onClick={openEditDialog}
+                      title="Chỉnh sửa"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-xl bg-card/80 hover:bg-card border-destructive text-destructive hover:bg-destructive/10 flex-shrink-0"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      title="Xóa"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  {/* Action Button Row 2: Medical Record */}
+                  <Button onClick={onViewMedical} className="rounded-xl w-full">
                     Sổ y tế
                     <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>

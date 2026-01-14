@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar, Clock, Star, Sparkles, Search, ChevronLeft, ChevronRight, CheckCircle2, Loader2, MapPin } from "lucide-react"
 import Image from "next/image"
+import { AlertDialog, useAlertDialog } from "@/components/ui/alert-dialog-custom"
 
 export function ServiceBooking() {
   const { data: servicesData, isLoading: servicesLoading } = useServices()
@@ -29,6 +30,7 @@ export function ServiceBooking() {
   const [filterCategory, setFilterCategory] = useState("all")
   const [bookingSuccess, setBookingSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { alertState, showAlert, closeAlert } = useAlertDialog()
 
   const services = servicesData?.services || []
 
@@ -96,11 +98,19 @@ export function ServiceBooking() {
           setIsSubmitting(false)
         }, 2000)
       } else {
-        alert(response.message || "Đặt lịch thất bại")
+        showAlert({
+          type: "error",
+          title: "Đặt lịch thất bại",
+          message: response.message || "Không thể đặt lịch. Vui lòng thử lại.",
+        })
         setIsSubmitting(false)
       }
     } catch (error) {
-      alert("Lỗi kết nối")
+      showAlert({
+        type: "error",
+        title: "Lỗi kết nối",
+        message: "Không thể kết nối đến máy chủ. Vui lòng thử lại.",
+      })
       setIsSubmitting(false)
     }
   }
@@ -554,6 +564,18 @@ export function ServiceBooking() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        open={alertState.open}
+        onOpenChange={closeAlert}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        onConfirm={alertState.onConfirm}
+        showCancel={alertState.showCancel}
+      />
     </div>
   )
 }

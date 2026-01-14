@@ -222,12 +222,12 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                   <Loader2 className="w-8 h-8 animate-spin text-primary" />
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 flex-1 overflow-hidden p-2">
+                <div className="flex gap-3 overflow-x-auto p-2 pb-4 scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
                   {pets?.map((pet, index) => (
                     <div
                       key={pet._id}
                       onClick={() => onPetSelect(pet._id)}
-                      className={`relative cursor-pointer transition-all duration-300 ${index === currentPetIndex
+                      className={`relative cursor-pointer transition-all duration-300 flex-shrink-0 w-[140px] sm:w-[160px] ${index === currentPetIndex
                         ? "scale-[1.02]"
                         : "hover:scale-[1.01]"
                         }`}
@@ -304,7 +304,10 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                   ))}
 
                   {/* Add Pet Card */}
-                  <Card className="cursor-pointer transition-all duration-300 border-dashed border-2 hover:border-primary hover:bg-primary/5">
+                  <Card 
+                    onClick={() => onTabChange?.("pets")}
+                    className="cursor-pointer transition-all duration-300 border-dashed border-2 hover:border-primary hover:bg-primary/5 flex-shrink-0 w-[140px] sm:w-[160px]"
+                  >
                     <CardContent className="p-1.5 h-full flex flex-col items-center justify-center text-foreground/40 hover:text-primary aspect-[3/2]">
                       <div className="w-6 h-6 rounded-full border-2 border-dashed border-current flex items-center justify-center mb-0.5">
                         <span className="text-sm">+</span>
@@ -331,21 +334,21 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                   {
                     icon: Calendar,
                     label: "Đặt lịch",
-                    color: "bg-accent",
+                    color: "bg-[#2B3A98]",
                     tab: "booking",
                     count: bookings?.filter((b: any) => ["PENDING", "CONFIRMED"].includes(b.status)).length || 0
                   },
                   {
                     icon: ShoppingBag,
                     label: "Mua sắm",
-                    color: "bg-green-500",
+                    color: "bg-[#F16A3F]",
                     tab: "marketplace",
                     count: orders?.filter((o: any) => ["PENDING", "PROCESSING"].includes(o.status)).length || 0
                   },
                   {
                     icon: Bell,
                     label: "Nhắc nhở",
-                    color: "bg-purple-500",
+                    color: "bg-green-600",
                     tab: "medical",
                     count: (bookings?.filter((b: any) => ["PENDING", "CONFIRMED"].includes(b.status)).length || 0) + (orders?.filter((o: any) => ["PENDING", "PROCESSING"].includes(o.status)).length || 0)
                   },
