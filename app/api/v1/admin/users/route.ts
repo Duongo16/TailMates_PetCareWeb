@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const role = searchParams.get("role");
     const status = searchParams.get("status");
+    const search = searchParams.get("search");
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
 
@@ -25,6 +26,14 @@ export async function GET(request: NextRequest) {
     if (role) query.role = role.toUpperCase();
     if (status === "active") query.is_active = true;
     if (status === "pending") query.is_active = false;
+
+    // Server-side search by full_name or email
+    if (search && search.trim()) {
+      query.$or = [
+        { full_name: { $regex: search.trim(), $options: "i" } },
+        { email: { $regex: search.trim(), $options: "i" } },
+      ];
+    }
 
     const skip = (page - 1) * limit;
 

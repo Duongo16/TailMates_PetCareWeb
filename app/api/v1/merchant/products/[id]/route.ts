@@ -4,6 +4,7 @@ import Product from "@/models/Product";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 import { UserRole } from "@/models/User";
 import mongoose from "mongoose";
+import { deleteFromCloudinary, deleteMultipleFromCloudinary } from "@/lib/cloudinary";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -87,6 +88,16 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
     }
 
+    // Delete old images from Cloudinary if images are being updated
+    if (body.images && body.images.length > 0 && product.images?.length > 0) {
+      const oldPublicIds = product.images.map((img: any) => img.public_id).filter(Boolean);
+      const newPublicIds = body.images.map((img: any) => img.public_id);
+      const idsToDelete = oldPublicIds.filter((id: string) => !newPublicIds.includes(id));
+      if (idsToDelete.length > 0) {
+        await deleteMultipleFromCloudinary(idsToDelete);
+      }
+    }
+
     const updatedProduct = await Product.findByIdAndUpdate(
       id,
       { $set: updateData },
@@ -124,6 +135,14 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     if (!product) {
       return apiResponse.notFound("Product not found");
+    }
+
+    // Delete product images from Cloudinary
+    if (product.images && product.images.length > 0) {
+      const publicIds = product.images.map((img: any) => img.public_id).filter(Boolean);
+      if (publicIds.length > 0) {
+        await deleteMultipleFromCloudinary(publicIds);
+      }
     }
 
     await Product.findByIdAndDelete(id);

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import connectDB from "@/lib/db";
 import { Banner, UserRole } from "@/models";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
+import { deleteFromCloudinary } from "@/lib/cloudinary";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -30,8 +31,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             return apiResponse.notFound("Banner not found");
         }
 
-        // Update fields
+        // Update fields - delete old image from Cloudinary if new image provided
         if (image?.url && image?.public_id) {
+            if (banner.image?.public_id && image.public_id !== banner.image.public_id) {
+                await deleteFromCloudinary(banner.image.public_id);
+            }
             banner.image = image;
         }
         if (targetUrl !== undefined) banner.targetUrl = targetUrl;
@@ -64,11 +68,18 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         await connectDB();
 
         const { id } = await params;
-        const banner = await Banner.findByIdAndDelete(id);
+        const banner = await Banner.findById(id);
 
         if (!banner) {
             return apiResponse.notFound("Banner not found");
         }
+
+        // Delete banner image from Cloudinary
+        if (banner.image?.public_id) {
+            await deleteFromCloudinary(banner.image.public_id);
+        }
+
+        await Banner.findByIdAndDelete(id);
 
         return apiResponse.success(null, "Banner deleted successfully");
     } catch (error) {

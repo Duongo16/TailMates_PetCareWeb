@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 import Pet from "@/models/Pet";
 import { authenticate, apiResponse } from "@/lib/auth";
 import mongoose from "mongoose";
+import { deleteFromCloudinary } from "@/lib/cloudinary";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -90,6 +91,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
     }
 
+    // Delete old image from Cloudinary if image is being updated
+    if (body.image && pet.image?.public_id && body.image.public_id !== pet.image.public_id) {
+      await deleteFromCloudinary(pet.image.public_id);
+    }
+
     const updatedPet = await Pet.findByIdAndUpdate(
       id,
       { $set: updateData },
@@ -126,6 +132,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     // Only owner can delete
     if (pet.owner_id.toString() !== user!._id.toString()) {
       return apiResponse.forbidden("You can only delete your own pets");
+    }
+
+    // Delete pet image from Cloudinary
+    if (pet.image?.public_id) {
+      await deleteFromCloudinary(pet.image.public_id);
     }
 
     await Pet.findByIdAndDelete(id);

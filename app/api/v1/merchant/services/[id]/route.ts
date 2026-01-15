@@ -4,6 +4,7 @@ import Service from "@/models/Service";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 import { UserRole } from "@/models/User";
 import mongoose from "mongoose";
+import { deleteFromCloudinary } from "@/lib/cloudinary";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -53,6 +54,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
     }
 
+    // Delete old image from Cloudinary if image is being updated
+    if (body.image && service.image?.public_id && body.image.public_id !== service.image.public_id) {
+      await deleteFromCloudinary(service.image.public_id);
+    }
+
     const updatedService = await Service.findByIdAndUpdate(
       id,
       { $set: updateData },
@@ -90,6 +96,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     if (!service) {
       return apiResponse.notFound("Service not found");
+    }
+
+    // Delete service image from Cloudinary
+    if (service.image?.public_id) {
+      await deleteFromCloudinary(service.image.public_id);
     }
 
     await Service.findByIdAndDelete(id);

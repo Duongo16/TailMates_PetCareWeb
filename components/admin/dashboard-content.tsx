@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useDeferredValue } from "react"
 import { useAdminUsers } from "@/lib/hooks"
 import { adminAPI } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,16 +19,14 @@ export function AdminDashboardContent({ activeTab }: AdminDashboardContentProps)
   const [searchTerm, setSearchTerm] = useState("")
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [registrationOpen, setRegistrationOpen] = useState(true)
-  
-  const { data, isLoading, refetch } = useAdminUsers()
+
+  // Use deferred value for search to debounce API calls
+  const deferredSearch = useDeferredValue(searchTerm)
+
+  // Pass search to server-side query - now searches across ALL pages
+  const { data, isLoading, refetch } = useAdminUsers({ search: deferredSearch || undefined })
   const users = data?.users || []
   const stats = data?.stats || { customers: 0, merchants: 0, active: 0, pending: 0, total: 0 }
-
-  const filteredUsers = users.filter(
-    (user: any) =>
-      (user.full_name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-      (user.email?.toLowerCase() || "").includes(searchTerm.toLowerCase()),
-  )
 
   const handleUpdateUserStatus = async (userId: string, isActive: boolean) => {
     if (!confirm(`Bạn có chắc muốn ${isActive ? "kích hoạt" : "vô hiệu hóa"} tài khoản này?`)) return
@@ -191,7 +189,7 @@ export function AdminDashboardContent({ activeTab }: AdminDashboardContentProps)
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredUsers.map((user: any) => (
+                    {users.map((user: any) => (
                       <tr key={user._id} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
                         <td className="py-3 px-4">
                           <p className="font-medium text-foreground">{user.full_name}</p>
@@ -210,14 +208,14 @@ export function AdminDashboardContent({ activeTab }: AdminDashboardContentProps)
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem>Xem chi tiết</DropdownMenuItem>
                               {user.is_active ? (
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                   className="text-destructive"
                                   onClick={() => handleUpdateUserStatus(user._id, false)}
                                 >
                                   Vô hiệu hóa
                                 </DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem 
+                                <DropdownMenuItem
                                   className="text-green-600"
                                   onClick={() => handleUpdateUserStatus(user._id, true)}
                                 >
@@ -229,7 +227,7 @@ export function AdminDashboardContent({ activeTab }: AdminDashboardContentProps)
                         </td>
                       </tr>
                     ))}
-                    {filteredUsers.length === 0 && (
+                    {users.length === 0 && (
                       <tr>
                         <td colSpan={5} className="py-8 text-center text-foreground/50">
                           Không tìm thấy người dùng

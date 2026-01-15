@@ -57,10 +57,10 @@ export function useMedicalRecords(petId: string) {
 }
 
 // ==================== Products Hooks ====================
-export function useProducts(params?: { category?: string; search?: string }) {
+export function useProducts(params?: { category?: string; search?: string; page?: number; limit?: number }) {
   return useFetch<{ products: any[]; pagination: any }>(
     () => productsAPI.list(params),
-    [params?.category, params?.search]
+    [params?.category, params?.search, params?.page, params?.limit]
   )
 }
 
@@ -172,10 +172,10 @@ export function usePackages() {
 }
 
 // ==================== Admin Hooks ====================
-export function useAdminUsers(params?: { role?: string; status?: string; page?: number }) {
+export function useAdminUsers(params?: { role?: string; status?: string; search?: string; page?: number }) {
   return useFetch<{ users: any[]; stats: any; pagination: any }>(
     () => import("@/lib/api").then(m => m.adminAPI.listUsers(params)),
-    [params?.role, params?.status, params?.page]
+    [params?.role, params?.status, params?.search, params?.page]
   )
 }
 

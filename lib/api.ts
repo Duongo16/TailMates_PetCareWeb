@@ -240,6 +240,9 @@ export const bookingsAPI = {
       method: "PUT",
       body: JSON.stringify({ status }),
     }),
+
+  getBookedSlots: (serviceId: string, date: string) =>
+    fetchWithAuth<{ booked_slots: string[] }>(`/bookings/slots?service_id=${serviceId}&date=${encodeURIComponent(date)}`),
 };
 
 // ==================== Packages API ====================
@@ -348,10 +351,11 @@ export const managerAPI = {
 
 // ==================== Admin API ====================
 export const adminAPI = {
-  listUsers: (params?: { role?: string; status?: string; page?: number; limit?: number }) => {
+  listUsers: (params?: { role?: string; status?: string; search?: string; page?: number; limit?: number }) => {
     const searchParams = new URLSearchParams();
     if (params?.role) searchParams.append("role", params.role);
     if (params?.status) searchParams.append("status", params.status);
+    if (params?.search) searchParams.append("search", params.search);
     if (params?.page) searchParams.append("page", params.page.toString());
     if (params?.limit) searchParams.append("limit", params.limit.toString());
     return fetchWithAuth<any>(`/admin/users?${searchParams.toString()}`);

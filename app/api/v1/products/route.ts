@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      query.$text = { $search: search };
+      // Partial match - contains text (case-insensitive)
+      query.name = { $regex: search, $options: "i" };
     }
 
     const total = await Product.countDocuments(query);

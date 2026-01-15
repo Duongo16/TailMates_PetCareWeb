@@ -1,16 +1,36 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useDeferredValue, useMemo } from "react"
 import { useProducts } from "@/lib/hooks"
 import { useCart } from "@/lib/cart-context"
 import { ordersAPI } from "@/lib/api"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Star, ShoppingCart, Loader2, Store, Package, Check } from "lucide-react"
+import { Star, ShoppingCart, Loader2, Store, Package, Check, Search, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react"
 import Image from "next/image"
 import { AlertDialog, useAlertDialog } from "@/components/ui/alert-dialog-custom"
 import { BannerCarousel } from "@/components/ui/banner-carousel"
+
+const CATEGORIES = [
+  { value: "all", label: "Tất cả danh mục" },
+  { value: "FOOD", label: "Thức ăn" },
+  { value: "TOY", label: "Đồ chơi" },
+  { value: "ACCESSORY", label: "Phụ kiện" },
+  { value: "MEDICINE", label: "Thuốc & Y tế" },
+  { value: "HYGIENE", label: "Vệ sinh" },
+  { value: "OTHER", label: "Khác" },
+]
+
+const SORT_OPTIONS = [
+  { value: "newest", label: "Mới nhất" },
+  { value: "price_asc", label: "Giá thấp → cao" },
+  { value: "price_desc", label: "Giá cao → thấp" },
+]
+
+const ITEMS_PER_PAGE = 8
 
 export function Marketplace() {
   const { addItem } = useCart()
@@ -21,7 +41,33 @@ export function Marketplace() {
   const [addedToCart, setAddedToCart] = useState(false)
   const { alertState, showAlert, closeAlert } = useAlertDialog()
 
-  const { data: products, isLoading: productsLoading } = useProducts()
+  // Filter & Pagination States
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [sortBy, setSortBy] = useState("newest")
+  const [currentPage, setCurrentPage] = useState(1)
+
+  // Debounce search
+  const deferredSearch = useDeferredValue(searchTerm)
+
+  const { data: products, isLoading: productsLoading } = useProducts({
+    category: selectedCategory === "all" ? undefined : selectedCategory,
+    search: deferredSearch || undefined,
+    page: currentPage,
+    limit: ITEMS_PER_PAGE,
+  })
+
+  // Sort products client-side
+  const sortedProducts = useMemo(() => {
+    if (!products?.products) return []
+    const sorted = [...products.products]
+    if (sortBy === "price_asc") {
+      sorted.sort((a, b) => a.price - b.price)
+    } else if (sortBy === "price_desc") {
+      sorted.sort((a, b) => b.price - a.price)
+    }
+    return sorted
+  }, [products?.products, sortBy])
 
   const handleAddToCart = (product: any) => {
     addItem({
@@ -58,9 +104,6 @@ export function Marketplace() {
         note: `Đặt hàng nhanh từ Marketplace`,
       }
 
-      console.log("🔍 Creating order with data:", orderData)
-      console.log("🖼️ Product image URL:", selectedProduct.images?.[0]?.url)
-
       const res = await ordersAPI.create(orderData)
       if (res.success) {
         setOrderSuccess(true)
@@ -87,23 +130,28 @@ export function Marketplace() {
     }
   }
 
-  if (productsLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    )
+  // Reset page when filter changes
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category)
+    setCurrentPage(1)
   }
 
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value)
+    setCurrentPage(1)
+  }
+
+  const pagination = products?.pagination
+  const totalPages = pagination?.total_pages || 1
+
   return (
-    <div className="space-y-6 lg:pt-16">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-navy">Cửa hàng 🛍️</h1>
           <p className="text-navy/60">Sản phẩm cho bé cưng</p>
         </div>
-
       </div>
 
       {/* Added to Cart Toast */}
@@ -128,20 +176,139 @@ export function Marketplace() {
       {/* Banner Carousel */}
       <BannerCarousel location="SHOP" />
 
-      {/* All Products */}
-      <div>
-        <h3 className="font-bold text-navy mb-3">Tất cả sản phẩm</h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {products?.products?.map((product: any) => (
-            <ProductCard
-              key={product._id}
-              product={product}
-              onAddToCart={handleAddToCart}
-              formatPrice={formatPrice}
-              onView={() => setSelectedProduct(product)}
-            />
-          ))}
+      {/* Search & Filter */}
+      <div className="space-y-3">
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40" />
+          <Input
+            placeholder="Tìm kiếm sản phẩm theo tên..."
+            value={searchTerm}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="pl-10 rounded-xl h-10"
+          />
         </div>
+
+        {/* Filter Row - Comboboxes */}
+        <div className="flex flex-wrap gap-2">
+          {/* Category Filter */}
+          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+            <SelectTrigger className="w-[180px] rounded-xl h-10">
+              <SelectValue placeholder="Danh mục" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map((cat) => (
+                <SelectItem key={cat.value} value={cat.value}>
+                  {cat.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Sort Filter */}
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[160px] rounded-xl h-10">
+              <ArrowUpDown className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Sắp xếp" />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Products Grid */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-navy">
+            {selectedCategory === "all" ? "Tất cả sản phẩm" : CATEGORIES.find(c => c.value === selectedCategory)?.label}
+            {pagination && <span className="font-normal text-navy/60 ml-2">({pagination.total} sản phẩm)</span>}
+          </h3>
+        </div>
+
+        {productsLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {sortedProducts.map((product: any) => (
+                <ProductCard
+                  key={product._id}
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                  formatPrice={formatPrice}
+                  onView={() => setSelectedProduct(product)}
+                />
+              ))}
+            </div>
+
+            {/* Empty State */}
+            {sortedProducts.length === 0 && (
+              <div className="text-center py-12">
+                <Package className="w-16 h-16 mx-auto text-foreground/20 mb-4" />
+                <p className="text-foreground/60">Không tìm thấy sản phẩm nào</p>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-lg"
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage(p => p - 1)}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "ghost"}
+                        size="sm"
+                        className="w-8 h-8 rounded-lg"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-lg"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage(p => p + 1)}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Product Detail Modal */}

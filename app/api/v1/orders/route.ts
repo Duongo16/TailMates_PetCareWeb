@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
       product_id: string;
       name: string;
       price: number;
+      product_image?: string;
       quantity: number;
     }> = [];
     let merchantId: string | null = null;
@@ -85,10 +86,16 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Get first product image URL if available
+      const productImageUrl = product.images && product.images.length > 0
+        ? product.images[0].url
+        : undefined;
+
       orderItems.push({
         product_id: product._id.toString(),
         name: product.name,
         price: product.price,
+        product_image: productImageUrl,
         quantity: item.quantity,
       });
 

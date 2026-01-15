@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useServices, useBookings, usePets } from "@/lib/hooks"
 import { bookingsAPI } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Clock, Star, Search, ChevronLeft, ChevronRight, CheckCircle2, Loader2, MapPin } from "lucide-react"
+import { Calendar, Clock, Star, Search, ChevronLeft, ChevronRight, CheckCircle2, Loader2, MapPin, XCircle } from "lucide-react"
 import Image from "next/image"
 import { AlertDialog, useAlertDialog } from "@/components/ui/alert-dialog-custom"
 import { BannerCarousel } from "@/components/ui/banner-carousel"
@@ -31,6 +31,8 @@ export function ServiceBooking() {
   const [filterCategory, setFilterCategory] = useState("all")
   const [bookingSuccess, setBookingSuccess] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [bookedSlots, setBookedSlots] = useState<string[]>([])
+  const [loadingSlots, setLoadingSlots] = useState(false)
   const { alertState, showAlert, closeAlert } = useAlertDialog()
 
   const services = servicesData?.services || []
@@ -42,23 +44,18 @@ export function ServiceBooking() {
     }).format(price)
   }
 
-  // Generate categories from available services (assuming category is missing in schema, we might mock or use a field if added. 
-  // Looking at schema, Service model doesn't have explicit category enum, but maybe we can just list "Spa", "Medical", etc based on names or added field. 
-  // Let's assume all for now or mock standard categories if needed. Schema showed "name", "price_min", etc.)
-  const categories = ["all", "Spa & Grooming", "Y tế", "Huấn luyện"] // Mock categories for now
+  const categories = ["all", "Spa & Grooming", "Y tế", "Huấn luyện"]
 
   const filteredServices = services.filter((service: any) => {
     const matchesSearch =
       service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (service.description || "").toLowerCase().includes(searchTerm.toLowerCase())
-    // Basic category filtering based on name keywords if category field missing
     let matchesCategory = true;
     if (filterCategory !== "all") {
       if (filterCategory === "Y tế") matchesCategory = service.name.toLowerCase().includes("khám") || service.name.toLowerCase().includes("tiêm");
       else if (filterCategory === "Spa & Grooming") matchesCategory = service.name.toLowerCase().includes("tắm") || service.name.toLowerCase().includes("cắt");
       else matchesCategory = true;
     }
-
     return matchesSearch && matchesCategory
   })
 
@@ -68,13 +65,35 @@ export function ServiceBooking() {
     return `${hour.toString().padStart(2, '0')}:00`
   })
 
+  // Fetch booked slots when date or service changes
+  useEffect(() => {
+    async function fetchBookedSlots() {
+      if (!selectedService || !selectedDate) {
+        setBookedSlots([])
+        return
+      }
+
+      setLoadingSlots(true)
+      try {
+        const response = await bookingsAPI.getBookedSlots(selectedService._id, selectedDate)
+        if (response.success && response.data) {
+          setBookedSlots(response.data.booked_slots || [])
+        }
+      } catch (error) {
+        console.error("Error fetching booked slots:", error)
+      } finally {
+        setLoadingSlots(false)
+      }
+    }
+
+    fetchBookedSlots()
+  }, [selectedService, selectedDate])
+
   const handleBooking = async () => {
     if (!selectedService || !selectedPet || !selectedDate || !selectedTime) return
 
     setIsSubmitting(true)
     try {
-      // Create date object from selected date and time
-      // selectedDate format: "dd/mm/yyyy" (from generateDates)
       const [day, month, year] = selectedDate.split("/").map(Number)
       const [hours, minutes] = selectedTime.split(":").map(Number)
       const bookingDate = new Date(year, month - 1, day, hours, minutes)
@@ -96,6 +115,7 @@ export function ServiceBooking() {
           setSelectedDate("")
           setSelectedTime("")
           setNotes("")
+          setBookedSlots([])
           setIsSubmitting(false)
         }, 2000)
       } else {
@@ -123,7 +143,7 @@ export function ServiceBooking() {
       const date = new Date(today)
       date.setDate(today.getDate() + i)
       dates.push({
-        full: date.toLocaleDateString("vi-VN"), // dd/mm/yyyy
+        full: date.toLocaleDateString("vi-VN"),
         day: date.getDate(),
         weekday: date.toLocaleDateString("vi-VN", { weekday: "short" }),
         month: date.toLocaleDateString("vi-VN", { month: "short" }),
@@ -195,8 +215,6 @@ export function ServiceBooking() {
               ))}
             </div>
           </div>
-
-
 
           {/* Services Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -310,7 +328,7 @@ export function ServiceBooking() {
         </TabsContent>
       </Tabs>
 
-      {/* Booking Modal */}
+      {/* Booking Modal - Improved UI */}
       <Dialog
         open={!!selectedService}
         onOpenChange={(open) => {
@@ -318,57 +336,77 @@ export function ServiceBooking() {
             setSelectedService(null)
             setBookingStep(1)
             setBookingSuccess(false)
+            setSelectedDate("")
+            setSelectedTime("")
+            setBookedSlots([])
           }
         }}
       >
-        <DialogContent className="max-w-lg rounded-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-xl rounded-3xl max-h-[90vh] overflow-y-auto p-6">
           {bookingSuccess ? (
-            <div className="py-8 text-center">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="w-10 h-10 text-green-600" />
+            <div className="py-12 text-center">
+              <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="w-12 h-12 text-green-600" />
               </div>
-              <h3 className="text-xl font-bold text-foreground mb-2">Đặt lịch thành công!</h3>
+              <h3 className="text-2xl font-bold text-foreground mb-2">Đặt lịch thành công!</h3>
               <p className="text-foreground/60">Chúng tôi sẽ liên hệ xác nhận sớm nhất</p>
             </div>
           ) : (
             <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
+              <DialogHeader className="pb-4 border-b border-border">
+                <DialogTitle className="flex items-center gap-3">
                   {bookingStep > 1 && (
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setBookingStep(bookingStep - 1)}
-                      className="rounded-full"
+                      className="rounded-full h-8 w-8"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </Button>
                   )}
-                  <span>Đặt lịch - Bước {bookingStep}/3</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg">Đặt lịch dịch vụ</span>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3].map((step) => (
+                        <div
+                          key={step}
+                          className={`w-2 h-2 rounded-full transition-all ${step === bookingStep ? "w-6 bg-primary" : step < bookingStep ? "bg-primary" : "bg-border"
+                            }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </DialogTitle>
               </DialogHeader>
 
               {selectedService && (
-                <div className="space-y-4">
-                  {/* Service Info */}
-                  <Card className="bg-secondary/30">
+                <div className="space-y-6 pt-4">
+                  {/* Service Info Card - Compact */}
+                  <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-secondary">
+                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-secondary flex-shrink-0">
                           <Image
                             src={selectedService.image?.url || "/placeholder.svg"}
                             alt={selectedService.name}
-                            width={64}
-                            height={64}
+                            width={80}
+                            height={80}
                             className="w-full h-full object-cover"
                           />
                         </div>
-                        <div className="flex-1">
-                          <h4 className="font-bold text-foreground">{selectedService.name}</h4>
-                          <p className="text-sm text-foreground/60">{selectedService.merchant_id?.merchant_profile?.shop_name}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="font-bold text-primary">{formatPrice(selectedService.price_min)}</span>
-                            <span className="text-sm text-foreground/50">• {selectedService.duration_minutes} phút</span>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-foreground text-lg">{selectedService.name}</h4>
+                          <p className="text-sm text-foreground/60 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {selectedService.merchant_id?.merchant_profile?.shop_name}
+                          </p>
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className="font-bold text-primary text-lg">{formatPrice(selectedService.price_min)}</span>
+                            <Badge variant="secondary" className="text-xs">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {selectedService.duration_minutes} phút
+                            </Badge>
                           </div>
                         </div>
                       </div>
@@ -377,20 +415,23 @@ export function ServiceBooking() {
 
                   {/* Step 1: Select Pet & Date */}
                   {bookingStep === 1 && (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
+                      {/* Pet Selection */}
                       <div>
-                        <Label className="text-foreground font-medium">Chọn thú cưng</Label>
-                        <div className="grid grid-cols-3 gap-2 mt-2">
+                        <Label className="text-foreground font-semibold text-base mb-3 block">
+                          🐾 Chọn thú cưng
+                        </Label>
+                        <div className="flex flex-wrap gap-2 justify-center">
                           {pets?.map((pet) => (
                             <button
                               key={pet._id}
                               onClick={() => setSelectedPet(pet._id)}
-                              className={`p-3 rounded-xl border-2 transition-all ${selectedPet === pet._id
-                                ? "border-primary bg-primary/5"
+                              className={`p-3 rounded-xl border-2 transition-all w-24 ${selectedPet === pet._id
+                                ? "border-primary bg-primary/5 shadow-md"
                                 : "border-border hover:border-primary/50"
                                 }`}
                             >
-                              <div className="w-12 h-12 rounded-full overflow-hidden mx-auto mb-2 bg-secondary">
+                              <div className="w-12 h-12 rounded-full overflow-hidden mx-auto mb-1 bg-secondary">
                                 <Image
                                   src={pet.image?.url || "/placeholder.svg"}
                                   alt={pet.name}
@@ -399,21 +440,27 @@ export function ServiceBooking() {
                                   className="w-full h-full object-cover"
                                 />
                               </div>
-                              <p className="text-sm font-medium text-foreground">{pet.name}</p>
-                              <p className="text-xs text-foreground/50">{pet.species}</p>
+                              <p className="text-sm font-semibold text-foreground text-center">{pet.name}</p>
+                              <p className="text-xs text-foreground/50 text-center">{pet.species}</p>
                             </button>
                           ))}
                         </div>
                       </div>
 
+                      {/* Date Selection */}
                       <div>
-                        <Label className="text-foreground font-medium">Chọn ngày</Label>
-                        <div className="flex gap-2 overflow-x-auto mt-2 pb-2">
-                          {dates.slice(0, 7).map((date) => (
+                        <Label className="text-foreground font-semibold text-base mb-3 block">
+                          📅 Chọn ngày
+                        </Label>
+                        <div className="grid grid-cols-7 gap-2">
+                          {dates.map((date) => (
                             <button
                               key={date.full}
-                              onClick={() => setSelectedDate(date.full)}
-                              className={`flex-shrink-0 w-16 p-2 rounded-xl border-2 transition-all ${selectedDate === date.full
+                              onClick={() => {
+                                setSelectedDate(date.full)
+                                setSelectedTime("") // Reset time when date changes
+                              }}
+                              className={`p-2 rounded-xl border-2 transition-all text-center ${selectedDate === date.full
                                 ? "border-primary bg-primary text-primary-foreground"
                                 : "border-border hover:border-primary/50"
                                 }`}
@@ -429,43 +476,71 @@ export function ServiceBooking() {
                       <Button
                         onClick={() => setBookingStep(2)}
                         disabled={!selectedPet || !selectedDate}
-                        className="w-full rounded-xl py-6"
+                        className="w-full rounded-xl py-6 text-base"
                       >
-                        Tiếp tục
-                        <ChevronRight className="w-4 h-4 ml-2" />
+                        Tiếp tục chọn giờ
+                        <ChevronRight className="w-5 h-5 ml-2" />
                       </Button>
                     </div>
                   )}
 
                   {/* Step 2: Select Time */}
                   {bookingStep === 2 && (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       <div>
-                        <Label className="text-foreground font-medium">Chọn giờ</Label>
-                        <div className="grid grid-cols-3 gap-2 mt-2">
-                          {availableTimes.map((time) => (
-                            <button
-                              key={time}
-                              onClick={() => setSelectedTime(time)}
-                              className={`p-3 rounded-xl border-2 transition-all ${selectedTime === time
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-border hover:border-primary/50"
-                                }`}
-                            >
-                              <Clock className="w-4 h-4 mx-auto mb-1" />
-                              <p className="font-medium">{time}</p>
-                            </button>
-                          ))}
-                        </div>
+                        <Label className="text-foreground font-semibold text-base mb-3 block">
+                          ⏰ Chọn giờ - {selectedDate}
+                        </Label>
+
+                        {loadingSlots ? (
+                          <div className="flex items-center justify-center py-8">
+                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                            <span className="ml-2 text-foreground/60">Đang tải lịch...</span>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                            {availableTimes.map((time) => {
+                              const isBooked = bookedSlots.includes(time)
+                              return (
+                                <button
+                                  key={time}
+                                  onClick={() => !isBooked && setSelectedTime(time)}
+                                  disabled={isBooked}
+                                  className={`p-3 rounded-xl border-2 transition-all ${isBooked
+                                    ? "border-destructive/30 bg-destructive/5 cursor-not-allowed opacity-60"
+                                    : selectedTime === time
+                                      ? "border-primary bg-primary text-primary-foreground shadow-md"
+                                      : "border-border hover:border-primary/50 hover:shadow-sm"
+                                    }`}
+                                >
+                                  {isBooked ? (
+                                    <>
+                                      <XCircle className="w-4 h-4 mx-auto mb-1 text-destructive/60" />
+                                      <p className="font-medium text-sm line-through">{time}</p>
+                                      <p className="text-xs text-destructive/60">Đã đặt</p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Clock className="w-4 h-4 mx-auto mb-1" />
+                                      <p className="font-semibold">{time}</p>
+                                    </>
+                                  )}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
 
                       <div>
-                        <Label className="text-foreground font-medium">Ghi chú (không bắt buộc)</Label>
+                        <Label className="text-foreground font-semibold text-base mb-2 block">
+                          📝 Ghi chú (không bắt buộc)
+                        </Label>
                         <Textarea
                           placeholder="VD: Bé hay sợ nước, cần nhẹ nhàng..."
                           value={notes}
                           onChange={(e) => setNotes(e.target.value)}
-                          className="mt-2 rounded-xl"
+                          className="rounded-xl resize-none"
                           rows={3}
                         />
                       </div>
@@ -473,52 +548,52 @@ export function ServiceBooking() {
                       <Button
                         onClick={() => setBookingStep(3)}
                         disabled={!selectedTime}
-                        className="w-full rounded-xl py-6"
+                        className="w-full rounded-xl py-6 text-base"
                       >
                         Xem lại đặt lịch
-                        <ChevronRight className="w-4 h-4 ml-2" />
+                        <ChevronRight className="w-5 h-5 ml-2" />
                       </Button>
                     </div>
                   )}
 
                   {/* Step 3: Confirm */}
                   {bookingStep === 3 && (
-                    <div className="space-y-4">
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-sm">Thông tin đặt lịch</CardTitle>
+                    <div className="space-y-6">
+                      <Card className="overflow-hidden">
+                        <CardHeader className="bg-secondary/50 py-3">
+                          <CardTitle className="text-base">📋 Thông tin đặt lịch</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="flex justify-between py-2 border-b border-border">
+                        <CardContent className="divide-y divide-border">
+                          <div className="flex justify-between py-3">
                             <span className="text-foreground/60">Dịch vụ</span>
-                            <span className="font-medium text-foreground">{selectedService.name}</span>
+                            <span className="font-semibold text-foreground">{selectedService.name}</span>
                           </div>
-                          <div className="flex justify-between py-2 border-b border-border">
+                          <div className="flex justify-between py-3">
                             <span className="text-foreground/60">Thú cưng</span>
-                            <span className="font-medium text-foreground">
+                            <span className="font-semibold text-foreground">
                               {pets?.find((p) => p._id === selectedPet)?.name}
                             </span>
                           </div>
-                          <div className="flex justify-between py-2 border-b border-border">
+                          <div className="flex justify-between py-3">
                             <span className="text-foreground/60">Thời gian</span>
-                            <span className="font-medium text-foreground">{selectedTime} - {selectedDate}</span>
+                            <span className="font-semibold text-foreground">{selectedTime} - {selectedDate}</span>
                           </div>
-                          <div className="flex justify-between py-2 border-b border-border">
+                          <div className="flex justify-between py-3">
                             <span className="text-foreground/60">Địa điểm</span>
-                            <span className="font-medium text-foreground flex items-center gap-1">
+                            <span className="font-semibold text-foreground flex items-center gap-1">
                               <MapPin className="w-3 h-3" />
                               {selectedService.merchant_id?.merchant_profile?.shop_name}
                             </span>
                           </div>
                           {notes && (
-                            <div className="py-2">
+                            <div className="py-3">
                               <span className="text-foreground/60 block mb-1">Ghi chú</span>
                               <span className="text-foreground">{notes}</span>
                             </div>
                           )}
-                          <div className="flex justify-between py-2 pt-4 border-t border-border">
-                            <span className="font-bold text-foreground">Tổng cộng</span>
-                            <span className="font-bold text-primary text-lg">{formatPrice(selectedService.price_min)}</span>
+                          <div className="flex justify-between py-4 bg-secondary/30 -mx-6 px-6 mt-3">
+                            <span className="font-bold text-foreground text-lg">Tổng cộng</span>
+                            <span className="font-bold text-primary text-xl">{formatPrice(selectedService.price_min)}</span>
                           </div>
                         </CardContent>
                       </Card>
@@ -526,7 +601,7 @@ export function ServiceBooking() {
                       <Button
                         onClick={handleBooking}
                         disabled={isSubmitting}
-                        className="w-full rounded-xl py-6 bg-green-600 hover:bg-green-700"
+                        className="w-full rounded-xl py-6 text-base bg-green-600 hover:bg-green-700"
                       >
                         {isSubmitting ? (
                           <Loader2 className="w-5 h-5 mr-2 animate-spin" />

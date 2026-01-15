@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import { authenticate, apiResponse } from "@/lib/auth";
+import { deleteFromCloudinary } from "@/lib/cloudinary";
 
 // GET /api/v1/users/me - Get current user profile
 export async function GET(request: NextRequest) {
@@ -45,7 +46,15 @@ export async function PUT(request: NextRequest) {
 
     if (full_name) updateData.full_name = full_name;
     if (phone_number) updateData.phone_number = phone_number;
-    if (avatar) updateData.avatar = avatar;
+
+    // Handle avatar update - delete old avatar from Cloudinary
+    if (avatar) {
+      const oldAvatarPublicId = user!.avatar?.public_id;
+      if (oldAvatarPublicId && avatar.public_id !== oldAvatarPublicId) {
+        await deleteFromCloudinary(oldAvatarPublicId);
+      }
+      updateData.avatar = avatar;
+    }
 
     // Update merchant profile if applicable
     if (user!.role === "MERCHANT" && body.merchant_profile) {

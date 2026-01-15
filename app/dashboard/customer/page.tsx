@@ -18,9 +18,9 @@ type CustomerTab = "dashboard" | "pets" | "medical" | "marketplace" | "booking" 
 const tabs = [
   { id: "dashboard" as CustomerTab, label: "Trang chủ", icon: Home },
   { id: "pets" as CustomerTab, label: "Thú cưng", icon: PawPrint },
-  { id: "medical" as CustomerTab, label: "Sổ y tế", icon: FileText },
-  { id: "booking" as CustomerTab, label: "Đặt lịch", icon: Calendar },
   { id: "marketplace" as CustomerTab, label: "Mua sắm", icon: ShoppingBag },
+  { id: "booking" as CustomerTab, label: "Đặt lịch", icon: Calendar },
+  { id: "medical" as CustomerTab, label: "Sổ y tế", icon: FileText },
 ]
 
 export default function CustomerDashboardPage() {

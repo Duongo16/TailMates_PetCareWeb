@@ -100,32 +100,32 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
     // Let's create a simple 7-day mock based on order created_at if available
     const today = new Date()
     const last7Days = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(today);
-        d.setDate(d.getDate() - (6 - i));
-        return d.toLocaleDateString('vi-VN', {weekday: 'short'});
+      const d = new Date(today);
+      d.setDate(d.getDate() - (6 - i));
+      return d.toLocaleDateString('vi-VN', { weekday: 'short' });
     })
-    
+
     // Simple revenue mock distribution for visualization
     const revenueData = last7Days.map(day => ({
-        day,
-        products: Math.floor(totalRevenue / 7 * (0.8 + Math.random() * 0.4)), // Distribute somewhat randomly
-        services: 0 // Service revenue tracking needs booking costs, currently booking model has price in service snapshot?
+      day,
+      products: Math.floor(totalRevenue / 7 * (0.8 + Math.random() * 0.4)), // Distribute somewhat randomly
+      services: 0 // Service revenue tracking needs booking costs, currently booking model has price in service snapshot?
     }))
 
     // Category distribution
     const categoryMap: any = {}
     products?.forEach((p: any) => {
-        categoryMap[p.category] = (categoryMap[p.category] || 0) + 1
+      categoryMap[p.category] = (categoryMap[p.category] || 0) + 1
     })
     const categoryData = Object.keys(categoryMap).map((key, index) => ({
-        name: key,
-        value: categoryMap[key],
-        color: COLORS[index % COLORS.length]
+      name: key,
+      value: categoryMap[key],
+      color: COLORS[index % COLORS.length]
     }))
-    
+
     // Add services to category data
     if (services?.length) {
-        categoryData.push({ name: "Dịch vụ", value: services.length, color: COLORS[COLORS.length - 1] })
+      categoryData.push({ name: "Dịch vụ", value: services.length, color: COLORS[COLORS.length - 1] })
     }
 
     return { totalRevenue, pendingOrdersCount, upcomingBookingsCount, totalProductsCount, revenueData, categoryData }
@@ -282,7 +282,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
       if (res.success) {
         refetchOrders()
         if (selectedOrder && selectedOrder._id === orderId) {
-             setSelectedOrder({...selectedOrder, status})
+          setSelectedOrder({ ...selectedOrder, status })
         }
       } else {
         alert(res.message)
@@ -291,17 +291,17 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
       alert("Lỗi cập nhật trạng thái")
     }
   }
-  
+
   const handleUpdateBookingStatus = async (bookingId: string, status: string) => {
     try {
       const res = await bookingsAPI.updateStatus(bookingId, status)
       if (res.success) {
         refetchBookings()
       } else {
-         alert(res.message)
+        alert(res.message)
       }
     } catch {
-       alert("Lỗi cập nhật trạng thái")
+      alert("Lỗi cập nhật trạng thái")
     }
   }
 
@@ -395,7 +395,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
             </CardContent>
           </Card>
 
-           <Card>
+          <Card>
             <CardHeader>
               <CardTitle>Phân bổ (Sản phẩm & Dịch vụ)</CardTitle>
             </CardHeader>
@@ -420,12 +420,12 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                 </ResponsiveContainer>
               </div>
               <div className="flex flex-wrap justify-center gap-4 mt-2">
-                 {stats.categoryData.map((cat: any) => (
-                   <div key={cat.name} className="flex items-center gap-2">
-                     <div className="w-3 h-3 rounded" style={{ background: cat.color }} />
-                     <span className="text-sm text-foreground/70">{cat.name} ({cat.value})</span>
-                   </div>
-                 ))}
+                {stats.categoryData.map((cat: any) => (
+                  <div key={cat.name} className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded" style={{ background: cat.color }} />
+                    <span className="text-sm text-foreground/70">{cat.name} ({cat.value})</span>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -433,55 +433,55 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
 
         {/* Recent Activity */}
         <div className="grid lg:grid-cols-2 gap-4">
-           {/* Recent Orders */}
-           <Card>
+          {/* Recent Orders */}
+          <Card>
             <CardHeader>
               <CardTitle>Đơn hàng gần đây</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {orders?.slice(0, 3).map((order: any) => (
-                   <div key={order._id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
-                     <div className="flex items-center gap-3">
-                       <div>
-                         <p className="font-medium text-foreground">{order.customer_id?.full_name || "Khách hàng"}</p>
-                         <p className="text-sm text-foreground/60">{new Date(order.created_at).toLocaleDateString("vi-VN")}</p>
-                       </div>
-                     </div>
-                     <div className="text-right">
-                       <p className="font-bold text-primary">{formatPrice(order.total_amount)}</p>
-                       {getStatusBadge(order.status)}
-                     </div>
-                   </div>
+                  <div key={order._id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <p className="font-medium text-foreground">{order.customer_id?.full_name || "Khách hàng"}</p>
+                        <p className="text-sm text-foreground/60">{new Date(order.created_at).toLocaleDateString("vi-VN")}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-primary">{formatPrice(order.total_amount)}</p>
+                      {getStatusBadge(order.status)}
+                    </div>
+                  </div>
                 ))}
                 {!orders?.length && <p className="text-center text-foreground/50">Chưa có đơn hàng nào</p>}
               </div>
             </CardContent>
-           </Card>
-           
-           {/* Recent Bookings */}
-           <Card>
+          </Card>
+
+          {/* Recent Bookings */}
+          <Card>
             <CardHeader>
-               <CardTitle>Lịch hẹn gần đây</CardTitle>
+              <CardTitle>Lịch hẹn gần đây</CardTitle>
             </CardHeader>
             <CardContent>
-               <div className="space-y-3">
-                 {bookings?.slice(0, 3).map((booking: any) => (
-                   <div key={booking._id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
-                      <div>
-                        <p className="font-bold text-foreground">{booking.service_id?.name || "Dịch vụ"}</p>
-                        <p className="text-sm text-foreground/60">{booking.customer_id?.full_name}</p>
-                      </div>
-                      <div className="text-right">
-                         <p className="font-bold">{new Date(booking.booking_time).toLocaleDateString("vi-VN")}</p>
-                         {getStatusBadge(booking.status)}
-                      </div>
-                   </div>
-                 ))}
-                 {!bookings?.length && <p className="text-center text-foreground/50">Chưa có lịch hẹn nào</p>}
-               </div>
+              <div className="space-y-3">
+                {bookings?.slice(0, 3).map((booking: any) => (
+                  <div key={booking._id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
+                    <div>
+                      <p className="font-bold text-foreground">{booking.service_id?.name || "Dịch vụ"}</p>
+                      <p className="text-sm text-foreground/60">{booking.customer_id?.full_name}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">{new Date(booking.booking_time).toLocaleDateString("vi-VN")}</p>
+                      {getStatusBadge(booking.status)}
+                    </div>
+                  </div>
+                ))}
+                {!bookings?.length && <p className="text-center text-foreground/50">Chưa có lịch hẹn nào</p>}
+              </div>
             </CardContent>
-           </Card>
+          </Card>
         </div>
       </div>
     )
@@ -510,18 +510,18 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
               <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div>
                   <Label>Tên sản phẩm *</Label>
-                  <Input 
-                    value={newProduct.name} 
-                    onChange={(e) => setNewProduct({...newProduct, name: e.target.value})}
-                    placeholder="Nhập tên sản phẩm" 
-                    className="rounded-xl mt-1" 
+                  <Input
+                    value={newProduct.name}
+                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                    placeholder="Nhập tên sản phẩm"
+                    className="rounded-xl mt-1"
                   />
                 </div>
                 <div>
                   <Label>Danh mục</Label>
-                  <Select 
-                    value={newProduct.category} 
-                    onValueChange={(val) => setNewProduct({...newProduct, category: val})}
+                  <Select
+                    value={newProduct.category}
+                    onValueChange={(val) => setNewProduct({ ...newProduct, category: val })}
                   >
                     <SelectTrigger className="rounded-xl mt-1">
                       <SelectValue placeholder="Chọn danh mục" />
@@ -539,32 +539,32 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Giá (VND) *</Label>
-                    <Input 
-                      type="number" 
+                    <Input
+                      type="number"
                       value={newProduct.price}
-                      onChange={(e) => setNewProduct({...newProduct, price: e.target.value})}
-                      placeholder="0" 
-                      className="rounded-xl mt-1" 
+                      onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                      placeholder="0"
+                      className="rounded-xl mt-1"
                     />
                   </div>
                   <div>
                     <Label>Số lượng kho</Label>
-                    <Input 
-                      type="number" 
+                    <Input
+                      type="number"
                       value={newProduct.stock}
-                      onChange={(e) => setNewProduct({...newProduct, stock: e.target.value})}
-                      placeholder="0" 
-                      className="rounded-xl mt-1" 
+                      onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                      placeholder="0"
+                      className="rounded-xl mt-1"
                     />
                   </div>
                 </div>
                 <div>
                   <Label>Hình ảnh (URL)</Label>
-                  <Input 
+                  <Input
                     value={newProduct.image_url}
-                    onChange={(e) => setNewProduct({...newProduct, image_url: e.target.value})}
-                    placeholder="https://example.com/image.jpg" 
-                    className="rounded-xl mt-1" 
+                    onChange={(e) => setNewProduct({ ...newProduct, image_url: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
+                    className="rounded-xl mt-1"
                   />
                   {newProduct.image_url && (
                     <div className="mt-2 w-20 h-20 rounded-lg overflow-hidden bg-secondary">
@@ -574,18 +574,18 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                 </div>
                 <div>
                   <Label>Mô tả</Label>
-                  <Textarea 
+                  <Textarea
                     value={newProduct.description}
-                    onChange={(e) => setNewProduct({...newProduct, description: e.target.value})}
-                    placeholder="Mô tả sản phẩm..." 
-                    className="rounded-xl mt-1" 
-                    rows={3} 
+                    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                    placeholder="Mô tả sản phẩm..."
+                    className="rounded-xl mt-1"
+                    rows={3}
                   />
                 </div>
-                <Button 
-                    className="w-full rounded-xl" 
-                    onClick={handleAddProduct}
-                    disabled={isSubmitting || !newProduct.name || !newProduct.price}
+                <Button
+                  className="w-full rounded-xl"
+                  onClick={handleAddProduct}
+                  disabled={isSubmitting || !newProduct.name || !newProduct.price}
                 >
                   {isSubmitting ? <Loader2 className="animate-spin" /> : "Lưu sản phẩm"}
                 </Button>
@@ -604,17 +604,17 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
               <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div>
                   <Label>Tên sản phẩm *</Label>
-                  <Input 
-                    value={editingProduct.name} 
-                    onChange={(e) => setEditingProduct({...editingProduct, name: e.target.value})}
-                    className="rounded-xl mt-1" 
+                  <Input
+                    value={editingProduct.name}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                    className="rounded-xl mt-1"
                   />
                 </div>
                 <div>
                   <Label>Danh mục</Label>
-                  <Select 
-                    value={editingProduct.category} 
-                    onValueChange={(val) => setEditingProduct({...editingProduct, category: val})}
+                  <Select
+                    value={editingProduct.category}
+                    onValueChange={(val) => setEditingProduct({ ...editingProduct, category: val })}
                   >
                     <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -630,29 +630,29 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Giá (VND) *</Label>
-                    <Input 
-                      type="number" 
+                    <Input
+                      type="number"
                       value={editingProduct.price}
-                      onChange={(e) => setEditingProduct({...editingProduct, price: e.target.value})}
-                      className="rounded-xl mt-1" 
+                      onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value })}
+                      className="rounded-xl mt-1"
                     />
                   </div>
                   <div>
                     <Label>Số lượng kho</Label>
-                    <Input 
-                      type="number" 
+                    <Input
+                      type="number"
                       value={editingProduct.stock_quantity}
-                      onChange={(e) => setEditingProduct({...editingProduct, stock_quantity: e.target.value})}
-                      className="rounded-xl mt-1" 
+                      onChange={(e) => setEditingProduct({ ...editingProduct, stock_quantity: e.target.value })}
+                      className="rounded-xl mt-1"
                     />
                   </div>
                 </div>
                 <div>
                   <Label>Hình ảnh (URL)</Label>
-                  <Input 
+                  <Input
                     value={editingProduct.image_url}
-                    onChange={(e) => setEditingProduct({...editingProduct, image_url: e.target.value})}
-                    className="rounded-xl mt-1" 
+                    onChange={(e) => setEditingProduct({ ...editingProduct, image_url: e.target.value })}
+                    className="rounded-xl mt-1"
                   />
                   {editingProduct.image_url && (
                     <div className="mt-2 w-20 h-20 rounded-lg overflow-hidden bg-secondary">
@@ -662,17 +662,17 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                 </div>
                 <div>
                   <Label>Mô tả</Label>
-                  <Textarea 
+                  <Textarea
                     value={editingProduct.description || ""}
-                    onChange={(e) => setEditingProduct({...editingProduct, description: e.target.value})}
-                    className="rounded-xl mt-1" 
-                    rows={3} 
+                    onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                    className="rounded-xl mt-1"
+                    rows={3}
                   />
                 </div>
-                <Button 
-                    className="w-full rounded-xl" 
-                    onClick={handleEditProduct}
-                    disabled={isSubmitting || !editingProduct.name || !editingProduct.price}
+                <Button
+                  className="w-full rounded-xl"
+                  onClick={handleEditProduct}
+                  disabled={isSubmitting || !editingProduct.name || !editingProduct.price}
                 >
                   {isSubmitting ? <Loader2 className="animate-spin" /> : "Cập nhật"}
                 </Button>
@@ -682,44 +682,44 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
         </Dialog>
 
         {productsLoading ? (
-            <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" /></div>
+          <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" /></div>
         ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {products?.map((product: any) => (
-                <Card key={product._id} className="overflow-hidden group relative">
+              <Card key={product._id} className="overflow-hidden group relative">
                 <CardContent className="p-0">
-                    <div className="relative aspect-square bg-secondary">
-                      <Image src={product.images?.[0]?.url || "/placeholder.svg"} alt={product.name} fill className="object-cover" />
-                      {/* Edit/Delete overlay */}
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <Button size="icon" variant="secondary" className="rounded-full" onClick={() => openEditProduct(product)}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button size="icon" variant="destructive" className="rounded-full" onClick={() => handleDeleteProduct(product._id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                  <div className="relative aspect-square bg-secondary">
+                    <Image src={product.images?.[0]?.url || "/placeholder.svg"} alt={product.name} fill className="object-cover" />
+                    {/* Edit/Delete overlay */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <Button size="icon" variant="secondary" className="rounded-full" onClick={() => openEditProduct(product)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button size="icon" variant="destructive" className="rounded-full" onClick={() => handleDeleteProduct(product._id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                    <div className="p-4">
+                  </div>
+                  <div className="p-4">
                     <h4 className="font-bold text-foreground text-sm line-clamp-1">{product.name}</h4>
                     <p className="text-xs text-foreground/50 mb-2">{product.category}</p>
                     <div className="flex items-center justify-between">
-                        <p className="text-primary font-bold">{formatPrice(product.price)}</p>
-                        <div className="flex items-center gap-1 text-sm">
+                      <p className="text-primary font-bold">{formatPrice(product.price)}</p>
+                      <div className="flex items-center gap-1 text-sm">
                         <Star className="w-3 h-3 fill-primary text-primary" />
                         <span className="text-foreground/60">{product.rating || 5.0}</span>
-                        </div>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between mt-2 text-xs text-foreground/50">
-                        <span>Kho: {product.stock_quantity}</span>
-                        <span>Đã bán: {product.sold_quantity || 0}</span>
+                      <span>Kho: {product.stock_quantity}</span>
+                      <span>Đã bán: {product.sold_quantity || 0}</span>
                     </div>
-                    </div>
+                  </div>
                 </CardContent>
-                </Card>
+              </Card>
             ))}
             {!products?.length && <p className="col-span-4 text-center text-foreground/50 py-10">Chưa có sản phẩm nào</p>}
-            </div>
+          </div>
         )}
       </div>
     )
@@ -748,52 +748,52 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
               <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div>
                   <Label>Tên dịch vụ *</Label>
-                  <Input 
+                  <Input
                     value={newService.name}
-                    onChange={(e) => setNewService({...newService, name: e.target.value})}
-                    placeholder="VD: Tắm Spa Cao Cấp" 
-                    className="rounded-xl mt-1" 
-                />
+                    onChange={(e) => setNewService({ ...newService, name: e.target.value })}
+                    placeholder="VD: Tắm Spa Cao Cấp"
+                    className="rounded-xl mt-1"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Giá thấp nhất (VND) *</Label>
-                    <Input 
-                        type="number" 
-                        value={newService.price_min}
-                        onChange={(e) => setNewService({...newService, price_min: e.target.value})}
-                        placeholder="200000" 
-                        className="rounded-xl mt-1" 
+                    <Input
+                      type="number"
+                      value={newService.price_min}
+                      onChange={(e) => setNewService({ ...newService, price_min: e.target.value })}
+                      placeholder="200000"
+                      className="rounded-xl mt-1"
                     />
                   </div>
                   <div>
                     <Label>Giá cao nhất (VND)</Label>
-                    <Input 
-                        type="number" 
-                        value={newService.price_max}
-                        onChange={(e) => setNewService({...newService, price_max: e.target.value})}
-                        placeholder="350000" 
-                        className="rounded-xl mt-1" 
+                    <Input
+                      type="number"
+                      value={newService.price_max}
+                      onChange={(e) => setNewService({ ...newService, price_max: e.target.value })}
+                      placeholder="350000"
+                      className="rounded-xl mt-1"
                     />
                   </div>
                 </div>
                 <div>
                   <Label>Thời gian (phút) *</Label>
-                  <Input 
-                      type="number"
-                      value={newService.duration_minutes}
-                      onChange={(e) => setNewService({...newService, duration_minutes: e.target.value})}
-                      placeholder="60" 
-                      className="rounded-xl mt-1" 
+                  <Input
+                    type="number"
+                    value={newService.duration_minutes}
+                    onChange={(e) => setNewService({ ...newService, duration_minutes: e.target.value })}
+                    placeholder="60"
+                    className="rounded-xl mt-1"
                   />
                 </div>
                 <div>
                   <Label>Hình ảnh (URL)</Label>
-                  <Input 
+                  <Input
                     value={newService.image_url}
-                    onChange={(e) => setNewService({...newService, image_url: e.target.value})}
-                    placeholder="https://example.com/service.jpg" 
-                    className="rounded-xl mt-1" 
+                    onChange={(e) => setNewService({ ...newService, image_url: e.target.value })}
+                    placeholder="https://example.com/service.jpg"
+                    className="rounded-xl mt-1"
                   />
                   {newService.image_url && (
                     <div className="mt-2 w-20 h-20 rounded-lg overflow-hidden bg-secondary">
@@ -803,18 +803,18 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                 </div>
                 <div>
                   <Label>Mô tả chi tiết</Label>
-                  <Textarea 
+                  <Textarea
                     value={newService.description}
-                    onChange={(e) => setNewService({...newService, description: e.target.value})}
-                    placeholder="Mô tả dịch vụ..." 
-                    className="rounded-xl mt-1" 
-                    rows={3} 
-                 />
+                    onChange={(e) => setNewService({ ...newService, description: e.target.value })}
+                    placeholder="Mô tả dịch vụ..."
+                    className="rounded-xl mt-1"
+                    rows={3}
+                  />
                 </div>
-                <Button 
-                    className="w-full rounded-xl" 
-                    onClick={handleAddService}
-                    disabled={isSubmitting || !newService.name || !newService.price_min}
+                <Button
+                  className="w-full rounded-xl"
+                  onClick={handleAddService}
+                  disabled={isSubmitting || !newService.name || !newService.price_min}
                 >
                   {isSubmitting ? <Loader2 className="animate-spin" /> : "Lưu dịch vụ"}
                 </Button>
@@ -833,47 +833,47 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
               <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div>
                   <Label>Tên dịch vụ *</Label>
-                  <Input 
+                  <Input
                     value={editingService.name}
-                    onChange={(e) => setEditingService({...editingService, name: e.target.value})}
-                    className="rounded-xl mt-1" 
+                    onChange={(e) => setEditingService({ ...editingService, name: e.target.value })}
+                    className="rounded-xl mt-1"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Giá thấp nhất (VND) *</Label>
-                    <Input 
-                        type="number" 
-                        value={editingService.price_min}
-                        onChange={(e) => setEditingService({...editingService, price_min: e.target.value})}
-                        className="rounded-xl mt-1" 
+                    <Input
+                      type="number"
+                      value={editingService.price_min}
+                      onChange={(e) => setEditingService({ ...editingService, price_min: e.target.value })}
+                      className="rounded-xl mt-1"
                     />
                   </div>
                   <div>
                     <Label>Giá cao nhất (VND)</Label>
-                    <Input 
-                        type="number" 
-                        value={editingService.price_max || ""}
-                        onChange={(e) => setEditingService({...editingService, price_max: e.target.value})}
-                        className="rounded-xl mt-1" 
+                    <Input
+                      type="number"
+                      value={editingService.price_max || ""}
+                      onChange={(e) => setEditingService({ ...editingService, price_max: e.target.value })}
+                      className="rounded-xl mt-1"
                     />
                   </div>
                 </div>
                 <div>
                   <Label>Thời gian (phút) *</Label>
-                  <Input 
-                      type="number"
-                      value={editingService.duration_minutes}
-                      onChange={(e) => setEditingService({...editingService, duration_minutes: e.target.value})}
-                      className="rounded-xl mt-1" 
+                  <Input
+                    type="number"
+                    value={editingService.duration_minutes}
+                    onChange={(e) => setEditingService({ ...editingService, duration_minutes: e.target.value })}
+                    className="rounded-xl mt-1"
                   />
                 </div>
                 <div>
                   <Label>Hình ảnh (URL)</Label>
-                  <Input 
+                  <Input
                     value={editingService.image_url}
-                    onChange={(e) => setEditingService({...editingService, image_url: e.target.value})}
-                    className="rounded-xl mt-1" 
+                    onChange={(e) => setEditingService({ ...editingService, image_url: e.target.value })}
+                    className="rounded-xl mt-1"
                   />
                   {editingService.image_url && (
                     <div className="mt-2 w-20 h-20 rounded-lg overflow-hidden bg-secondary">
@@ -883,17 +883,17 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                 </div>
                 <div>
                   <Label>Mô tả chi tiết</Label>
-                  <Textarea 
+                  <Textarea
                     value={editingService.description || ""}
-                    onChange={(e) => setEditingService({...editingService, description: e.target.value})}
-                    className="rounded-xl mt-1" 
-                    rows={3} 
+                    onChange={(e) => setEditingService({ ...editingService, description: e.target.value })}
+                    className="rounded-xl mt-1"
+                    rows={3}
                   />
                 </div>
-                <Button 
-                    className="w-full rounded-xl" 
-                    onClick={handleEditService}
-                    disabled={isSubmitting || !editingService.name || !editingService.price_min}
+                <Button
+                  className="w-full rounded-xl"
+                  onClick={handleEditService}
+                  disabled={isSubmitting || !editingService.name || !editingService.price_min}
                 >
                   {isSubmitting ? <Loader2 className="animate-spin" /> : "Cập nhật"}
                 </Button>
@@ -909,12 +909,12 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-xl bg-secondary flex items-center justify-center overflow-hidden">
-                        <Image 
-                            src={service.image?.url || "/placeholder.svg"} 
-                            alt={service.name} 
-                            width={64} height={64} 
-                            className="w-full h-full object-cover"
-                        />
+                      <Image
+                        src={service.image?.url || "/placeholder.svg"}
+                        alt={service.name}
+                        width={64} height={64}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -933,20 +933,20 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                   <div className="flex items-center gap-4">
                     <p className="text-xl font-bold text-primary">{formatPrice(service.price_min)}</p>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" size="icon" 
+                      <Button
+                        variant="outline" size="icon"
                         className="rounded-xl bg-transparent"
                         onClick={() => openEditService(service)}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button 
-                        variant="outline" size="icon" 
+                      <Button
+                        variant="outline" size="icon"
                         className="rounded-xl bg-transparent text-destructive hover:text-destructive"
                         onClick={() => {
-                            if(confirm("Xóa dịch vụ này?")) {
-                                merchantAPI.deleteService(service._id).then(() => refetchServices())
-                            }
+                          if (confirm("Xóa dịch vụ này?")) {
+                            merchantAPI.deleteService(service._id).then(() => refetchServices())
+                          }
                         }}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -996,13 +996,13 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                     <div className="flex items-center gap-4">
                       {/* Icon based on status */}
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-secondary`}>
-                         <Package className="w-6 h-6 text-foreground/60" />
+                        <Package className="w-6 h-6 text-foreground/60" />
                       </div>
                       <div>
                         <p className="font-bold text-foreground">#{order._id.slice(-6).toUpperCase()}</p>
                         <p className="text-sm text-foreground/60">{order.customer_id?.full_name}</p>
                         <p className="text-sm text-foreground/80">
-                           Total items: {order.items.length}
+                          Total items: {order.items.length}
                         </p>
                       </div>
                     </div>
@@ -1017,18 +1017,18 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
             ))}
           </TabsContent>
           {/* We can implement other tab contents similarly by filtering `orders` */}
-           <TabsContent value="pending" className="mt-4 space-y-4">
-               {orders?.filter((o:any) => o.status === 'PENDING').map((order: any) => (
-                    // Duplicate card code or componentize it ideally
-                    <Card key={order._id} className="cursor-pointer" onClick={() => setSelectedOrder(order)}>
-                        <CardContent className="p-4 flex justify-between items-center">
-                            <div>#{order._id.slice(-6)} - {order.customer_id?.full_name}</div>
-                            {getStatusBadge(order.status)}
-                        </CardContent>
-                    </Card>
-               ))}
-           </TabsContent>
-           {/* ... other tabs ... */}
+          <TabsContent value="pending" className="mt-4 space-y-4">
+            {orders?.filter((o: any) => o.status === 'PENDING').map((order: any) => (
+              // Duplicate card code or componentize it ideally
+              <Card key={order._id} className="cursor-pointer" onClick={() => setSelectedOrder(order)}>
+                <CardContent className="p-4 flex justify-between items-center">
+                  <div>#{order._id.slice(-6)} - {order.customer_id?.full_name}</div>
+                  {getStatusBadge(order.status)}
+                </CardContent>
+              </Card>
+            ))}
+          </TabsContent>
+          {/* ... other tabs ... */}
         </Tabs>
 
         {/* Order Detail Modal */}
@@ -1054,31 +1054,31 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                       <Phone className="w-4 h-4 text-foreground/60" />
                       <span>{selectedOrder.customer_id?.phone_number}</span>
                     </div>
-                     <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-foreground/60" />
                       <span>{selectedOrder.shipping_address || "Tại cửa hàng"}</span>
                     </div>
                   </CardContent>
                 </Card>
-                
+
                 <div className="space-y-2">
-                    {selectedOrder.items.map((item: any, idx: number) => (
-                         <div key={idx} className="flex justify-between py-2 border-b">
-                            <span>{item.name} x{item.quantity}</span>
-                            <span>{formatPrice(item.price * item.quantity)}</span>
-                         </div>
-                    ))}
+                  {selectedOrder.items.map((item: any, idx: number) => (
+                    <div key={idx} className="flex justify-between py-2 border-b">
+                      <span>{item.name} x{item.quantity}</span>
+                      <span>{formatPrice(item.price * item.quantity)}</span>
+                    </div>
+                  ))}
                 </div>
-                 
+
                 <div className="flex justify-between font-bold text-lg">
-                    <span>Tổng cộng</span>
-                    <span className="text-primary">{formatPrice(selectedOrder.total_amount)}</span>
+                  <span>Tổng cộng</span>
+                  <span className="text-primary">{formatPrice(selectedOrder.total_amount)}</span>
                 </div>
 
                 {selectedOrder.status === "PENDING" && (
                   <div className="flex gap-2">
                     <Button className="flex-1 rounded-xl" onClick={() => handleUpdateOrderStatus(selectedOrder._id, "CONFIRMED")}>
-                        Xác nhận đơn
+                      Xác nhận đơn
                     </Button>
                     <Button variant="outline" className="flex-1 rounded-xl bg-transparent" onClick={() => handleUpdateOrderStatus(selectedOrder._id, "CANCELLED")}>
                       Từ chối
@@ -1086,9 +1086,9 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                   </div>
                 )}
                 {selectedOrder.status === "CONFIRMED" && (
-                   <Button className="w-full rounded-xl" onClick={() => handleUpdateOrderStatus(selectedOrder._id, "SHIPPING")}>
-                     Tiến hành giao hang
-                   </Button>
+                  <Button className="w-full rounded-xl" onClick={() => handleUpdateOrderStatus(selectedOrder._id, "SHIPPING")}>
+                    Tiến hành giao hang
+                  </Button>
                 )}
                 {selectedOrder.status === "SHIPPING" && (
                   <Button className="w-full rounded-xl bg-green-600 hover:bg-green-700" onClick={() => handleUpdateOrderStatus(selectedOrder._id, "COMPLETED")}>
@@ -1134,7 +1134,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                   <div className="text-right">
                     {getStatusBadge(booking.status)}
                     <p className="font-bold text-foreground mt-2">
-                        {new Date(booking.booking_time).toLocaleString("vi-VN")}
+                      {new Date(booking.booking_time).toLocaleString("vi-VN")}
                     </p>
                     {booking.status === "PENDING" && (
                       <div className="flex gap-2 mt-2">
@@ -1147,9 +1147,9 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                       </div>
                     )}
                     {booking.status === "CONFIRMED" && (
-                         <Button size="sm" variant="ghost" className="mt-2 text-green-600" onClick={() => handleUpdateBookingStatus(booking._id, "COMPLETED")}>
-                            Hoàn thành
-                         </Button>
+                      <Button size="sm" variant="ghost" className="mt-2 text-green-600" onClick={() => handleUpdateBookingStatus(booking._id, "COMPLETED")}>
+                        Hoàn thành
+                      </Button>
                     )}
                   </div>
                 </div>
