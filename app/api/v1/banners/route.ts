@@ -1,15 +1,16 @@
 import { NextRequest } from "next/server";
+import { unstable_cache, revalidateTag } from "next/cache";
 import connectDB from "@/lib/db";
 import { Banner, BannerLocation, UserRole } from "@/models";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 
-// GET /api/v1/banners - Public: Get active banners by location
-export async function GET(request: NextRequest) {
-    try {
-        await connectDB();
+// Cache duration: 1 hour
+export const revalidate = 3600;
 
-        const { searchParams } = new URL(request.url);
-        const location = searchParams.get("location")?.toUpperCase() || "ALL";
+// Cached banner fetching function
+const getCachedBanners = unstable_cache(
+    async (location: string) => {
+        await connectDB();
 
         // Build query - get active banners for the specified location or ALL
         const query: Record<string, unknown> = { isActive: true };
@@ -23,7 +24,22 @@ export async function GET(request: NextRequest) {
 
         const banners = await Banner.find(query)
             .sort({ priority: 1, created_at: -1 })
-            .select("-createdBy -__v");
+            .select("-createdBy -__v")
+            .lean(); // Use lean() for better performance
+
+        return banners;
+    },
+    ["banners"], // Cache key prefix
+    { revalidate: 3600, tags: ["banners"] } // 1 hour cache with tag for invalidation
+);
+
+// GET /api/v1/banners - Public: Get active banners by location (CACHED)
+export async function GET(request: NextRequest) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const location = searchParams.get("location")?.toUpperCase() || "ALL";
+
+        const banners = await getCachedBanners(location);
 
         return apiResponse.success({ banners });
     } catch (error) {
@@ -63,6 +79,9 @@ export async function POST(request: NextRequest) {
             isActive: isActive !== undefined ? isActive : true,
             createdBy: user._id,
         });
+
+        // Invalidate banners cache so users see new banner immediately
+        revalidateTag("banners", "page");
 
         return apiResponse.created({ banner }, "Banner created successfully");
     } catch (error) {

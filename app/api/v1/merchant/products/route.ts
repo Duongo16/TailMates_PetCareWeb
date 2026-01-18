@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
       images,
       stock_quantity,
       ai_tags,
+      specifications,
     } = body;
 
     if (!name || !category || price === undefined) {
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
       stock_quantity: stock_quantity || 0,
       ai_tags: ai_tags || [],
       is_active: true,
+      specifications: specifications || undefined,
     });
 
     return apiResponse.created(product, "Product created successfully");

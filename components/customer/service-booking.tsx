@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useServices, useBookings, usePets } from "@/lib/hooks"
 import { bookingsAPI } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,17 +10,33 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Clock, Star, Search, ChevronLeft, ChevronRight, CheckCircle2, Loader2, MapPin, XCircle } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Calendar, Clock, Star, Search, ChevronLeft, ChevronRight, CheckCircle2, Loader2, MapPin, XCircle, Sparkles, Syringe, Bath, Stethoscope, Bug, Store } from "lucide-react"
 import Image from "next/image"
 import { AlertDialog, useAlertDialog } from "@/components/ui/alert-dialog-custom"
 import { BannerCarousel } from "@/components/ui/banner-carousel"
+
+// Status color mapping
+const STATUS_COLORS = {
+  PENDING: "bg-orange-500",
+  CONFIRMED: "bg-green-500",
+  COMPLETED: "bg-blue-500",
+  CANCELLED: "bg-red-500",
+}
+
+const STATUS_LABELS = {
+  PENDING: "Chờ xác nhận",
+  CONFIRMED: "Đã xác nhận",
+  COMPLETED: "Hoàn thành",
+  CANCELLED: "Đã hủy",
+}
 
 export function ServiceBooking() {
   const { data: servicesData, isLoading: servicesLoading } = useServices()
   const { data: bookings, refetch: refetchBookings, isLoading: bookingsLoading } = useBookings()
   const { data: pets, isLoading: petsLoading } = usePets()
 
+  // Service selection & booking flow
   const [selectedService, setSelectedService] = useState<any | null>(null)
   const [bookingStep, setBookingStep] = useState(1)
   const [selectedDate, setSelectedDate] = useState("")
@@ -34,6 +50,11 @@ export function ServiceBooking() {
   const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
   const { alertState, showAlert, closeAlert } = useAlertDialog()
+
+  // Calendar state
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<Date | null>(null)
+  const [showDayAppointments, setShowDayAppointments] = useState(false)
 
   const services = servicesData?.services || []
 
@@ -65,17 +86,18 @@ export function ServiceBooking() {
     return `${hour.toString().padStart(2, '0')}:00`
   })
 
-  // Fetch booked slots when date or service changes
+  // Fetch booked slots when date, service, or pet changes
   useEffect(() => {
     async function fetchBookedSlots() {
-      if (!selectedService || !selectedDate) {
+      if (!selectedService || !selectedDate || !selectedPet) {
         setBookedSlots([])
         return
       }
 
       setLoadingSlots(true)
       try {
-        const response = await bookingsAPI.getBookedSlots(selectedService._id, selectedDate)
+        // Pass petId to check for pet's existing bookings on this date
+        const response = await bookingsAPI.getBookedSlots(selectedService._id, selectedDate, selectedPet)
         if (response.success && response.data) {
           setBookedSlots(response.data.booked_slots || [])
         }
@@ -87,7 +109,7 @@ export function ServiceBooking() {
     }
 
     fetchBookedSlots()
-  }, [selectedService, selectedDate])
+  }, [selectedService, selectedDate, selectedPet])
 
   const handleBooking = async () => {
     if (!selectedService || !selectedPet || !selectedDate || !selectedTime) return
@@ -154,6 +176,90 @@ export function ServiceBooking() {
 
   const dates = generateDates()
 
+  // Calendar helpers - Get bookings grouped by status for each date
+  const getBookingsByStatusForDate = useMemo(() => {
+    const statusMap = new Map<string, { status: string; count: number }[]>()
+    bookings?.forEach((booking: any) => {
+      const dateKey = new Date(booking.booking_time).toDateString()
+      if (!statusMap.has(dateKey)) {
+        statusMap.set(dateKey, [])
+      }
+      const statusArray = statusMap.get(dateKey)!
+      const existingStatus = statusArray.find(s => s.status === booking.status)
+      if (existingStatus) {
+        existingStatus.count++
+      } else {
+        statusArray.push({ status: booking.status, count: 1 })
+      }
+    })
+    return statusMap
+  }, [bookings])
+
+  const getBookingsForDate = (date: Date) => {
+    return bookings?.filter((booking: any) => {
+      const bookingDate = new Date(booking.booking_time)
+      return bookingDate.toDateString() === date.toDateString()
+    }) || []
+  }
+
+  // Generate calendar days for current month
+  const generateCalendarDays = () => {
+    const year = currentMonth.getFullYear()
+    const month = currentMonth.getMonth()
+
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+
+    const startDayOfWeek = firstDay.getDay() // 0 = Sunday
+    const daysInMonth = lastDay.getDate()
+
+    const days: (Date | null)[] = []
+
+    // Add empty slots for days before the first day of month
+    for (let i = 0; i < startDayOfWeek; i++) {
+      days.push(null)
+    }
+
+    // Add all days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+      days.push(new Date(year, month, day))
+    }
+
+    return days
+  }
+
+  const calendarDays = generateCalendarDays()
+  const weekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"]
+
+  // Month/Year options
+  const months = [
+    "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
+    "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"
+  ]
+
+  const currentYear = new Date().getFullYear()
+  const years = [currentYear - 1, currentYear, currentYear + 1]
+
+  const handleMonthChange = (direction: 'prev' | 'next') => {
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev)
+      if (direction === 'prev') {
+        newDate.setMonth(prev.getMonth() - 1)
+      } else {
+        newDate.setMonth(prev.getMonth() + 1)
+      }
+      return newDate
+    })
+  }
+
+  const handleDayClick = (day: Date) => {
+    const bookingsOnDay = getBookingsForDate(day)
+    if (bookingsOnDay.length > 0) {
+      setSelectedCalendarDay(day)
+      setShowDayAppointments(true)
+    }
+  }
+
   if (servicesLoading || bookingsLoading || petsLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -163,172 +269,339 @@ export function ServiceBooking() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Đặt lịch dịch vụ</h1>
-        <p className="text-foreground/60">Chọn dịch vụ phù hợp cho bé cưng của bạn</p>
-      </div>
-
-      {/* Banner Carousel */}
+    <div className="space-y-4">
+      {/* Banner - Full Width */}
       <BannerCarousel location="SERVICE" />
 
-      <Tabs defaultValue="services" className="w-full">
-        <TabsList className="w-full bg-card rounded-xl p-1">
-          <TabsTrigger
-            value="services"
-            className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
-            Dịch vụ
-          </TabsTrigger>
-          <TabsTrigger
-            value="bookings"
-            className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
-            Lịch hẹn của tôi
-          </TabsTrigger>
-        </TabsList>
+      {/* Main Grid Layout - 60/40 split on desktop, stacked on mobile */}
+      <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4">
 
-        <TabsContent value="services" className="mt-4 space-y-4">
-          {/* Search & Filter */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/50" />
-              <Input
-                placeholder="Tìm kiếm dịch vụ..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 rounded-xl"
-              />
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {categories.map((cat) => (
-                <Button
-                  key={cat}
-                  variant={filterCategory === cat ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFilterCategory(cat)}
-                  className="rounded-full whitespace-nowrap bg-transparent data-[state=active]:bg-primary"
+        {/* Column 1 (60%): Calendar - Compact size */}
+        <Card>
+          <CardContent className="p-4">
+            {/* Month/Year Selector - Compact */}
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <p className="font-bold text-base text-foreground">
+                {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+              </p>
+              <div className="flex items-center gap-1">
+                <Select
+                  value={currentMonth.getMonth().toString()}
+                  onValueChange={(value) => {
+                    const newDate = new Date(currentMonth)
+                    newDate.setMonth(parseInt(value))
+                    setCurrentMonth(newDate)
+                  }}
                 >
-                  {cat === "all" ? "Tất cả" : cat}
-                </Button>
+                  <SelectTrigger className="w-24 h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {months.map((month, index) => (
+                      <SelectItem key={index} value={index.toString()}>
+                        {month}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={currentMonth.getFullYear().toString()}
+                  onValueChange={(value) => {
+                    const newDate = new Date(currentMonth)
+                    newDate.setFullYear(parseInt(value))
+                    setCurrentMonth(newDate)
+                  }}
+                >
+                  <SelectTrigger className="w-20 h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <div className="flex gap-0.5">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleMonthChange('prev')}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => handleMonthChange('next')}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Weekday Headers */}
+            <div className="grid grid-cols-7 gap-0.5 mb-1">
+              {weekdays.map((day) => (
+                <div key={day} className="text-center text-xs font-medium text-foreground/60 py-1">
+                  {day}
+                </div>
               ))}
             </div>
-          </div>
 
-          {/* Services Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {filteredServices.map((service: any) => (
-              <Card
-                key={service._id}
-                className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => setSelectedService(service)}
-              >
-                <CardContent className="p-0">
-                  <div className="flex">
-                    <div className="relative w-32 h-32 flex-shrink-0 bg-secondary">
+            {/* Calendar Days - Compact */}
+            <div className="grid grid-cols-7 gap-0.5">
+              {calendarDays.map((day, index) => {
+                if (!day) {
+                  return <div key={`empty-${index}`} className="h-8" />
+                }
+
+                const isToday = day.toDateString() === new Date().toDateString()
+                const bookingsByStatus = getBookingsByStatusForDate.get(day.toDateString()) || []
+                const hasBookings = bookingsByStatus.length > 0
+
+                return (
+                  <button
+                    key={day.toISOString()}
+                    onClick={() => handleDayClick(day)}
+                    className={`h-15 rounded-md flex flex-col items-center justify-center transition-all ${isToday ? "bg-primary/10 border border-primary" : "hover:bg-secondary"
+                      } ${hasBookings ? "cursor-pointer" : "cursor-default"}`}
+                  >
+                    <span className={`text-[11px] font-medium ${isToday ? "text-primary" : "text-foreground"}`}>
+                      {day.getDate()}
+                    </span>
+                    {/* Status-colored Booking Dots */}
+                    {hasBookings && (
+                      <div className="flex gap-0.5 flex-wrap justify-center">
+                        {bookingsByStatus.slice(0, 3).map((statusInfo, i) => (
+                          <div
+                            key={i}
+                            className={`w-1 h-1 rounded-full ${STATUS_COLORS[statusInfo.status as keyof typeof STATUS_COLORS] || 'bg-gray-400'}`}
+                            title={`${STATUS_LABELS[statusInfo.status as keyof typeof STATUS_LABELS]}: ${statusInfo.count}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Status Legend */}
+            <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-border">
+              {Object.entries(STATUS_LABELS).map(([status, label]) => (
+                <div key={status} className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full ${STATUS_COLORS[status as keyof typeof STATUS_COLORS]}`} />
+                  <span className="text-xs text-foreground/60">{label}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Column 2: Services List (Row 1) + AI Suggestions (Row 2) */}
+        <div className="space-y-4">
+          {/* Services List */}
+          <Card className="overflow-hidden">
+            <CardContent className="p-3">
+              {/* Category Filter Tabs */}
+              <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2">
+                {categories.map((cat) => (
+                  <Button
+                    key={cat}
+                    variant={filterCategory === cat ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFilterCategory(cat)}
+                    className="rounded-full whitespace-nowrap text-xs h-7 px-3"
+                  >
+                    {cat === "all" ? "Tất cả" : cat}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Search */}
+              <div className="relative mb-2">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/50" />
+                <Input
+                  placeholder="Tìm kiếm dịch vụ..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8 rounded-lg h-8 text-sm"
+                />
+              </div>
+
+              {/* Services List - Compact on mobile */}
+              <div className="space-y-1.5 max-h-[250px] lg:max-h-[200px] overflow-y-auto pr-1">
+                {filteredServices.map((service: any) => (
+                  <div
+                    key={service._id}
+                    className="flex items-center gap-2 p-2 rounded-lg border border-border hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer bg-background"
+                    onClick={() => setSelectedService(service)}
+                  >
+                    <div className="w-10 h-10 rounded-lg overflow-hidden bg-secondary flex-shrink-0">
                       <Image
                         src={service.image?.url || "/placeholder.svg"}
                         alt={service.name}
-                        fill
-                        className="object-cover"
+                        width={40}
+                        height={40}
+                        className="w-full h-full object-cover"
                       />
                     </div>
-                    <div className="flex-1 p-4">
-                      <div className="flex items-start justify-between mb-1">
-                        <div>
-                          <h4 className="font-bold text-foreground">{service.name}</h4>
-                          <p className="text-xs text-foreground/50">{service.merchant_id?.merchant_profile?.shop_name || "Merchant"}</p>
-                        </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-foreground text-sm truncate">{service.name}</h4>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Store className="w-3 h-3 text-foreground/40" />
+                        <span className="text-xs text-foreground/60 truncate max-w-[120px]">
+                          {service.merchant_id?.merchant_profile?.shop_name || "Cửa hàng"}
+                        </span>
                       </div>
-                      <p className="text-sm text-foreground/60 line-clamp-2 mb-2">{service.description}</p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 text-sm text-foreground/60">
-                          <span className="flex items-center gap-1">
-                            <Star className="w-4 h-4 fill-primary text-primary" />
-                            {service.merchant_id?.merchant_profile?.rating || 5.0}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            {service.duration_minutes}p
-                          </span>
-                        </div>
-                        <p className="font-bold text-primary">{formatPrice(service.price_min)}</p>
-                      </div>
+                      <p className="text-[10px] text-foreground/40">{service.duration_minutes}p</p>
                     </div>
+                    <p className="font-bold text-primary text-sm whitespace-nowrap">{formatPrice(service.price_min)}</p>
                   </div>
-                </CardContent>
-              </Card>
+                ))}
+
+                {filteredServices.length === 0 && (
+                  <div className="text-center py-4">
+                    <Search className="w-8 h-8 text-foreground/30 mx-auto mb-2" />
+                    <p className="text-foreground/60 text-sm">Không tìm thấy dịch vụ</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* AI Suggestions Card */}
+          <Card className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/20" />
+            <CardHeader className="relative pb-1 pt-3 px-4">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <Sparkles className="w-4 h-4 text-primary" />
+                Gợi ý thông minh từ AI
+                <Badge variant="secondary" className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5">
+                  Sắp ra mắt
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="relative pt-0 pb-3 px-4">
+              <div className="grid grid-cols-2 gap-1.5 opacity-60">
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-background/50 border border-border/50">
+                  <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                    <Syringe className="w-3 h-3 text-orange-600" />
+                  </div>
+                  <p className="font-medium text-foreground text-xs truncate">Nhắc tiêm phòng</p>
+                </div>
+
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-background/50 border border-border/50">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <Bath className="w-3 h-3 text-blue-600" />
+                  </div>
+                  <p className="font-medium text-foreground text-xs truncate">Gợi ý spa</p>
+                </div>
+
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-background/50 border border-border/50">
+                  <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <Bug className="w-3 h-3 text-green-600" />
+                  </div>
+                  <p className="font-medium text-foreground text-xs truncate">Nhắc tẩy giun</p>
+                </div>
+
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-background/50 border border-border/50">
+                  <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                    <Stethoscope className="w-3 h-3 text-purple-600" />
+                  </div>
+                  <p className="font-medium text-foreground text-xs truncate">Khám định kỳ</p>
+                </div>
+              </div>
+
+              {/* Coming Soon Overlay */}
+              <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px] flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-1">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <p className="font-bold text-foreground text-sm">Sắp ra mắt</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Day Appointments Popup - Shows ALL pets' bookings */}
+      <Dialog open={showDayAppointments} onOpenChange={setShowDayAppointments}>
+        <DialogContent className="max-w-md rounded-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Calendar className="w-4 h-4 text-primary" />
+              Lịch hẹn ngày {selectedCalendarDay?.toLocaleDateString("vi-VN")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {selectedCalendarDay && getBookingsForDate(selectedCalendarDay).map((booking: any) => (
+              <div
+                key={booking._id}
+                className="flex items-start gap-3 p-3 rounded-xl border border-border bg-secondary/30"
+              >
+                {/* Status indicator */}
+                <div className={`w-1 h-full min-h-[60px] rounded-full ${STATUS_COLORS[booking.status as keyof typeof STATUS_COLORS]}`} />
+
+                <div className="flex-1 min-w-0">
+                  {/* Service name */}
+                  <h4 className="font-bold text-foreground text-sm">{booking.service_id?.name || "Dịch vụ"}</h4>
+
+                  {/* Pet name with icon */}
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-sm">
+                      {booking.pet_id?.species === "Dog" ? "🐕" : booking.pet_id?.species === "Cat" ? "🐈" : "🐾"}
+                    </span>
+                    <span className="text-sm text-foreground/70 font-medium">{booking.pet_id?.name || "Thú cưng"}</span>
+                  </div>
+
+                  {/* Time */}
+                  <p className="text-xs text-foreground/60 mt-1">
+                    ⏰ {new Date(booking.booking_time).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+
+                  {/* Merchant */}
+                  <p className="text-xs text-foreground/50 mt-0.5">
+                    📍 {booking.service_id?.merchant_id?.merchant_profile?.shop_name || "Cửa hàng"}
+                  </p>
+                </div>
+
+                {/* Status badge */}
+                <Badge
+                  className={`text-xs ${booking.status === "CONFIRMED"
+                    ? "bg-green-100 text-green-700"
+                    : booking.status === "COMPLETED"
+                      ? "bg-blue-100 text-blue-700"
+                      : booking.status === "CANCELLED"
+                        ? "bg-red-100 text-red-700"
+                        : "bg-orange-100 text-orange-700"
+                    }`}
+                >
+                  {STATUS_LABELS[booking.status as keyof typeof STATUS_LABELS]}
+                </Badge>
+              </div>
             ))}
+
+            {selectedCalendarDay && getBookingsForDate(selectedCalendarDay).length === 0 && (
+              <div className="text-center py-6">
+                <Calendar className="w-10 h-10 text-foreground/30 mx-auto mb-2" />
+                <p className="text-foreground/60 text-sm">Không có lịch hẹn trong ngày này</p>
+              </div>
+            )}
           </div>
-        </TabsContent>
+        </DialogContent>
+      </Dialog>
 
-        <TabsContent value="bookings" className="mt-4 space-y-4">
-          <h3 className="font-bold text-foreground">Lịch hẹn sắp tới</h3>
-          {bookings && bookings.length > 0 ? (
-            <div className="space-y-3">
-              {bookings.map((booking: any) => (
-                <Card key={booking._id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-12 h-12 rounded-xl flex items-center justify-center ${booking.status === "CONFIRMED" ? "bg-green-100" : "bg-orange-100"
-                            }`}
-                        >
-                          <Calendar
-                            className={`w-6 h-6 ${booking.status === "CONFIRMED" ? "text-green-600" : "text-orange-600"
-                              }`}
-                          />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-foreground">{booking.service_id?.name || "Dịch vụ đã xóa"}</h4>
-                          <p className="text-sm text-foreground/60">
-                            {booking.service_id?.merchant_id?.merchant_profile?.shop_name || "Cửa hàng"}
-                          </p>
-                          <p className="text-sm text-foreground/70">Cho bé: {booking.pet_id?.name || "Thú cưng"}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge
-                          className={
-                            booking.status === "CONFIRMED"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-orange-100 text-orange-700"
-                          }
-                        >
-                          {booking.status === "CONFIRMED"
-                            ? "Đã xác nhận"
-                            : booking.status === "COMPLETED"
-                              ? "Hoàn thành"
-                              : booking.status === "CANCELLED"
-                                ? "Đã hủy"
-                                : "Chờ xác nhận"}
-                        </Badge>
-                        <p className="font-bold text-foreground mt-1">
-                          {new Date(booking.booking_time).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                        <p className="text-sm text-foreground/50">
-                          {new Date(booking.booking_time).toLocaleDateString("vi-VN")}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card className="bg-secondary/30">
-              <CardContent className="p-8 text-center">
-                <Calendar className="w-12 h-12 text-foreground/30 mx-auto mb-3" />
-                <p className="text-foreground/60">Bạn chưa có lịch hẹn nào</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Booking Modal - Improved UI */}
+      {/* Booking Modal - Improved UI (UNCHANGED logic) */}
       <Dialog
         open={!!selectedService}
         onOpenChange={(open) => {
@@ -342,18 +615,18 @@ export function ServiceBooking() {
           }
         }}
       >
-        <DialogContent className="max-w-xl rounded-3xl max-h-[90vh] overflow-y-auto p-6">
+        <DialogContent className="max-w-xl rounded-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           {bookingSuccess ? (
-            <div className="py-12 text-center">
-              <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircle2 className="w-12 h-12 text-green-600" />
+            <div className="py-8 text-center">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 className="w-10 h-10 text-green-600" />
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">Đặt lịch thành công!</h3>
+              <h3 className="text-xl font-bold text-foreground mb-2">Đặt lịch thành công!</h3>
               <p className="text-foreground/60">Chúng tôi sẽ liên hệ xác nhận sớm nhất</p>
             </div>
           ) : (
             <>
-              <DialogHeader className="pb-4 border-b border-border">
+              <DialogHeader className="pb-3 border-b border-border">
                 <DialogTitle className="flex items-center gap-3">
                   {bookingStep > 1 && (
                     <Button
@@ -366,12 +639,12 @@ export function ServiceBooking() {
                     </Button>
                   )}
                   <div className="flex items-center gap-3">
-                    <span className="text-lg">Đặt lịch dịch vụ</span>
+                    <span className="text-base">Đặt lịch dịch vụ</span>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3].map((step) => (
                         <div
                           key={step}
-                          className={`w-2 h-2 rounded-full transition-all ${step === bookingStep ? "w-6 bg-primary" : step < bookingStep ? "bg-primary" : "bg-border"
+                          className={`w-2 h-2 rounded-full transition-all ${step === bookingStep ? "w-5 bg-primary" : step < bookingStep ? "bg-primary" : "bg-border"
                             }`}
                         />
                       ))}
@@ -381,31 +654,31 @@ export function ServiceBooking() {
               </DialogHeader>
 
               {selectedService && (
-                <div className="space-y-6 pt-4">
+                <div className="space-y-4 pt-3">
                   {/* Service Info Card - Compact */}
                   <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-20 h-20 rounded-xl overflow-hidden bg-secondary flex-shrink-0">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-secondary flex-shrink-0">
                           <Image
                             src={selectedService.image?.url || "/placeholder.svg"}
                             alt={selectedService.name}
-                            width={80}
-                            height={80}
+                            width={64}
+                            height={64}
                             className="w-full h-full object-cover"
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-foreground text-lg">{selectedService.name}</h4>
-                          <p className="text-sm text-foreground/60 flex items-center gap-1">
+                          <h4 className="font-bold text-foreground">{selectedService.name}</h4>
+                          <p className="text-xs text-foreground/60 flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
                             {selectedService.merchant_id?.merchant_profile?.shop_name}
                           </p>
-                          <div className="flex items-center gap-3 mt-2">
-                            <span className="font-bold text-primary text-lg">{formatPrice(selectedService.price_min)}</span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="font-bold text-primary">{formatPrice(selectedService.price_min)}</span>
                             <Badge variant="secondary" className="text-xs">
                               <Clock className="w-3 h-3 mr-1" />
-                              {selectedService.duration_minutes} phút
+                              {selectedService.duration_minutes}p
                             </Badge>
                           </div>
                         </div>
@@ -415,10 +688,10 @@ export function ServiceBooking() {
 
                   {/* Step 1: Select Pet & Date */}
                   {bookingStep === 1 && (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                       {/* Pet Selection */}
                       <div>
-                        <Label className="text-foreground font-semibold text-base mb-3 block">
+                        <Label className="text-foreground font-semibold text-sm mb-2 block">
                           🐾 Chọn thú cưng
                         </Label>
                         <div className="flex flex-wrap gap-2 justify-center">
@@ -426,22 +699,21 @@ export function ServiceBooking() {
                             <button
                               key={pet._id}
                               onClick={() => setSelectedPet(pet._id)}
-                              className={`p-3 rounded-xl border-2 transition-all w-24 ${selectedPet === pet._id
+                              className={`p-2 rounded-xl border-2 transition-all w-20 ${selectedPet === pet._id
                                 ? "border-primary bg-primary/5 shadow-md"
                                 : "border-border hover:border-primary/50"
                                 }`}
                             >
-                              <div className="w-12 h-12 rounded-full overflow-hidden mx-auto mb-1 bg-secondary">
+                              <div className="w-10 h-10 rounded-full overflow-hidden mx-auto mb-1 bg-secondary">
                                 <Image
                                   src={pet.image?.url || "/placeholder.svg"}
                                   alt={pet.name}
-                                  width={48}
-                                  height={48}
+                                  width={40}
+                                  height={40}
                                   className="w-full h-full object-cover"
                                 />
                               </div>
-                              <p className="text-sm font-semibold text-foreground text-center">{pet.name}</p>
-                              <p className="text-xs text-foreground/50 text-center">{pet.species}</p>
+                              <p className="text-xs font-semibold text-foreground text-center truncate">{pet.name}</p>
                             </button>
                           ))}
                         </div>
@@ -449,10 +721,10 @@ export function ServiceBooking() {
 
                       {/* Date Selection */}
                       <div>
-                        <Label className="text-foreground font-semibold text-base mb-3 block">
+                        <Label className="text-foreground font-semibold text-sm mb-2 block">
                           📅 Chọn ngày
                         </Label>
-                        <div className="grid grid-cols-7 gap-2">
+                        <div className="grid grid-cols-7 gap-1">
                           {dates.map((date) => (
                             <button
                               key={date.full}
@@ -460,14 +732,14 @@ export function ServiceBooking() {
                                 setSelectedDate(date.full)
                                 setSelectedTime("") // Reset time when date changes
                               }}
-                              className={`p-2 rounded-xl border-2 transition-all text-center ${selectedDate === date.full
+                              className={`p-1.5 rounded-lg border-2 transition-all text-center ${selectedDate === date.full
                                 ? "border-primary bg-primary text-primary-foreground"
                                 : "border-border hover:border-primary/50"
                                 }`}
                             >
-                              <p className="text-xs opacity-70">{date.weekday}</p>
-                              <p className="text-lg font-bold">{date.day}</p>
-                              <p className="text-xs opacity-70">{date.month}</p>
+                              <p className="text-[10px] opacity-70">{date.weekday}</p>
+                              <p className="text-sm font-bold">{date.day}</p>
+                              <p className="text-[10px] opacity-70">{date.month}</p>
                             </button>
                           ))}
                         </div>
@@ -476,29 +748,29 @@ export function ServiceBooking() {
                       <Button
                         onClick={() => setBookingStep(2)}
                         disabled={!selectedPet || !selectedDate}
-                        className="w-full rounded-xl py-6 text-base"
+                        className="w-full rounded-xl py-5"
                       >
                         Tiếp tục chọn giờ
-                        <ChevronRight className="w-5 h-5 ml-2" />
+                        <ChevronRight className="w-4 h-4 ml-2" />
                       </Button>
                     </div>
                   )}
 
                   {/* Step 2: Select Time */}
                   {bookingStep === 2 && (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                       <div>
-                        <Label className="text-foreground font-semibold text-base mb-3 block">
+                        <Label className="text-foreground font-semibold text-sm mb-2 block">
                           ⏰ Chọn giờ - {selectedDate}
                         </Label>
 
                         {loadingSlots ? (
-                          <div className="flex items-center justify-center py-8">
-                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                            <span className="ml-2 text-foreground/60">Đang tải lịch...</span>
+                          <div className="flex items-center justify-center py-6">
+                            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                            <span className="ml-2 text-foreground/60 text-sm">Đang tải lịch...</span>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                          <div className="grid grid-cols-5 gap-2">
                             {availableTimes.map((time) => {
                               const isBooked = bookedSlots.includes(time)
                               return (
@@ -506,23 +778,22 @@ export function ServiceBooking() {
                                   key={time}
                                   onClick={() => !isBooked && setSelectedTime(time)}
                                   disabled={isBooked}
-                                  className={`p-3 rounded-xl border-2 transition-all ${isBooked
+                                  className={`p-2 rounded-lg border-2 transition-all ${isBooked
                                     ? "border-destructive/30 bg-destructive/5 cursor-not-allowed opacity-60"
                                     : selectedTime === time
                                       ? "border-primary bg-primary text-primary-foreground shadow-md"
-                                      : "border-border hover:border-primary/50 hover:shadow-sm"
+                                      : "border-border hover:border-primary/50"
                                     }`}
                                 >
                                   {isBooked ? (
                                     <>
-                                      <XCircle className="w-4 h-4 mx-auto mb-1 text-destructive/60" />
-                                      <p className="font-medium text-sm line-through">{time}</p>
-                                      <p className="text-xs text-destructive/60">Đã đặt</p>
+                                      <XCircle className="w-3 h-3 mx-auto mb-0.5 text-destructive/60" />
+                                      <p className="font-medium text-xs line-through">{time}</p>
                                     </>
                                   ) : (
                                     <>
-                                      <Clock className="w-4 h-4 mx-auto mb-1" />
-                                      <p className="font-semibold">{time}</p>
+                                      <Clock className="w-3 h-3 mx-auto mb-0.5" />
+                                      <p className="font-semibold text-sm">{time}</p>
                                     </>
                                   )}
                                 </button>
@@ -533,7 +804,7 @@ export function ServiceBooking() {
                       </div>
 
                       <div>
-                        <Label className="text-foreground font-semibold text-base mb-2 block">
+                        <Label className="text-foreground font-semibold text-sm mb-2 block">
                           📝 Ghi chú (không bắt buộc)
                         </Label>
                         <Textarea
@@ -541,59 +812,59 @@ export function ServiceBooking() {
                           value={notes}
                           onChange={(e) => setNotes(e.target.value)}
                           className="rounded-xl resize-none"
-                          rows={3}
+                          rows={2}
                         />
                       </div>
 
                       <Button
                         onClick={() => setBookingStep(3)}
                         disabled={!selectedTime}
-                        className="w-full rounded-xl py-6 text-base"
+                        className="w-full rounded-xl py-5"
                       >
                         Xem lại đặt lịch
-                        <ChevronRight className="w-5 h-5 ml-2" />
+                        <ChevronRight className="w-4 h-4 ml-2" />
                       </Button>
                     </div>
                   )}
 
                   {/* Step 3: Confirm */}
                   {bookingStep === 3 && (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                       <Card className="overflow-hidden">
-                        <CardHeader className="bg-secondary/50 py-3">
-                          <CardTitle className="text-base">📋 Thông tin đặt lịch</CardTitle>
+                        <CardHeader className="bg-secondary/50 py-2 px-4">
+                          <CardTitle className="text-sm">📋 Thông tin đặt lịch</CardTitle>
                         </CardHeader>
-                        <CardContent className="divide-y divide-border">
-                          <div className="flex justify-between py-3">
-                            <span className="text-foreground/60">Dịch vụ</span>
-                            <span className="font-semibold text-foreground">{selectedService.name}</span>
+                        <CardContent className="divide-y divide-border p-0">
+                          <div className="flex justify-between py-2 px-4">
+                            <span className="text-foreground/60 text-sm">Dịch vụ</span>
+                            <span className="font-semibold text-foreground text-sm">{selectedService.name}</span>
                           </div>
-                          <div className="flex justify-between py-3">
-                            <span className="text-foreground/60">Thú cưng</span>
-                            <span className="font-semibold text-foreground">
+                          <div className="flex justify-between py-2 px-4">
+                            <span className="text-foreground/60 text-sm">Thú cưng</span>
+                            <span className="font-semibold text-foreground text-sm">
                               {pets?.find((p) => p._id === selectedPet)?.name}
                             </span>
                           </div>
-                          <div className="flex justify-between py-3">
-                            <span className="text-foreground/60">Thời gian</span>
-                            <span className="font-semibold text-foreground">{selectedTime} - {selectedDate}</span>
+                          <div className="flex justify-between py-2 px-4">
+                            <span className="text-foreground/60 text-sm">Thời gian</span>
+                            <span className="font-semibold text-foreground text-sm">{selectedTime} - {selectedDate}</span>
                           </div>
-                          <div className="flex justify-between py-3">
-                            <span className="text-foreground/60">Địa điểm</span>
-                            <span className="font-semibold text-foreground flex items-center gap-1">
+                          <div className="flex justify-between py-2 px-4">
+                            <span className="text-foreground/60 text-sm">Địa điểm</span>
+                            <span className="font-semibold text-foreground text-sm flex items-center gap-1">
                               <MapPin className="w-3 h-3" />
                               {selectedService.merchant_id?.merchant_profile?.shop_name}
                             </span>
                           </div>
                           {notes && (
-                            <div className="py-3">
-                              <span className="text-foreground/60 block mb-1">Ghi chú</span>
-                              <span className="text-foreground">{notes}</span>
+                            <div className="py-2 px-4">
+                              <span className="text-foreground/60 block mb-1 text-sm">Ghi chú</span>
+                              <span className="text-foreground text-sm">{notes}</span>
                             </div>
                           )}
-                          <div className="flex justify-between py-4 bg-secondary/30 -mx-6 px-6 mt-3">
-                            <span className="font-bold text-foreground text-lg">Tổng cộng</span>
-                            <span className="font-bold text-primary text-xl">{formatPrice(selectedService.price_min)}</span>
+                          <div className="flex justify-between py-3 px-4 bg-secondary/30">
+                            <span className="font-bold text-foreground">Tổng cộng</span>
+                            <span className="font-bold text-primary text-lg">{formatPrice(selectedService.price_min)}</span>
                           </div>
                         </CardContent>
                       </Card>
@@ -601,12 +872,12 @@ export function ServiceBooking() {
                       <Button
                         onClick={handleBooking}
                         disabled={isSubmitting}
-                        className="w-full rounded-xl py-6 text-base bg-green-600 hover:bg-green-700"
+                        className="w-full rounded-xl py-5 bg-green-600 hover:bg-green-700"
                       >
                         {isSubmitting ? (
-                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         ) : (
-                          <CheckCircle2 className="w-5 h-5 mr-2" />
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
                         )}
                         Xác nhận đặt lịch
                       </Button>

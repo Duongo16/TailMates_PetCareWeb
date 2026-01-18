@@ -79,6 +79,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       "stock_quantity",
       "ai_tags",
       "is_active",
+      "specifications",
     ];
 
     const updateData: Record<string, unknown> = {};

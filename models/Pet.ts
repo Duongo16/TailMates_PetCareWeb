@@ -38,6 +38,10 @@ export interface IPet extends Document {
   weight_kg?: number;
   gender: PetGender;
   sterilized: boolean;
+  color?: string;
+  microchip?: string;
+  allergies?: string[];
+  notes?: string;
   image?: ICloudinaryImage;
   ai_analysis?: IAIAnalysis;
   created_at: Date;
@@ -98,6 +102,22 @@ const PetSchema = new Schema<IPet>(
     sterilized: {
       type: Boolean,
       default: false,
+    },
+    color: {
+      type: String,
+      trim: true,
+    },
+    microchip: {
+      type: String,
+      trim: true,
+    },
+    allergies: [{
+      type: String,
+      trim: true,
+    }],
+    notes: {
+      type: String,
+      trim: true,
     },
     image: CloudinaryImageSchema,
     ai_analysis: AIAnalysisSchema,

@@ -6,6 +6,7 @@ import { apiResponse } from "@/lib/auth";
 import mongoose from "mongoose";
 
 // GET /api/v1/bookings/slots - Get booked time slots for a service on a specific date
+// Also returns pet's existing bookings to prevent double-booking
 export async function GET(request: NextRequest) {
     try {
         await connectDB();
@@ -13,6 +14,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const serviceId = searchParams.get("service_id");
         const dateStr = searchParams.get("date"); // Format: dd/mm/yyyy
+        const petId = searchParams.get("pet_id"); // Optional: to check pet's existing bookings
 
         if (!serviceId) {
             return apiResponse.error("Service ID is required");
@@ -37,8 +39,8 @@ export async function GET(request: NextRequest) {
         const startOfDay = new Date(year, month - 1, day, 0, 0, 0);
         const endOfDay = new Date(year, month - 1, day, 23, 59, 59);
 
-        // Find all bookings for this service's merchant on this date
-        const bookings = await Booking.find({
+        // Find all bookings for this service on this date
+        const serviceBookings = await Booking.find({
             service_id: serviceId,
             booking_time: {
                 $gte: startOfDay,
@@ -47,16 +49,39 @@ export async function GET(request: NextRequest) {
             status: { $in: ["PENDING", "CONFIRMED"] },
         }).select("booking_time");
 
-        // Extract booked times (HH:MM format)
-        const bookedSlots = bookings.map((booking) => {
+        // Extract booked times (HH:MM format) for the service
+        const serviceBookedSlots = serviceBookings.map((booking) => {
             const time = new Date(booking.booking_time);
             return `${time.getHours().toString().padStart(2, "0")}:${time.getMinutes().toString().padStart(2, "0")}`;
         });
 
+        // If petId is provided, also find pet's existing bookings on this date (any service)
+        let petBookedSlots: string[] = [];
+        if (petId && mongoose.Types.ObjectId.isValid(petId)) {
+            const petBookings = await Booking.find({
+                pet_id: petId,
+                booking_time: {
+                    $gte: startOfDay,
+                    $lte: endOfDay,
+                },
+                status: { $in: ["PENDING", "CONFIRMED"] },
+            }).select("booking_time");
+
+            petBookedSlots = petBookings.map((booking) => {
+                const time = new Date(booking.booking_time);
+                return `${time.getHours().toString().padStart(2, "0")}:${time.getMinutes().toString().padStart(2, "0")}`;
+            });
+        }
+
+        // Merge and deduplicate both lists
+        const allBookedSlots = [...new Set([...serviceBookedSlots, ...petBookedSlots])];
+
         return apiResponse.success({
             service_id: serviceId,
             date: dateStr,
-            booked_slots: bookedSlots,
+            booked_slots: allBookedSlots,
+            service_booked_slots: serviceBookedSlots,
+            pet_booked_slots: petBookedSlots,
         });
     } catch (error) {
         console.error("Get booked slots error:", error);

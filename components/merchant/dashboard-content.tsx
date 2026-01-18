@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useMerchantProducts, useMerchantServices, useOrders, useBookings } from "@/lib/hooks"
+import { HEALTH_TAGS, TargetSpecies, LifeStage, BreedSize } from "@/lib/product-constants"
 import { merchantAPI, ordersAPI, bookingsAPI } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Switch } from "@/components/ui/switch"
+import { ImageUpload } from "@/components/ui/image-upload"
 import {
   Calendar,
   QrCode,
@@ -60,8 +64,28 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Form States with image support
-  const [newProduct, setNewProduct] = useState({ name: "", category: "FOOD", price: "", stock: "", description: "", image_url: "" })
-  const [newService, setNewService] = useState({ name: "", category: "spa", price_min: "", price_max: "", duration_minutes: "", description: "", image_url: "" })
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    category: "FOOD",
+    price: "",
+    stock: "",
+    description: "",
+    image_url: "",
+    image_public_id: "",
+    // Specifications for FOOD category
+    targetSpecies: "",
+    lifeStage: "",
+    breedSize: "",
+    healthTags: [] as string[],
+    protein: "",
+    fat: "",
+    fiber: "",
+    moisture: "",
+    calories: "",
+    ingredients: "",
+    isSterilized: false,
+  })
+  const [newService, setNewService] = useState({ name: "", category: "spa", price_min: "", price_max: "", duration_minutes: "", description: "", image_url: "", image_public_id: "" })
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -144,11 +168,34 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
       if (newProduct.image_url) {
         productData.images = [{ url: newProduct.image_url, public_id: `prod_${Date.now()}` }]
       }
+      // Add specifications for FOOD category
+      if (newProduct.category === "FOOD") {
+        const specifications: any = {}
+        if (newProduct.targetSpecies) specifications.targetSpecies = newProduct.targetSpecies
+        if (newProduct.lifeStage) specifications.lifeStage = newProduct.lifeStage
+        if (newProduct.breedSize) specifications.breedSize = newProduct.breedSize
+        if (newProduct.healthTags.length > 0) specifications.healthTags = newProduct.healthTags
+        if (newProduct.ingredients) specifications.ingredients = newProduct.ingredients.split(",").map((i: string) => i.trim())
+        specifications.isSterilized = newProduct.isSterilized
+        // Nutritional info
+        const nutritionalInfo: any = {}
+        if (newProduct.protein) nutritionalInfo.protein = Number(newProduct.protein)
+        if (newProduct.fat) nutritionalInfo.fat = Number(newProduct.fat)
+        if (newProduct.fiber) nutritionalInfo.fiber = Number(newProduct.fiber)
+        if (newProduct.moisture) nutritionalInfo.moisture = Number(newProduct.moisture)
+        if (newProduct.calories) nutritionalInfo.calories = Number(newProduct.calories)
+        if (Object.keys(nutritionalInfo).length > 0) specifications.nutritionalInfo = nutritionalInfo
+        if (Object.keys(specifications).length > 0) productData.specifications = specifications
+      }
       const res = await merchantAPI.createProduct(productData)
       if (res.success) {
         setShowAddProduct(false)
         refetchProducts()
-        setNewProduct({ name: "", category: "FOOD", price: "", stock: "", description: "", image_url: "" })
+        setNewProduct({
+          name: "", category: "FOOD", price: "", stock: "", description: "", image_url: "", image_public_id: "",
+          targetSpecies: "", lifeStage: "", breedSize: "", healthTags: [],
+          protein: "", fat: "", fiber: "", moisture: "", calories: "", ingredients: "", isSterilized: false,
+        })
       } else {
         alert(res.message)
       }
@@ -172,6 +219,25 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
       }
       if (editingProduct.image_url) {
         productData.images = [{ url: editingProduct.image_url, public_id: editingProduct.images?.[0]?.public_id || `prod_${Date.now()}` }]
+      }
+      // Add specifications for FOOD category
+      if (editingProduct.category === "FOOD") {
+        const specifications: any = {}
+        if (editingProduct.targetSpecies) specifications.targetSpecies = editingProduct.targetSpecies
+        if (editingProduct.lifeStage) specifications.lifeStage = editingProduct.lifeStage
+        if (editingProduct.breedSize) specifications.breedSize = editingProduct.breedSize
+        if (editingProduct.healthTags?.length > 0) specifications.healthTags = editingProduct.healthTags
+        if (editingProduct.ingredients?.length > 0) specifications.ingredients = editingProduct.ingredients
+        specifications.isSterilized = editingProduct.isSterilized || false
+        // Nutritional info
+        const nutritionalInfo: any = {}
+        if (editingProduct.protein) nutritionalInfo.protein = Number(editingProduct.protein)
+        if (editingProduct.fat) nutritionalInfo.fat = Number(editingProduct.fat)
+        if (editingProduct.fiber) nutritionalInfo.fiber = Number(editingProduct.fiber)
+        if (editingProduct.moisture) nutritionalInfo.moisture = Number(editingProduct.moisture)
+        if (editingProduct.calories) nutritionalInfo.calories = Number(editingProduct.calories)
+        if (Object.keys(nutritionalInfo).length > 0) specifications.nutritionalInfo = nutritionalInfo
+        if (Object.keys(specifications).length > 0) productData.specifications = specifications
       }
       const res = await merchantAPI.updateProduct(editingProduct._id, productData)
       if (res.success) {
@@ -203,9 +269,22 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
   }
 
   const openEditProduct = (product: any) => {
+    const specs = product.specifications || {}
     setEditingProduct({
       ...product,
-      image_url: product.images?.[0]?.url || ""
+      image_url: product.images?.[0]?.url || "",
+      // Flatten specifications for form
+      targetSpecies: specs.targetSpecies || "",
+      lifeStage: specs.lifeStage || "",
+      breedSize: specs.breedSize || "",
+      healthTags: specs.healthTags || [],
+      ingredients: specs.ingredients || [],
+      isSterilized: specs.isSterilized || false,
+      protein: specs.nutritionalInfo?.protein?.toString() || "",
+      fat: specs.nutritionalInfo?.fat?.toString() || "",
+      fiber: specs.nutritionalInfo?.fiber?.toString() || "",
+      moisture: specs.nutritionalInfo?.moisture?.toString() || "",
+      calories: specs.nutritionalInfo?.calories?.toString() || "",
     })
     setShowEditProduct(true)
   }
@@ -227,7 +306,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
       if (res.success) {
         setShowAddService(false)
         refetchServices()
-        setNewService({ name: "", category: "spa", price_min: "", price_max: "", duration_minutes: "", description: "", image_url: "" })
+        setNewService({ name: "", category: "spa", price_min: "", price_max: "", duration_minutes: "", description: "", image_url: "", image_public_id: "" })
       } else {
         alert(res.message)
       }
@@ -558,20 +637,17 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                     />
                   </div>
                 </div>
-                <div>
-                  <Label>Hình ảnh (URL)</Label>
-                  <Input
-                    value={newProduct.image_url}
-                    onChange={(e) => setNewProduct({ ...newProduct, image_url: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
-                    className="rounded-xl mt-1"
-                  />
-                  {newProduct.image_url && (
-                    <div className="mt-2 w-20 h-20 rounded-lg overflow-hidden bg-secondary">
-                      <Image src={newProduct.image_url} alt="Preview" width={80} height={80} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                </div>
+                <ImageUpload
+                  label="Hình ảnh sản phẩm"
+                  value={newProduct.image_url}
+                  onChange={(url, publicId) => {
+                    setNewProduct({
+                      ...newProduct,
+                      image_url: url,
+                      image_public_id: publicId || newProduct.image_public_id
+                    })
+                  }}
+                />
                 <div>
                   <Label>Mô tả</Label>
                   <Textarea
@@ -582,6 +658,111 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                     rows={3}
                   />
                 </div>
+                {/* Specifications Section for FOOD */}
+                {newProduct.category === "FOOD" && (
+                  <div className="border-t pt-4 mt-4 space-y-4">
+                    <h4 className="font-semibold text-sm text-foreground/80">📋 Thông tin chi tiết & Dinh dưỡng</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-xs">Loài</Label>
+                        <Select value={newProduct.targetSpecies} onValueChange={(val) => setNewProduct({ ...newProduct, targetSpecies: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="DOG">🐕 Chó</SelectItem>
+                            <SelectItem value="CAT">🐱 Mèo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Độ tuổi</Label>
+                        <Select value={newProduct.lifeStage} onValueChange={(val) => setNewProduct({ ...newProduct, lifeStage: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="KITTEN_PUPPY">Con nhỏ</SelectItem>
+                            <SelectItem value="ADULT">Trưởng thành</SelectItem>
+                            <SelectItem value="SENIOR">Lớn tuổi</SelectItem>
+                            <SelectItem value="ALL_STAGES">Mọi độ tuổi</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Kích cỡ</Label>
+                        <Select value={newProduct.breedSize} onValueChange={(val) => setNewProduct({ ...newProduct, breedSize: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="SMALL">Nhỏ</SelectItem>
+                            <SelectItem value="MEDIUM">Vừa</SelectItem>
+                            <SelectItem value="LARGE">Lớn</SelectItem>
+                            <SelectItem value="GIANT">Khổng lồ</SelectItem>
+                            <SelectItem value="ALL_SIZES">Mọi kích cỡ</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Lợi ích sức khỏe</Label>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {HEALTH_TAGS.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant={newProduct.healthTags.includes(tag) ? "default" : "outline"}
+                            className="cursor-pointer text-xs"
+                            onClick={() => {
+                              if (newProduct.healthTags.includes(tag)) {
+                                setNewProduct({ ...newProduct, healthTags: newProduct.healthTags.filter((t: string) => t !== tag) })
+                              } else {
+                                setNewProduct({ ...newProduct, healthTags: [...newProduct.healthTags, tag] })
+                              }
+                            }}
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Thành phần (cách nhau bằng dấu phẩy)</Label>
+                      <Input
+                        value={newProduct.ingredients}
+                        onChange={(e) => setNewProduct({ ...newProduct, ingredients: e.target.value })}
+                        placeholder="Gà, gạo, cá hồi..."
+                        className="rounded-lg mt-1 h-9"
+                      />
+                    </div>
+                    <div className="grid grid-cols-5 gap-2">
+                      <div>
+                        <Label className="text-xs">Protein %</Label>
+                        <Input type="number" value={newProduct.protein} onChange={(e) => setNewProduct({ ...newProduct, protein: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Fat %</Label>
+                        <Input type="number" value={newProduct.fat} onChange={(e) => setNewProduct({ ...newProduct, fat: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Fiber %</Label>
+                        <Input type="number" value={newProduct.fiber} onChange={(e) => setNewProduct({ ...newProduct, fiber: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Moisture %</Label>
+                        <Input type="number" value={newProduct.moisture} onChange={(e) => setNewProduct({ ...newProduct, moisture: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Kcal/kg</Label>
+                        <Input type="number" value={newProduct.calories} onChange={(e) => setNewProduct({ ...newProduct, calories: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="newIsSterilized"
+                        checked={newProduct.isSterilized}
+                        onChange={(e) => setNewProduct({ ...newProduct, isSterilized: e.target.checked })}
+                        className="rounded"
+                      />
+                      <Label htmlFor="newIsSterilized" className="text-xs">Dành cho thú đã triệt sản</Label>
+                    </div>
+                  </div>
+                )}
                 <Button
                   className="w-full rounded-xl"
                   onClick={handleAddProduct}
@@ -647,19 +828,17 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                     />
                   </div>
                 </div>
-                <div>
-                  <Label>Hình ảnh (URL)</Label>
-                  <Input
-                    value={editingProduct.image_url}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, image_url: e.target.value })}
-                    className="rounded-xl mt-1"
-                  />
-                  {editingProduct.image_url && (
-                    <div className="mt-2 w-20 h-20 rounded-lg overflow-hidden bg-secondary">
-                      <Image src={editingProduct.image_url} alt="Preview" width={80} height={80} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                </div>
+                <ImageUpload
+                  label="Hình ảnh sản phẩm"
+                  value={editingProduct.image_url}
+                  onChange={(url, publicId) => {
+                    setEditingProduct({
+                      ...editingProduct,
+                      image_url: url,
+                      image_public_id: publicId || editingProduct.image_public_id
+                    })
+                  }}
+                />
                 <div>
                   <Label>Mô tả</Label>
                   <Textarea
@@ -669,6 +848,112 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                     rows={3}
                   />
                 </div>
+                {/* Specifications Section for FOOD */}
+                {editingProduct.category === "FOOD" && (
+                  <div className="border-t pt-4 mt-4 space-y-4">
+                    <h4 className="font-semibold text-sm text-foreground/80">📋 Thông tin chi tiết & Dinh dưỡng</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-xs">Loài</Label>
+                        <Select value={editingProduct.targetSpecies || ""} onValueChange={(val) => setEditingProduct({ ...editingProduct, targetSpecies: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="DOG">🐕 Chó</SelectItem>
+                            <SelectItem value="CAT">🐱 Mèo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Độ tuổi</Label>
+                        <Select value={editingProduct.lifeStage || ""} onValueChange={(val) => setEditingProduct({ ...editingProduct, lifeStage: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="KITTEN_PUPPY">Con nhỏ</SelectItem>
+                            <SelectItem value="ADULT">Trưởng thành</SelectItem>
+                            <SelectItem value="SENIOR">Lớn tuổi</SelectItem>
+                            <SelectItem value="ALL_STAGES">Mọi độ tuổi</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Kích cỡ</Label>
+                        <Select value={editingProduct.breedSize || ""} onValueChange={(val) => setEditingProduct({ ...editingProduct, breedSize: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="SMALL">Nhỏ</SelectItem>
+                            <SelectItem value="MEDIUM">Vừa</SelectItem>
+                            <SelectItem value="LARGE">Lớn</SelectItem>
+                            <SelectItem value="GIANT">Khổng lồ</SelectItem>
+                            <SelectItem value="ALL_SIZES">Mọi kích cỡ</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Lợi ích sức khỏe</Label>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {HEALTH_TAGS.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant={editingProduct.healthTags?.includes(tag) ? "default" : "outline"}
+                            className="cursor-pointer text-xs"
+                            onClick={() => {
+                              const currentTags = editingProduct.healthTags || []
+                              if (currentTags.includes(tag)) {
+                                setEditingProduct({ ...editingProduct, healthTags: currentTags.filter((t: string) => t !== tag) })
+                              } else {
+                                setEditingProduct({ ...editingProduct, healthTags: [...currentTags, tag] })
+                              }
+                            }}
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Thành phần</Label>
+                      <Input
+                        value={Array.isArray(editingProduct.ingredients) ? editingProduct.ingredients.join(", ") : ""}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, ingredients: e.target.value.split(",").map((s: string) => s.trim()) })}
+                        placeholder="Gà, gạo, cá hồi..."
+                        className="rounded-lg mt-1 h-9"
+                      />
+                    </div>
+                    <div className="grid grid-cols-5 gap-2">
+                      <div>
+                        <Label className="text-xs">Protein %</Label>
+                        <Input type="number" value={editingProduct.protein || ""} onChange={(e) => setEditingProduct({ ...editingProduct, protein: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Fat %</Label>
+                        <Input type="number" value={editingProduct.fat || ""} onChange={(e) => setEditingProduct({ ...editingProduct, fat: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Fiber %</Label>
+                        <Input type="number" value={editingProduct.fiber || ""} onChange={(e) => setEditingProduct({ ...editingProduct, fiber: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Moisture %</Label>
+                        <Input type="number" value={editingProduct.moisture || ""} onChange={(e) => setEditingProduct({ ...editingProduct, moisture: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Kcal/kg</Label>
+                        <Input type="number" value={editingProduct.calories || ""} onChange={(e) => setEditingProduct({ ...editingProduct, calories: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="editIsSterilized"
+                        checked={editingProduct.isSterilized || false}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, isSterilized: e.target.checked })}
+                        className="rounded"
+                      />
+                      <Label htmlFor="editIsSterilized" className="text-xs">Dành cho thú đã triệt sản</Label>
+                    </div>
+                  </div>
+                )}
                 <Button
                   className="w-full rounded-xl"
                   onClick={handleEditProduct}
@@ -684,42 +969,93 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
         {productsLoading ? (
           <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" /></div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {products?.map((product: any) => (
-              <Card key={product._id} className="overflow-hidden group relative">
-                <CardContent className="p-0">
-                  <div className="relative aspect-square bg-secondary">
-                    <Image src={product.images?.[0]?.url || "/placeholder.svg"} alt={product.name} fill className="object-cover" />
-                    {/* Edit/Delete overlay */}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <Button size="icon" variant="secondary" className="rounded-full" onClick={() => openEditProduct(product)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button size="icon" variant="destructive" className="rounded-full" onClick={() => handleDeleteProduct(product._id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <h4 className="font-bold text-foreground text-sm line-clamp-1">{product.name}</h4>
-                    <p className="text-xs text-foreground/50 mb-2">{product.category}</p>
-                    <div className="flex items-center justify-between">
-                      <p className="text-primary font-bold">{formatPrice(product.price)}</p>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Star className="w-3 h-3 fill-primary text-primary" />
-                        <span className="text-foreground/60">{product.rating || 5.0}</span>
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[80px]">Ảnh</TableHead>
+                  <TableHead>Tên sản phẩm</TableHead>
+                  <TableHead>Danh mục</TableHead>
+                  <TableHead className="text-right">Giá</TableHead>
+                  <TableHead className="text-center">Kho</TableHead>
+                  <TableHead className="text-center">Đã bán</TableHead>
+                  <TableHead className="text-center">Trạng thái</TableHead>
+                  <TableHead className="text-right">Thao tác</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products?.map((product: any) => (
+                  <TableRow key={product._id}>
+                    <TableCell>
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary">
+                        <Image
+                          src={product.images?.[0]?.url || "/placeholder.svg"}
+                          alt={product.name}
+                          width={48}
+                          height={48}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-2 text-xs text-foreground/50">
-                      <span>Kho: {product.stock_quantity}</span>
-                      <span>Đã bán: {product.sold_quantity || 0}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {!products?.length && <p className="col-span-4 text-center text-foreground/50 py-10">Chưa có sản phẩm nào</p>}
-          </div>
+                    </TableCell>
+                    <TableCell className="font-medium">{product.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{product.category}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-bold text-primary">
+                      {formatPrice(product.price)}
+                    </TableCell>
+                    <TableCell className="text-center">{product.stock_quantity}</TableCell>
+                    <TableCell className="text-center">{product.sold_quantity || 0}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <Switch
+                          checked={product.is_active !== false}
+                          onCheckedChange={async (checked) => {
+                            try {
+                              await merchantAPI.updateProduct(product._id, { is_active: checked })
+                              refetchProducts()
+                            } catch {
+                              alert("Lỗi khi cập nhật trạng thái")
+                            }
+                          }}
+                        />
+                        <span className={`text-xs ${product.is_active !== false ? "text-green-600" : "text-foreground/50"}`}>
+                          {product.is_active !== false ? "Hiển thị" : "Ẩn"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="rounded-lg h-8 w-8"
+                          onClick={() => openEditProduct(product)}
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="rounded-lg h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteProduct(product._id)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!products?.length && (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-10 text-foreground/50">
+                      Chưa có sản phẩm nào
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Card>
         )}
       </div>
     )
@@ -787,20 +1123,17 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                     className="rounded-xl mt-1"
                   />
                 </div>
-                <div>
-                  <Label>Hình ảnh (URL)</Label>
-                  <Input
-                    value={newService.image_url}
-                    onChange={(e) => setNewService({ ...newService, image_url: e.target.value })}
-                    placeholder="https://example.com/service.jpg"
-                    className="rounded-xl mt-1"
-                  />
-                  {newService.image_url && (
-                    <div className="mt-2 w-20 h-20 rounded-lg overflow-hidden bg-secondary">
-                      <Image src={newService.image_url} alt="Preview" width={80} height={80} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                </div>
+                <ImageUpload
+                  label="Hình ảnh dịch vụ"
+                  value={newService.image_url}
+                  onChange={(url, publicId) => {
+                    setNewService({
+                      ...newService,
+                      image_url: url,
+                      image_public_id: publicId || newService.image_public_id
+                    })
+                  }}
+                />
                 <div>
                   <Label>Mô tả chi tiết</Label>
                   <Textarea
@@ -868,19 +1201,17 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                     className="rounded-xl mt-1"
                   />
                 </div>
-                <div>
-                  <Label>Hình ảnh (URL)</Label>
-                  <Input
-                    value={editingService.image_url}
-                    onChange={(e) => setEditingService({ ...editingService, image_url: e.target.value })}
-                    className="rounded-xl mt-1"
-                  />
-                  {editingService.image_url && (
-                    <div className="mt-2 w-20 h-20 rounded-lg overflow-hidden bg-secondary">
-                      <Image src={editingService.image_url} alt="Preview" width={80} height={80} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                </div>
+                <ImageUpload
+                  label="Hình ảnh dịch vụ"
+                  value={editingService.image_url}
+                  onChange={(url, publicId) => {
+                    setEditingService({
+                      ...editingService,
+                      image_url: url,
+                      image_public_id: publicId || editingService.image_public_id
+                    })
+                  }}
+                />
                 <div>
                   <Label>Mô tả chi tiết</Label>
                   <Textarea
@@ -902,63 +1233,81 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
           </DialogContent>
         </Dialog>
 
-        <div className="space-y-4">
-          {services?.map((service: any) => (
-            <Card key={service._id}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-xl bg-secondary flex items-center justify-center overflow-hidden">
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[80px]">Ảnh</TableHead>
+                <TableHead>Tên dịch vụ</TableHead>
+                <TableHead>Trạng thái</TableHead>
+                <TableHead className="text-center">Thời gian</TableHead>
+                <TableHead className="text-right">Giá</TableHead>
+                <TableHead className="text-right">Thao tác</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {services?.map((service: any) => (
+                <TableRow key={service._id}>
+                  <TableCell>
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary">
                       <Image
                         src={service.image?.url || "/placeholder.svg"}
                         alt={service.name}
-                        width={64} height={64}
+                        width={48}
+                        height={48}
                         className="w-full h-full object-cover"
                       />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-foreground">{service.name}</h4>
-                        <Badge
-                          className={service.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}
-                        >
-                          {service.is_active ? "Hoạt động" : "Tạm ngưng"}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-foreground/60">
-                        {service.duration_minutes} phút
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <p className="text-xl font-bold text-primary">{formatPrice(service.price_min)}</p>
-                    <div className="flex gap-2">
+                  </TableCell>
+                  <TableCell className="font-medium">{service.name}</TableCell>
+                  <TableCell>
+                    <Badge className={service.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
+                      {service.is_active ? "Hoạt động" : "Tạm ngưng"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-center">{service.duration_minutes} phút</TableCell>
+                  <TableCell className="text-right font-bold text-primary">
+                    {formatPrice(service.price_min)}
+                    {service.price_max && service.price_max !== service.price_min && (
+                      <span className="text-foreground/50 font-normal"> - {formatPrice(service.price_max)}</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
                       <Button
-                        variant="outline" size="icon"
-                        className="rounded-xl bg-transparent"
+                        size="icon"
+                        variant="outline"
+                        className="rounded-lg h-8 w-8"
                         onClick={() => openEditService(service)}
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3.5 h-3.5" />
                       </Button>
                       <Button
-                        variant="outline" size="icon"
-                        className="rounded-xl bg-transparent text-destructive hover:text-destructive"
+                        size="icon"
+                        variant="outline"
+                        className="rounded-lg h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => {
                           if (confirm("Xóa dịch vụ này?")) {
                             merchantAPI.deleteService(service._id).then(() => refetchServices())
                           }
                         }}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-          {!services?.length && <p className="text-center text-foreground/50 py-10">Chưa có dịch vụ nào</p>}
-        </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!services?.length && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-10 text-foreground/50">
+                    Chưa có dịch vụ nào
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </Card>
       </div>
     )
   }

@@ -4,12 +4,15 @@ import { useState, useDeferredValue, useMemo } from "react"
 import { useProducts } from "@/lib/hooks"
 import { useCart } from "@/lib/cart-context"
 import { ordersAPI } from "@/lib/api"
+import { HEALTH_TAGS } from "@/lib/product-constants"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Star, ShoppingCart, Loader2, Store, Package, Check, Search, ChevronLeft, ChevronRight, ArrowUpDown } from "lucide-react"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Star, ShoppingCart, Loader2, Store, Package, Check, Search, ChevronLeft, ChevronRight, ArrowUpDown, Filter, ChevronDown, Dog, Cat, Leaf, Sparkles, Bone, Gamepad2, Shirt, HeartPulse } from "lucide-react"
 import Image from "next/image"
 import { AlertDialog, useAlertDialog } from "@/components/ui/alert-dialog-custom"
 import { BannerCarousel } from "@/components/ui/banner-carousel"
@@ -46,6 +49,11 @@ export function Marketplace() {
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
   const [currentPage, setCurrentPage] = useState(1)
+  // Advanced filter states
+  const [targetSpecies, setTargetSpecies] = useState("")
+  const [lifeStage, setLifeStage] = useState("")
+  const [selectedHealthTags, setSelectedHealthTags] = useState<string[]>([])
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
 
   // Debounce search
   const deferredSearch = useDeferredValue(searchTerm)
@@ -55,6 +63,10 @@ export function Marketplace() {
     search: deferredSearch || undefined,
     page: currentPage,
     limit: ITEMS_PER_PAGE,
+    // Advanced filters
+    targetSpecies: targetSpecies || undefined,
+    lifeStage: lifeStage || undefined,
+    healthTags: selectedHealthTags.length > 0 ? selectedHealthTags : undefined,
   })
 
   // Sort products client-side
@@ -141,18 +153,84 @@ export function Marketplace() {
     setCurrentPage(1)
   }
 
+  // Reset advanced filters
+  const handleResetAdvancedFilters = () => {
+    setTargetSpecies("")
+    setLifeStage("")
+    setSelectedHealthTags([])
+    setCurrentPage(1)
+  }
+
+  const hasAdvancedFilters = targetSpecies || lifeStage || selectedHealthTags.length > 0
+
   const pagination = products?.pagination
   const totalPages = pagination?.total_pages || 1
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-navy">Cửa hàng 🛍️</h1>
-          <p className="text-navy/60">Sản phẩm cho bé cưng</p>
+      {/* Banner - Full Width */}
+      <BannerCarousel location="SHOP" />
+
+      {/* AI Product Recommendations - Compact with Feature Buttons */}
+      <Card className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/10" />
+        <CardContent className="p-3">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-foreground text-sm">Gợi ý sản phẩm AI</h3>
+                <Badge variant="secondary" className="bg-primary/10 text-primary text-[10px] px-1.5 h-5">
+                  Sắp ra mắt
+                </Badge>
+              </div>
+              <p className="text-xs text-foreground/60">Gợi ý dựa trên hồ sơ thú cưng</p>
+            </div>
+          </div>
+
+          {/* Mock Feature Buttons behind overlay */}
+          <div className="grid grid-cols-4 gap-2 opacity-50">
+            {/* Food */}
+            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/50 border border-border/50">
+              <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                <Bone className="w-4 h-4 text-orange-600" />
+              </div>
+              <span className="text-[10px] font-medium text-center hidden sm:block">Thức ăn</span>
+            </div>
+            {/* Toys */}
+            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/50 border border-border/50">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                <Gamepad2 className="w-4 h-4 text-blue-600" />
+              </div>
+              <span className="text-[10px] font-medium text-center hidden sm:block">Đồ chơi</span>
+            </div>
+            {/* Accessories */}
+            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/50 border border-border/50">
+              <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
+                <Shirt className="w-4 h-4 text-pink-600" />
+              </div>
+              <span className="text-[10px] font-medium text-center hidden sm:block">Phụ kiện</span>
+            </div>
+            {/* Health */}
+            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/50 border border-border/50">
+              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                <HeartPulse className="w-4 h-4 text-green-600" />
+              </div>
+              <span className="text-[10px] font-medium text-center hidden sm:block">Sức khỏe</span>
+            </div>
+          </div>
+        </CardContent>
+
+        {/* Improved Overlay */}
+        <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] flex items-center justify-center">
+          <div className="flex items-center gap-2 px-4 py-2 bg-background/80 shadow-sm rounded-full border border-primary/10">
+            <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+            <span className="text-xs font-bold text-primary">Tính năng đang phát triển</span>
+          </div>
         </div>
-      </div>
+      </Card>
 
       {/* Added to Cart Toast */}
       {addedToCart && (
@@ -172,9 +250,6 @@ export function Marketplace() {
           </Card>
         </div>
       )}
-
-      {/* Banner Carousel */}
-      <BannerCarousel location="SHOP" />
 
       {/* Search & Filter */}
       <div className="space-y-3">
@@ -219,7 +294,90 @@ export function Marketplace() {
               ))}
             </SelectContent>
           </Select>
+
+          {/* Advanced Filters Toggle */}
+          <Button
+            variant={showAdvancedFilters || hasAdvancedFilters ? "default" : "outline"}
+            className="rounded-xl h-10"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            Lọc nâng cao
+            {hasAdvancedFilters && <Badge className="ml-2 bg-white text-primary h-5">!</Badge>}
+          </Button>
         </div>
+
+        {/* Advanced Filters Section */}
+        <Collapsible open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
+          <CollapsibleContent className="mt-3">
+            <Card className="p-4 bg-secondary/30">
+              <div className="space-y-4">
+                {/* Species & Life Stage Row */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-foreground/70 mb-1 block">Đối tượng</label>
+                    <Select value={targetSpecies} onValueChange={(val) => { setTargetSpecies(val); setCurrentPage(1) }}>
+                      <SelectTrigger className="rounded-lg h-9">
+                        <SelectValue placeholder="Loài" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">🐾 Tất cả</SelectItem>
+                        <SelectItem value="DOG">🐕 Chó</SelectItem>
+                        <SelectItem value="CAT">🐱 Mèo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-foreground/70 mb-1 block">Độ tuổi</label>
+                    <Select value={lifeStage} onValueChange={(val) => { setLifeStage(val); setCurrentPage(1) }}>
+                      <SelectTrigger className="rounded-lg h-9">
+                        <SelectValue placeholder="Độ tuổi" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Tất cả</SelectItem>
+                        <SelectItem value="KITTEN_PUPPY">Con nhỏ</SelectItem>
+                        <SelectItem value="ADULT">Trưởng thành</SelectItem>
+                        <SelectItem value="SENIOR">Lớn tuổi</SelectItem>
+                        <SelectItem value="ALL_STAGES">Mọi độ tuổi</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Health Tags */}
+                <div>
+                  <label className="text-xs font-medium text-foreground/70 mb-2 block">💚 Nhu cầu sức khỏe</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {HEALTH_TAGS.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant={selectedHealthTags.includes(tag) ? "default" : "outline"}
+                        className="cursor-pointer text-xs"
+                        onClick={() => {
+                          if (selectedHealthTags.includes(tag)) {
+                            setSelectedHealthTags(selectedHealthTags.filter(t => t !== tag))
+                          } else {
+                            setSelectedHealthTags([...selectedHealthTags, tag])
+                          }
+                          setCurrentPage(1)
+                        }}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Reset Button */}
+                {hasAdvancedFilters && (
+                  <Button variant="ghost" size="sm" onClick={handleResetAdvancedFilters} className="text-xs">
+                    Xóa bộ lọc
+                  </Button>
+                )}
+              </div>
+            </Card>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {/* Products Grid */}
@@ -358,6 +516,101 @@ export function Marketplace() {
                 <div>
                   <h4 className="font-bold mb-2">Mô tả</h4>
                   <p className="text-foreground/70">{selectedProduct.description}</p>
+                </div>
+              )}
+
+              {/* Specifications Display for FOOD products */}
+              {selectedProduct.specifications && (
+                <div className="space-y-3">
+                  {/* Health Tags as Badges */}
+                  {selectedProduct.specifications.healthTags?.length > 0 && (
+                    <div>
+                      <h4 className="font-bold mb-2 text-sm">💚 Lợi ích sức khỏe</h4>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedProduct.specifications.healthTags.map((tag: string) => (
+                          <Badge key={tag} variant="secondary" className="bg-green-100 text-green-700 text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Target Info Badges */}
+                  <div className="flex flex-wrap gap-2">
+                    {selectedProduct.specifications.targetSpecies && (
+                      <Badge variant="outline" className="text-xs">
+                        {selectedProduct.specifications.targetSpecies === "DOG" ? "🐕 Chó" : "🐱 Mèo"}
+                      </Badge>
+                    )}
+                    {selectedProduct.specifications.lifeStage && (
+                      <Badge variant="outline" className="text-xs">
+                        {selectedProduct.specifications.lifeStage === "KITTEN_PUPPY" ? "Con nhỏ" :
+                          selectedProduct.specifications.lifeStage === "ADULT" ? "Trưởng thành" :
+                            selectedProduct.specifications.lifeStage === "SENIOR" ? "Lớn tuổi" : "Mọi độ tuổi"}
+                      </Badge>
+                    )}
+                    {selectedProduct.specifications.breedSize && (
+                      <Badge variant="outline" className="text-xs">
+                        Kích cỡ: {selectedProduct.specifications.breedSize === "SMALL" ? "Nhỏ" :
+                          selectedProduct.specifications.breedSize === "MEDIUM" ? "Vừa" :
+                            selectedProduct.specifications.breedSize === "LARGE" ? "Lớn" :
+                              selectedProduct.specifications.breedSize === "GIANT" ? "Khổng lồ" : "Mọi kích cỡ"}
+                      </Badge>
+                    )}
+                    {selectedProduct.specifications.isSterilized && (
+                      <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+                        Dành cho thú triệt sản
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Nutrition Facts Table */}
+                  {selectedProduct.specifications.nutritionalInfo && (
+                    <div className="bg-secondary/30 rounded-xl p-3">
+                      <h4 className="font-bold mb-2 text-sm">🧪 Thông tin dinh dưỡng</h4>
+                      <div className="grid grid-cols-5 gap-2 text-center">
+                        {selectedProduct.specifications.nutritionalInfo.protein !== undefined && (
+                          <div className="bg-white rounded-lg p-2">
+                            <div className="text-lg font-bold text-primary">{selectedProduct.specifications.nutritionalInfo.protein}%</div>
+                            <div className="text-xs text-foreground/60">Protein</div>
+                          </div>
+                        )}
+                        {selectedProduct.specifications.nutritionalInfo.fat !== undefined && (
+                          <div className="bg-white rounded-lg p-2">
+                            <div className="text-lg font-bold text-orange-500">{selectedProduct.specifications.nutritionalInfo.fat}%</div>
+                            <div className="text-xs text-foreground/60">Fat</div>
+                          </div>
+                        )}
+                        {selectedProduct.specifications.nutritionalInfo.fiber !== undefined && (
+                          <div className="bg-white rounded-lg p-2">
+                            <div className="text-lg font-bold text-green-600">{selectedProduct.specifications.nutritionalInfo.fiber}%</div>
+                            <div className="text-xs text-foreground/60">Fiber</div>
+                          </div>
+                        )}
+                        {selectedProduct.specifications.nutritionalInfo.moisture !== undefined && (
+                          <div className="bg-white rounded-lg p-2">
+                            <div className="text-lg font-bold text-blue-500">{selectedProduct.specifications.nutritionalInfo.moisture}%</div>
+                            <div className="text-xs text-foreground/60">Moisture</div>
+                          </div>
+                        )}
+                        {selectedProduct.specifications.nutritionalInfo.calories !== undefined && (
+                          <div className="bg-white rounded-lg p-2">
+                            <div className="text-lg font-bold text-red-500">{selectedProduct.specifications.nutritionalInfo.calories}</div>
+                            <div className="text-xs text-foreground/60">kcal/kg</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Ingredients */}
+                  {selectedProduct.specifications.ingredients?.length > 0 && (
+                    <div>
+                      <h4 className="font-bold mb-1 text-sm">🥗 Thành phần</h4>
+                      <p className="text-sm text-foreground/70">{selectedProduct.specifications.ingredients.join(", ")}</p>
+                    </div>
+                  )}
                 </div>
               )}
 

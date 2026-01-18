@@ -1,14 +1,23 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
+import {
+  ProductCategory,
+  TargetSpecies,
+  LifeStage,
+  BreedSize,
+  HEALTH_TAGS,
+  IProductSpecifications,
+  INutritionalInfo,
+} from "@/lib/product-constants";
 
-// ==================== Enums ====================
-export enum ProductCategory {
-  FOOD = "FOOD",
-  TOY = "TOY",
-  MEDICINE = "MEDICINE",
-  ACCESSORY = "ACCESSORY",
-  HYGIENE = "HYGIENE",
-  OTHER = "OTHER",
-}
+// Re-export for backward compatibility with server-side imports
+export {
+  ProductCategory,
+  TargetSpecies,
+  LifeStage,
+  BreedSize,
+  HEALTH_TAGS,
+  type IProductSpecifications,
+};
 
 // ==================== Sub-Schemas ====================
 interface ICloudinaryImage {
@@ -28,6 +37,7 @@ export interface IProduct extends Document {
   stock_quantity: number;
   ai_tags: string[];
   is_active: boolean;
+  specifications?: IProductSpecifications;
   created_at: Date;
   updated_at: Date;
 }
@@ -37,6 +47,39 @@ const CloudinaryImageSchema = new Schema<ICloudinaryImage>(
   {
     url: { type: String, required: true },
     public_id: { type: String, required: true },
+  },
+  { _id: false }
+);
+
+const NutritionalInfoSchema = new Schema<INutritionalInfo>(
+  {
+    protein: { type: Number, min: 0, max: 100 },
+    fat: { type: Number, min: 0, max: 100 },
+    fiber: { type: Number, min: 0, max: 100 },
+    moisture: { type: Number, min: 0, max: 100 },
+    calories: { type: Number, min: 0 },
+  },
+  { _id: false }
+);
+
+const ProductSpecificationsSchema = new Schema<IProductSpecifications>(
+  {
+    targetSpecies: {
+      type: String,
+      enum: Object.values(TargetSpecies),
+    },
+    lifeStage: {
+      type: String,
+      enum: Object.values(LifeStage),
+    },
+    breedSize: {
+      type: String,
+      enum: Object.values(BreedSize),
+    },
+    healthTags: [{ type: String }],
+    nutritionalInfo: NutritionalInfoSchema,
+    ingredients: [{ type: String }],
+    isSterilized: { type: Boolean },
   },
   { _id: false }
 );
@@ -77,6 +120,7 @@ const ProductSchema = new Schema<IProduct>(
       type: Boolean,
       default: true,
     },
+    specifications: ProductSpecificationsSchema,
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
@@ -89,6 +133,12 @@ ProductSchema.index({ category: 1 });
 ProductSchema.index({ is_active: 1 });
 ProductSchema.index({ ai_tags: 1 });
 ProductSchema.index({ name: "text", description: "text" });
+// Indexes for specifications filtering
+ProductSchema.index({ "specifications.targetSpecies": 1 });
+ProductSchema.index({ "specifications.lifeStage": 1 });
+ProductSchema.index({ "specifications.breedSize": 1 });
+ProductSchema.index({ "specifications.healthTags": 1 });
+ProductSchema.index({ "specifications.isSterilized": 1 });
 
 // ==================== Model Export ====================
 const Product: Model<IProduct> =

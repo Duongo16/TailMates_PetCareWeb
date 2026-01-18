@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useManagerStats, useManagerMerchants, usePackages, useManagerBanners } from "@/lib/hooks"
+import { useAuth } from "@/lib/auth-context"
 import { managerAPI, packagesAPI, bannersAPI } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -9,9 +10,20 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { ProfileSettings } from "@/components/customer/profile-settings"
 import {
   Users,
   TrendingUp,
@@ -66,6 +78,7 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
   const { data: merchantsData, isLoading: merchantsLoading, refetch: refetchMerchants } = useManagerMerchants()
   const { data: packages, isLoading: packagesLoading, refetch: refetchPackages } = usePackages()
   const { data: bannersData, isLoading: bannersLoading, refetch: refetchBanners } = useManagerBanners()
+  const { user, refreshUser } = useAuth()
 
   const [showMerchantDetail, setShowMerchantDetail] = useState<any | null>(null)
   const [showAddPackage, setShowAddPackage] = useState(false)
@@ -100,6 +113,7 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
     isActive: true,
   })
   const [bannerFilter, setBannerFilter] = useState<string>("ALL")
+  const [deletingBannerId, setDeletingBannerId] = useState<string | null>(null)
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -731,7 +745,6 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
     }
 
     const handleDeleteBanner = async (bannerId: string) => {
-      if (!confirm("Bạn có chắc muốn xóa banner này?")) return
       try {
         const res = await bannersAPI.delete(bannerId)
         if (res.success) {
@@ -741,6 +754,8 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
         }
       } catch {
         alert("Lỗi xóa banner")
+      } finally {
+        setDeletingBannerId(null)
       }
     }
 
@@ -993,7 +1008,7 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
                         size="sm"
                         variant="destructive"
                         className="rounded-xl"
-                        onClick={() => handleDeleteBanner(banner._id)}
+                        onClick={() => setDeletingBannerId(banner._id)}
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
                         Xóa
@@ -1055,8 +1070,34 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
             )}
           </div>
         )}
+
+        {/* Delete Confirmation AlertDialog */}
+        <AlertDialog open={!!deletingBannerId} onOpenChange={(open) => !open && setDeletingBannerId(null)}>
+          <AlertDialogContent className="rounded-3xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Xác nhận xóa banner</AlertDialogTitle>
+              <AlertDialogDescription>
+                Bạn có chắc chắn muốn xóa banner này? Hành động này không thể hoàn tác.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-xl">Hủy</AlertDialogCancel>
+              <AlertDialogAction
+                className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => deletingBannerId && handleDeleteBanner(deletingBannerId)}
+              >
+                Xóa banner
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     )
+  }
+
+  // Settings Tab
+  if (activeTab === "settings") {
+    return <ProfileSettings user={user} onUpdate={refreshUser} />
   }
 
   return null

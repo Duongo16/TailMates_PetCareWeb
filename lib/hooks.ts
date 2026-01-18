@@ -57,10 +57,31 @@ export function useMedicalRecords(petId: string) {
 }
 
 // ==================== Products Hooks ====================
-export function useProducts(params?: { category?: string; search?: string; page?: number; limit?: number }) {
+export function useProducts(params?: {
+  category?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+  // Specifications filters
+  targetSpecies?: string;
+  lifeStage?: string;
+  breedSize?: string;
+  healthTags?: string[];
+  isSterilized?: boolean;
+}) {
   return useFetch<{ products: any[]; pagination: any }>(
     () => productsAPI.list(params),
-    [params?.category, params?.search, params?.page, params?.limit]
+    [
+      params?.category,
+      params?.search,
+      params?.page,
+      params?.limit,
+      params?.targetSpecies,
+      params?.lifeStage,
+      params?.breedSize,
+      params?.healthTags?.join(","),
+      params?.isSterilized,
+    ]
   )
 }
 
@@ -77,6 +98,68 @@ export function useOrders() {
 // ==================== Bookings Hooks ====================
 export function useBookings() {
   return useFetch<any[]>(() => bookingsAPI.list())
+}
+
+// ==================== Dashboard Parallel Fetch Hook ====================
+/**
+ * Fetches pets, bookings, and orders in PARALLEL using Promise.all
+ * This reduces dashboard load time from T1+T2+T3 to max(T1,T2,T3)
+ */
+export function useDashboardData() {
+  const [data, setData] = useState<{
+    pets: any[] | null
+    bookings: any[] | null
+    orders: any[] | null
+  }>({ pets: null, bookings: null, orders: null })
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const refetch = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      // Parallel fetch using Promise.all - key optimization!
+      const [petsRes, bookingsRes, ordersRes] = await Promise.all([
+        petsAPI.list(),
+        bookingsAPI.list(),
+        ordersAPI.list(),
+      ])
+
+      setData({
+        pets: petsRes.success ? petsRes.data || [] : [],
+        bookings: bookingsRes.success ? bookingsRes.data || [] : [],
+        orders: ordersRes.success ? ordersRes.data || [] : [],
+      })
+
+      // Collect any errors
+      const errors = [
+        !petsRes.success ? petsRes.message : null,
+        !bookingsRes.success ? bookingsRes.message : null,
+        !ordersRes.success ? ordersRes.message : null,
+      ].filter(Boolean)
+
+      if (errors.length > 0) {
+        setError(errors.join(", "))
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load dashboard data")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    refetch()
+  }, [refetch])
+
+  return {
+    pets: data.pets,
+    bookings: data.bookings,
+    orders: data.orders,
+    isLoading,
+    error,
+    refetch,
+  }
 }
 
 // ==================== Packages Hooks ====================

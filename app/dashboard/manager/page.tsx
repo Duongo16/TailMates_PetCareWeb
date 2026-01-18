@@ -3,9 +3,9 @@
 import { DashboardShell } from "@/components/dashboard/shell"
 import { ManagerDashboardContent } from "@/components/manager/dashboard-content"
 import { useState } from "react"
-import { Home, TrendingUp, Package, Store, ImageIcon } from "lucide-react"
+import { Home, TrendingUp, Package, Store, ImageIcon, Settings } from "lucide-react"
 
-type ManagerTab = "dashboard" | "revenue" | "merchants" | "packages" | "banners"
+type ManagerTab = "dashboard" | "revenue" | "merchants" | "packages" | "banners" | "settings"
 
 const tabs = [
   { id: "dashboard" as ManagerTab, label: "Tổng quan", icon: Home },
@@ -13,6 +13,7 @@ const tabs = [
   { id: "merchants" as ManagerTab, label: "Merchant", icon: Store },
   { id: "packages" as ManagerTab, label: "Gói đăng ký", icon: Package },
   { id: "banners" as ManagerTab, label: "Banner", icon: ImageIcon },
+  { id: "settings" as ManagerTab, label: "Cài đặt", icon: Settings },
 ]
 
 export default function ManagerDashboardPage() {

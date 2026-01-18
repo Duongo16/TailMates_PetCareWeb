@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { usePets, useBookings, useOrders } from "@/lib/hooks"
+import { useDashboardData } from "@/lib/hooks"
 import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -46,9 +46,8 @@ const healthQuestions = [
 
 export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboardProps) {
   const { user } = useAuth()
-  const { data: pets, isLoading: petsLoading } = usePets()
-  const { data: bookings } = useBookings()
-  const { data: orders } = useOrders()
+  // Parallel fetch - loads all data simultaneously for faster performance
+  const { pets, bookings, orders, isLoading: petsLoading } = useDashboardData()
 
   const [magicModalOpen, setMagicModalOpen] = useState(false)
   const [checklist, setChecklist] = useState<Record<string, boolean>>({})

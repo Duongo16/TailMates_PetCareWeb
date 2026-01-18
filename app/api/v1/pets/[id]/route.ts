@@ -80,6 +80,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       "weight_kg",
       "gender",
       "sterilized",
+      "color",
+      "microchip",
+      "allergies",
+      "notes",
       "image",
       "ai_analysis",
     ];

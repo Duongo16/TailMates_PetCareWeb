@@ -174,11 +174,33 @@ export const aiAPI = {
 
 // ==================== Products API (Public) ====================
 export const productsAPI = {
-  list: (params?: { category?: string; search?: string; page?: number }) => {
+  list: (params?: {
+    category?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+    // Specifications filters
+    targetSpecies?: string;
+    lifeStage?: string;
+    breedSize?: string;
+    healthTags?: string[];
+    isSterilized?: boolean;
+  }) => {
     const searchParams = new URLSearchParams();
     if (params?.category) searchParams.append("category", params.category);
     if (params?.search) searchParams.append("search", params.search);
     if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    // Specifications filters
+    if (params?.targetSpecies) searchParams.append("targetSpecies", params.targetSpecies);
+    if (params?.lifeStage) searchParams.append("lifeStage", params.lifeStage);
+    if (params?.breedSize) searchParams.append("breedSize", params.breedSize);
+    if (params?.healthTags && params.healthTags.length > 0) {
+      searchParams.append("healthTags", params.healthTags.join(","));
+    }
+    if (params?.isSterilized !== undefined) {
+      searchParams.append("isSterilized", params.isSterilized.toString());
+    }
     return fetchWithAuth<any>(`/products?${searchParams.toString()}`);
   },
 };
@@ -241,8 +263,10 @@ export const bookingsAPI = {
       body: JSON.stringify({ status }),
     }),
 
-  getBookedSlots: (serviceId: string, date: string) =>
-    fetchWithAuth<{ booked_slots: string[] }>(`/bookings/slots?service_id=${serviceId}&date=${encodeURIComponent(date)}`),
+  getBookedSlots: (serviceId: string, date: string, petId?: string) =>
+    fetchWithAuth<{ booked_slots: string[]; service_booked_slots: string[]; pet_booked_slots: string[] }>(
+      `/bookings/slots?service_id=${serviceId}&date=${encodeURIComponent(date)}${petId ? `&pet_id=${petId}` : ""}`
+    ),
 };
 
 // ==================== Packages API ====================

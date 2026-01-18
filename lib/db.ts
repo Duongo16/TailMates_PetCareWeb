@@ -12,6 +12,8 @@ if (!MONGODB_URI) {
  * Global is used to maintain a cached connection across hot reloads
  * in development. This prevents connections growing exponentially
  * during API Route usage.
+ * 
+ * Optimized for Vercel serverless with connection pooling.
  */
 interface MongooseCache {
   conn: typeof mongoose | null;
@@ -29,13 +31,24 @@ if (!global.mongoose) {
 }
 
 export async function connectDB(): Promise<typeof mongoose> {
+  // Return existing connection if available
   if (cached.conn) {
     return cached.conn;
   }
 
+  // Create new connection promise if not exists
   if (!cached.promise) {
+    // Vercel-optimized connection options
     const opts = {
       bufferCommands: false,
+      // Connection pooling for serverless
+      maxPoolSize: 10,
+      // Faster failover on connection issues
+      serverSelectionTimeoutMS: 5000,
+      // Close idle connections after 60s (important for serverless)
+      maxIdleTimeMS: 60000,
+      // Socket timeout for long queries
+      socketTimeoutMS: 45000,
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {

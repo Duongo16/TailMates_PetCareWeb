@@ -42,13 +42,62 @@ interface PetProfileProps {
 }
 
 const SPECIES_OPTIONS = [
-  { value: "Cat", label: "Mèo" },
   { value: "Dog", label: "Chó" },
+  { value: "Cat", label: "Mèo" },
   { value: "Rabbit", label: "Thỏ" },
   { value: "Bird", label: "Chim" },
   { value: "Hamster", label: "Hamster" },
   { value: "Other", label: "Khác" },
 ]
+
+const BREED_OPTIONS: Record<string, { value: string; label: string }[]> = {
+  Dog: [
+    { value: "Corgi", label: "Corgi" },
+    { value: "Golden Retriever", label: "Golden Retriever" },
+    { value: "Husky", label: "Husky" },
+    { value: "Poodle", label: "Poodle" },
+    { value: "Pomeranian", label: "Pomeranian" },
+    { value: "Shiba Inu", label: "Shiba Inu" },
+    { value: "Chihuahua", label: "Chihuahua" },
+    { value: "Bulldog", label: "Bulldog" },
+    { value: "Phốc sóc", label: "Phốc sóc" },
+    { value: "Chó ta", label: "Chó ta" },
+    { value: "Other", label: "Khác" },
+  ],
+  Cat: [
+    { value: "Mèo ta", label: "Mèo ta" },
+    { value: "Mèo Anh lông ngắn", label: "Mèo Anh lông ngắn" },
+    { value: "Mèo Ba Tư", label: "Mèo Ba Tư" },
+    { value: "Mèo Ragdoll", label: "Mèo Ragdoll" },
+    { value: "Mèo Maine Coon", label: "Mèo Maine Coon" },
+    { value: "Mèo Scottish Fold", label: "Mèo Scottish Fold" },
+    { value: "Mèo Munchkin", label: "Mèo Munchkin" },
+    { value: "Mèo Siamese", label: "Mèo Siamese" },
+    { value: "Other", label: "Khác" },
+  ],
+  Rabbit: [
+    { value: "Thỏ Hà Lan", label: "Thỏ Hà Lan" },
+    { value: "Thỏ sư tử", label: "Thỏ sư tử" },
+    { value: "Thỏ lop", label: "Thỏ lop" },
+    { value: "Other", label: "Khác" },
+  ],
+  Bird: [
+    { value: "Vẹt", label: "Vẹt" },
+    { value: "Chim sẻ", label: "Chim sẻ" },
+    { value: "Yến phụng", label: "Yến phụng" },
+    { value: "Chào mào", label: "Chào mào" },
+    { value: "Other", label: "Khác" },
+  ],
+  Hamster: [
+    { value: "Hamster Syria", label: "Hamster Syria" },
+    { value: "Hamster Robo", label: "Hamster Robo" },
+    { value: "Hamster Winter White", label: "Hamster Winter White" },
+    { value: "Other", label: "Khác" },
+  ],
+  Other: [
+    { value: "Other", label: "Khác" },
+  ],
+}
 
 const GENDER_OPTIONS = [
   { value: "MALE", label: "Đực" },
@@ -69,12 +118,16 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
   // Form state
   const [formData, setFormData] = useState({
     name: "",
-    species: "Cat",
+    species: "Dog",
     breed: "",
+    customBreed: "",
     age_months: "",
     weight_kg: "",
     gender: "MALE",
     sterilized: false,
+    color: "",
+    microchip: "",
+    notes: "",
     image_url: "",
     image_public_id: "",
   })
@@ -103,12 +156,16 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
   const resetForm = () => {
     setFormData({
       name: "",
-      species: "Cat",
+      species: "Dog",
       breed: "",
+      customBreed: "",
       age_months: "",
       weight_kg: "",
       gender: "MALE",
       sterilized: false,
+      color: "",
+      microchip: "",
+      notes: "",
       image_url: "",
       image_public_id: "",
     })
@@ -116,14 +173,22 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
 
   const openEditDialog = () => {
     if (selectedPet) {
+      // Check if current breed is in the predefined list
+      const speciesBreeds = BREED_OPTIONS[selectedPet.species] || BREED_OPTIONS.Other
+      const isCustomBreed = selectedPet.breed && !speciesBreeds.some(b => b.value === selectedPet.breed)
+
       setFormData({
         name: selectedPet.name || "",
-        species: selectedPet.species || "Cat",
-        breed: selectedPet.breed || "",
+        species: selectedPet.species || "Dog",
+        breed: isCustomBreed ? "Other" : (selectedPet.breed || ""),
+        customBreed: isCustomBreed ? (selectedPet.breed || "") : "",
         age_months: String(selectedPet.age_months || ""),
         weight_kg: String(selectedPet.weight_kg || ""),
         gender: selectedPet.gender || "MALE",
         sterilized: selectedPet.sterilized || false,
+        color: selectedPet.color || "",
+        microchip: selectedPet.microchip || "",
+        notes: selectedPet.notes || "",
         image_url: selectedPet.image?.url || "",
         image_public_id: selectedPet.image?.public_id || "",
       })
@@ -139,14 +204,18 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
 
     setIsSubmitting(true)
     try {
+      const finalBreed = formData.breed === "Other" ? formData.customBreed : formData.breed
       const petData: any = {
         name: formData.name,
         species: formData.species,
-        breed: formData.breed || undefined,
+        breed: finalBreed || undefined,
         age_months: parseInt(formData.age_months),
         weight_kg: formData.weight_kg ? parseFloat(formData.weight_kg) : undefined,
         gender: formData.gender,
         sterilized: formData.sterilized,
+        color: formData.color || undefined,
+        microchip: formData.microchip || undefined,
+        notes: formData.notes || undefined,
       }
 
       if (formData.image_url) {
@@ -180,14 +249,18 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
 
     setIsSubmitting(true)
     try {
+      const finalBreed = formData.breed === "Other" ? formData.customBreed : formData.breed
       const updateData: any = {
         name: formData.name,
         species: formData.species,
-        breed: formData.breed || undefined,
+        breed: finalBreed || undefined,
         age_months: parseInt(formData.age_months),
         weight_kg: formData.weight_kg ? parseFloat(formData.weight_kg) : undefined,
         gender: formData.gender,
         sterilized: formData.sterilized,
+        color: formData.color || undefined,
+        microchip: formData.microchip || undefined,
+        notes: formData.notes || undefined,
       }
 
       if (formData.image_url) {
@@ -263,104 +336,162 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
   }
 
   // Pet Form Component (shared between Add and Edit)
-  const PetForm = ({ isEdit = false }: { isEdit?: boolean }) => (
-    <div className="space-y-5">
-      {/* Image Upload - TOP */}
-      <ImageUpload
-        label="Hình ảnh thú cưng"
-        value={formData.image_url}
-        onChange={(url, publicId) => {
-          setFormData({
-            ...formData,
-            image_url: url,
-            image_public_id: publicId || formData.image_public_id
-          })
-        }}
-      />
+  const PetForm = ({ isEdit = false }: { isEdit?: boolean }) => {
+    const currentBreedOptions = BREED_OPTIONS[formData.species] || BREED_OPTIONS.Other
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
-          <Label>Tên thú cưng *</Label>
-          <Input
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="VD: Mochi"
-            className="rounded-xl mt-1"
+    return (
+      <div className="flex flex-col md:flex-row gap-6" >
+        {/* Left Column - Image Upload */}
+        <div className="md:w-1/3 flex-shrink-0">
+          <ImageUpload
+            label="Hình ảnh thú cưng"
+            value={formData.image_url}
+            onChange={(url, publicId) => {
+              setFormData({
+                ...formData,
+                image_url: url,
+                image_public_id: publicId || formData.image_public_id
+              })
+            }}
           />
         </div>
-        <div>
-          <Label>Loài *</Label>
-          <Select value={formData.species} onValueChange={(val) => setFormData({ ...formData, species: val })}>
-            <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {SPECIES_OPTIONS.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label>Giống</Label>
-          <Input
-            value={formData.breed}
-            onChange={(e) => setFormData({ ...formData, breed: e.target.value })}
-            placeholder="VD: Corgi"
-            className="rounded-xl mt-1"
-          />
-        </div>
-        <div>
-          <Label>Tuổi (tháng) *</Label>
-          <Input
-            type="number"
-            value={formData.age_months}
-            onChange={(e) => setFormData({ ...formData, age_months: e.target.value })}
-            placeholder="12"
-            className="rounded-xl mt-1"
-          />
-        </div>
-        <div>
-          <Label>Cân nặng (kg)</Label>
-          <Input
-            type="number"
-            step="0.1"
-            value={formData.weight_kg}
-            onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
-            placeholder="4.5"
-            className="rounded-xl mt-1"
-          />
-        </div>
-        <div>
-          <Label>Giới tính *</Label>
-          <Select value={formData.gender} onValueChange={(val) => setFormData({ ...formData, gender: val })}>
-            <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {GENDER_OPTIONS.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="col-span-2 flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="sterilized"
-            checked={formData.sterilized}
-            onChange={(e) => setFormData({ ...formData, sterilized: e.target.checked })}
-            className="w-4 h-4 rounded"
-          />
-          <Label htmlFor="sterilized" className="cursor-pointer">Đã triệt sản</Label>
+
+        {/* Right Column - Form Fields */}
+        <div className="flex-1 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <Label className="text-sm">Tên thú cưng *</Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="VD: Mochi"
+                className="rounded-xl mt-1 h-9" style={{ width: '100%' }}
+              />
+            </div>
+            <div>
+              <Label className="text-sm">Loài *</Label>
+              <Select
+                value={formData.species}
+                onValueChange={(val) => setFormData({ ...formData, species: val, breed: "", customBreed: "" })}
+              >
+                <SelectTrigger className="rounded-xl mt-1 h-9" style={{ width: '100%' }}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {SPECIES_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-sm">Giống</Label>
+              <Select
+                value={formData.breed}
+                onValueChange={(val) => setFormData({ ...formData, breed: val, customBreed: val === "Other" ? formData.customBreed : "" })}
+              >
+                <SelectTrigger className="rounded-xl mt-1 h-9" style={{ width: '100%' }}><SelectValue placeholder="Chọn giống" /></SelectTrigger>
+                <SelectContent>
+                  {currentBreedOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Custom breed input when 'Other' is selected */}
+            {formData.breed === "Other" && (
+              <div className="col-span-2">
+                <Label className="text-sm">Nhập tên giống</Label>
+                <Input
+                  value={formData.customBreed}
+                  onChange={(e) => setFormData({ ...formData, customBreed: e.target.value })}
+                  placeholder="VD: Chó lai Phú Quốc"
+                  className="rounded-xl mt-1 h-9" style={{ width: '100%' }}
+                />
+              </div>
+            )}
+
+            <div>
+              <Label className="text-sm">Tuổi (tháng) *</Label>
+              <Input
+                type="number"
+                value={formData.age_months}
+                onChange={(e) => setFormData({ ...formData, age_months: e.target.value })}
+                placeholder="12"
+                className="rounded-xl mt-1 h-9"
+              />
+            </div>
+            <div>
+              <Label className="text-sm">Cân nặng (kg)</Label>
+              <Input
+                type="number"
+                step="0.1"
+                value={formData.weight_kg}
+                onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
+                placeholder="4.5"
+                className="rounded-xl mt-1 h-9"
+              />
+            </div>
+            <div>
+              <Label className="text-sm">Giới tính *</Label>
+              <Select value={formData.gender} onValueChange={(val) => setFormData({ ...formData, gender: val })}>
+                <SelectTrigger className="rounded-xl mt-1 h-9" style={{ width: '100%' }}><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {GENDER_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-sm">Màu lông</Label>
+              <Input
+                value={formData.color}
+                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                placeholder="VD: Trắng, vàng"
+                className="rounded-xl mt-1 h-9"
+              />
+            </div>
+            <div>
+              <Label className="text-sm">Số Microchip</Label>
+              <Input
+                value={formData.microchip}
+                onChange={(e) => setFormData({ ...formData, microchip: e.target.value })}
+                placeholder="VD: 900123456789012"
+                className="rounded-xl mt-1 h-9"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="sterilized"
+                checked={formData.sterilized}
+                onChange={(e) => setFormData({ ...formData, sterilized: e.target.checked })}
+                className="w-4 h-4 rounded"
+              />
+              <Label htmlFor="sterilized" className="cursor-pointer text-sm">Đã triệt sản</Label>
+            </div>
+            <div className="col-span-2">
+              <Label className="text-sm">Ghi chú</Label>
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="VD: Sợ tiếng ồn, thích chơi với bóng..."
+                className="rounded-xl mt-1 min-h-[60px] resize-none" style={{ width: '100%' }}
+              />
+            </div>
+          </div>
+
+          <Button
+            className="w-full rounded-xl"
+            onClick={isEdit ? handleUpdatePet : handleAddPet}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? <Loader2 className="animate-spin" /> : isEdit ? "Cập nhật" : "Thêm thú cưng"}
+          </Button>
         </div>
       </div>
-
-      <Button
-        className="w-full rounded-xl"
-        onClick={isEdit ? handleUpdatePet : handleAddPet}
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? <Loader2 className="animate-spin" /> : isEdit ? "Cập nhật" : "Thêm thú cưng"}
-      </Button>
-    </div>
-  )
+    )
+  }
 
   if (isLoading) {
     return (
@@ -381,7 +512,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
               Thêm thú cưng ngay
             </Button>
           </DialogTrigger>
-          <DialogContent className="rounded-3xl max-w-md">
+          <DialogContent className="rounded-3xl ">
             <DialogHeader>
               <DialogTitle>Thêm thú cưng mới</DialogTitle>
             </DialogHeader>
@@ -402,7 +533,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
 
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="rounded-3xl max-w-md">
+        <DialogContent className="rounded-3xl max-w-4xl">
           <DialogHeader>
             <DialogTitle>Chỉnh sửa {selectedPet?.name}</DialogTitle>
           </DialogHeader>
@@ -517,7 +648,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
                     </Button>
                     <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
                       <DialogTrigger asChild>
-                        <Button 
+                        <Button
                           variant="outline"
                           size="icon"
                           className="rounded-xl bg-card/80 hover:bg-card flex-shrink-0"
@@ -527,17 +658,17 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
                           <Plus className="w-4 h-4" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="rounded-3xl max-w-md">
+                      <DialogContent className="rounded-3xl" style={{ width: '50%' }}>
                         <DialogHeader>
                           <DialogTitle>Thêm thú cưng mới</DialogTitle>
                         </DialogHeader>
                         <PetForm />
                       </DialogContent>
                     </Dialog>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="icon"
-                      className="rounded-xl bg-card/80 hover:bg-card flex-shrink-0" 
+                      className="rounded-xl bg-card/80 hover:bg-card flex-shrink-0"
                       onClick={openEditDialog}
                       title="Chỉnh sửa"
                     >

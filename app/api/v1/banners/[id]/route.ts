@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { revalidateTag } from "next/cache";
 import connectDB from "@/lib/db";
 import { Banner, UserRole } from "@/models";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
@@ -46,6 +47,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
         await banner.save();
 
+        // Invalidate banners cache so users see updated banner immediately
+        revalidateTag("banners", "page");
+
         return apiResponse.success({ banner }, "Banner updated successfully");
     } catch (error) {
         console.error("Update banner error:", error);
@@ -80,6 +84,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         }
 
         await Banner.findByIdAndDelete(id);
+
+        // Invalidate banners cache so users no longer see deleted banner
+        revalidateTag("banners", "page");
 
         return apiResponse.success(null, "Banner deleted successfully");
     } catch (error) {

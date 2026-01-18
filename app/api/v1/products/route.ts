@@ -3,7 +3,7 @@ import connectDB from "@/lib/db";
 import Product from "@/models/Product";
 import { apiResponse } from "@/lib/auth";
 
-// GET /api/v1/products - Public product listing
+// GET /api/v1/products - Public product listing with advanced filters
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
@@ -14,6 +14,13 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
 
+    // Advanced filters for specifications
+    const targetSpecies = searchParams.get("targetSpecies");
+    const lifeStage = searchParams.get("lifeStage");
+    const breedSize = searchParams.get("breedSize");
+    const healthTags = searchParams.get("healthTags"); // comma-separated
+    const isSterilized = searchParams.get("isSterilized");
+
     const query: Record<string, unknown> = { is_active: true };
 
     if (category) {
@@ -23,6 +30,28 @@ export async function GET(request: NextRequest) {
     if (search) {
       // Partial match - contains text (case-insensitive)
       query.name = { $regex: search, $options: "i" };
+    }
+
+    // Specifications filters
+    if (targetSpecies) {
+      query["specifications.targetSpecies"] = targetSpecies.toUpperCase();
+    }
+
+    if (lifeStage) {
+      query["specifications.lifeStage"] = lifeStage.toUpperCase();
+    }
+
+    if (breedSize) {
+      query["specifications.breedSize"] = breedSize.toUpperCase();
+    }
+
+    if (healthTags) {
+      const tags = healthTags.split(",").map(tag => tag.trim());
+      query["specifications.healthTags"] = { $all: tags };
+    }
+
+    if (isSterilized !== null && isSterilized !== undefined && isSterilized !== "") {
+      query["specifications.isSterilized"] = isSterilized === "true";
     }
 
     const total = await Product.countDocuments(query);
@@ -46,3 +75,4 @@ export async function GET(request: NextRequest) {
     return apiResponse.serverError("Failed to get products");
   }
 }
+
