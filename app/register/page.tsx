@@ -149,7 +149,7 @@ export default function RegisterPage() {
                   >
                     <PawPrint className="w-7 h-7 text-white" />
                   </motion.div>
-                  <Image src="/images/avarta.png" alt="TailMates" width={120} height={40} className="h-10 w-auto" />
+                  <Image src="/images/logo-ngang.png" alt="TailMates" width={120} height={40} className="sm:h-16 h-8 w-auto" />
                 </div>
               </FadeIn>
               <FadeIn delay={0.2}>
