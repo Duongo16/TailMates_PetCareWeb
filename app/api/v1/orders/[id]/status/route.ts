@@ -5,6 +5,12 @@ import User from "@/models/User";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 import { UserRole } from "@/models/User";
 import mongoose from "mongoose";
+import {
+  createNotification,
+  NotificationType,
+  getOrderStatusTitle,
+  getOrderStatusMessage,
+} from "@/lib/notification-service";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -62,9 +68,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       });
     }
 
+    // Create notification for customer
+    await createNotification({
+      userId: order.customer_id.toString(),
+      type: NotificationType.ORDER_UPDATE,
+      title: getOrderStatusTitle(status),
+      message: getOrderStatusMessage(order._id.toString(), status),
+      redirectUrl: "/dashboard?tab=orders",
+      referenceId: order._id.toString(),
+    });
+
     return apiResponse.success(order, "Order status updated successfully");
   } catch (error) {
     console.error("Update order status error:", error);
     return apiResponse.serverError("Failed to update order status");
   }
 }
+

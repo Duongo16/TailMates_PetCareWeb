@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -21,6 +21,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isLocalhost, setIsLocalhost] = useState(false)
+
+  useEffect(() => {
+    setIsLocalhost(window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -149,40 +154,42 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              <div className="mt-8">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border" />
+              {isLocalhost && (
+                <div className="mt-8">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-4 bg-card text-foreground/50">Tài khoản demo</span>
+                    </div>
                   </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-card text-foreground/50">Tài khoản demo</span>
-                  </div>
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  {demoAccounts.map((account) => {
-                    const Icon = account.icon
-                    return (
-                      <button
-                        key={account.email}
-                        type="button"
-                        onClick={() => {
-                          setEmail(account.email)
-                          setPassword("123456")
-                        }}
-                        className="p-3 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-secondary hover:border-primary/30 transition-all text-left group"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                            <Icon className="w-4 h-4 text-primary" />
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    {demoAccounts.map((account) => {
+                      const Icon = account.icon
+                      return (
+                        <button
+                          key={account.email}
+                          type="button"
+                          onClick={() => {
+                            setEmail(account.email)
+                            setPassword("123456")
+                          }}
+                          className="p-3 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-secondary hover:border-primary/30 transition-all text-left group"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                              <Icon className="w-4 h-4 text-primary" />
+                            </div>
+                            <span>{account.label}</span>
                           </div>
-                          <span>{account.label}</span>
-                        </div>
-                      </button>
-                    )
-                  })}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <p className="text-xs text-foreground/40 mt-3 text-center">Mật khẩu: 123456</p>
                 </div>
-                <p className="text-xs text-foreground/40 mt-3 text-center">Mật khẩu: 123456</p>
-              </div>
+              )}
 
               <p className="mt-8 text-center text-foreground/60">
                 Chưa có tài khoản?{" "}

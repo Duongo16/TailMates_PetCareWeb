@@ -127,22 +127,67 @@ export const petsAPI = {
       method: "DELETE",
     }),
 
-  getMedicalRecords: (petId: string) =>
-    fetchWithAuth<any[]>(`/pets/${petId}/medical-records`),
+  getMedicalRecords: (petId: string, status?: string) =>
+    fetchWithAuth<any[]>(`/pets/${petId}/medical-records${status ? `?status=${status}` : ""}`),
+
+  getMedicalRecordsPending: (petId: string) =>
+    fetchWithAuth<any[]>(`/pets/${petId}/medical-records?status=PENDING`),
+
+  getMedicalRecord: (petId: string, recordId: string) =>
+    fetchWithAuth<any>(`/pets/${petId}/medical-records/${recordId}`),
 
   addMedicalRecord: (
     petId: string,
     data: {
+      record_type: string;
       visit_date: string;
       diagnosis: string;
       treatment?: string;
+      condition?: string;
       notes?: string;
       vaccines?: string[];
+      medications?: Array<{
+        name: string;
+        dosage: string;
+        frequency: string;
+        duration_days?: number;
+        notes?: string;
+      }>;
+      follow_up_date?: string;
+      follow_up_notes?: string;
+      attachments?: Array<{ url: string; public_id: string }>;
+      booking_id?: string;
     }
   ) =>
     fetchWithAuth(`/pets/${petId}/medical-records`, {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+
+  updateMedicalRecord: (
+    petId: string,
+    recordId: string,
+    data: Record<string, unknown>
+  ) =>
+    fetchWithAuth(`/pets/${petId}/medical-records/${recordId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+
+  confirmMedicalRecord: (
+    petId: string,
+    recordId: string,
+    action: "confirm" | "reject" | "request_revision",
+    customer_feedback?: string
+  ) =>
+    fetchWithAuth(`/pets/${petId}/medical-records/${recordId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ action, customer_feedback }),
+    }),
+
+  deleteMedicalRecord: (petId: string, recordId: string) =>
+    fetchWithAuth(`/pets/${petId}/medical-records/${recordId}`, {
+      method: "DELETE",
     }),
 
   getQRCode: (petId: string) => fetchWithAuth(`/pets/${petId}/qr-code`),
@@ -348,6 +393,17 @@ export const merchantAPI = {
     fetchWithAuth(`/merchant/services/${id}`, {
       method: "DELETE",
     }),
+
+  // Medical Records
+  getMedicalRecords: (params?: { status?: string; pet_id?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.append("status", params.status);
+    if (params?.pet_id) searchParams.append("pet_id", params.pet_id);
+    return fetchWithAuth<any>(`/merchant/medical-records?${searchParams.toString()}`);
+  },
+
+  getCompletedBookings: () =>
+    fetchWithAuth<any>("/merchant/medical-records?type=bookings"),
 };
 
 // ==================== Manager API ====================
@@ -423,3 +479,25 @@ export const bannersAPI = {
       method: "DELETE",
     }),
 };
+
+// ==================== Notifications API ====================
+export const notificationsAPI = {
+  list: (params?: { limit?: number; page?: number; unread?: boolean }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.unread) searchParams.append("unread", "true");
+    return fetchWithAuth<any>(`/notifications?${searchParams.toString()}`);
+  },
+
+  markAsRead: (id: string) =>
+    fetchWithAuth(`/notifications/${id}`, {
+      method: "PATCH",
+    }),
+
+  markAllAsRead: () =>
+    fetchWithAuth("/notifications/read-all", {
+      method: "POST",
+    }),
+};
+

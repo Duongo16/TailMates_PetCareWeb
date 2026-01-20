@@ -22,6 +22,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [role, setRole] = useState<UserRole>("customer")
+  const [shopName, setShopName] = useState("")
+  const [address, setAddress] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -40,9 +42,20 @@ export default function RegisterPage() {
       return
     }
 
+    if (role === "merchant" && (!shopName.trim() || !address.trim())) {
+      setError("Vui lòng nhập tên cửa hàng và địa chỉ")
+      return
+    }
+
     setIsLoading(true)
 
-    const result = await register(name, email, password, role)
+    const result = await register(
+      name,
+      email,
+      password,
+      role,
+      role === "merchant" ? { shop_name: shopName.trim(), address: address.trim() } : undefined
+    )
 
     if (result.success) {
       router.push(`/dashboard/${role}`)
@@ -195,6 +208,41 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
+
+                {/* Merchant-specific fields */}
+                {role === "merchant" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="shopName" className="text-foreground font-medium">
+                        Tên cửa hàng <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="shopName"
+                        type="text"
+                        placeholder="VD: PetCare Shop"
+                        value={shopName}
+                        onChange={(e) => setShopName(e.target.value)}
+                        className="rounded-xl h-12 bg-background border-border focus:border-primary"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="address" className="text-foreground font-medium">
+                        Địa chỉ cửa hàng <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="address"
+                        type="text"
+                        placeholder="VD: 123 Đường ABC, Quận 1, TP.HCM"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        className="rounded-xl h-12 bg-background border-border focus:border-primary"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-foreground font-medium">

@@ -1,7 +1,8 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { authAPI } from "@/lib/api"
+import { AuthPromptModal } from "@/components/ui/auth-prompt-modal"
 
 export type UserRole = "customer" | "merchant" | "manager" | "admin"
 
@@ -30,6 +31,9 @@ export interface User {
 interface AuthContextType {
   user: User | null
   isLoading: boolean
+  showAuthPrompt: boolean
+  setShowAuthPrompt: (show: boolean) => void
+  requireAuth: (callback?: () => void) => boolean
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   register: (
     name: string,
@@ -72,6 +76,17 @@ function mapApiUserToUser(apiUser: any): User {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false)
+
+  // Function to check auth and show prompt if needed
+  const requireAuth = useCallback((callback?: () => void): boolean => {
+    if (user) {
+      callback?.()
+      return true
+    }
+    setShowAuthPrompt(true)
+    return false
+  }, [user])
 
   // Check for existing session on mount
   useEffect(() => {
@@ -189,8 +204,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{
+      user,
+      isLoading,
+      showAuthPrompt,
+      setShowAuthPrompt,
+      requireAuth,
+      login,
+      register,
+      logout,
+      refreshUser
+    }}>
       {children}
+      <AuthPromptModal
+        open={showAuthPrompt}
+        onOpenChange={setShowAuthPrompt}
+      />
     </AuthContext.Provider>
   )
 }

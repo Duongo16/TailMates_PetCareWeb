@@ -180,6 +180,21 @@ export function useMerchantServices() {
   return useFetch<any[]>(() => merchantAPI.listServices())
 }
 
+export function useMerchantMedicalRecords(params?: { status?: string; pet_id?: string }) {
+  return useFetch<any>(
+    () => merchantAPI.getMedicalRecords(params),
+    [params?.status, params?.pet_id]
+  )
+}
+
+export function useMerchantCompletedBookings() {
+  return useFetch<any>(() => merchantAPI.getCompletedBookings())
+}
+
+export function usePendingMedicalRecords(petId: string) {
+  return useFetch<any[]>(() => petsAPI.getMedicalRecordsPending(petId), [petId])
+}
+
 // ==================== AI Hooks ====================
 export function useAIRecommendProducts(petId: string | null) {
   const [data, setData] = useState<any>(null)
@@ -277,3 +292,81 @@ export function useManagerBanners() {
     []
   )
 }
+
+// ==================== Notification Types & Hook ====================
+export interface Notification {
+  _id: string
+  id?: string  // Alias for compatibility
+  type: 'ORDER_UPDATE' | 'BOOKING_UPDATE' | 'MEDICAL_RECORD' | 'SUBSCRIPTION' | 'SYSTEM'
+  title: string
+  message: string
+  is_read: boolean
+  isRead?: boolean  // Alias for compatibility
+  redirect_url?: string
+  redirectTab?: string  // Alias for compatibility
+  reference_id?: string
+  created_at: string
+  createdAt?: Date  // Alias for compatibility
+}
+
+export function useNotifications() {
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const { notificationsAPI } = await import("@/lib/api")
+      const response = await notificationsAPI.list({ limit: 20 })
+      if (response.success && response.data) {
+        // Transform API response to match frontend interface
+        const transformed = response.data.notifications.map((n: any) => ({
+          ...n,
+          id: n._id,
+          isRead: n.is_read,
+          createdAt: new Date(n.created_at),
+          redirectTab: n.redirect_url?.includes('tab=')
+            ? n.redirect_url.split('tab=')[1]?.split('&')[0]
+            : undefined,
+        }))
+        setNotifications(transformed)
+        setUnreadCount(response.data.unreadCount || 0)
+      }
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchNotifications()
+  }, [fetchNotifications])
+
+  const markAsRead = useCallback(async (id: string) => {
+    try {
+      const { notificationsAPI } = await import("@/lib/api")
+      await notificationsAPI.markAsRead(id)
+      setNotifications(prev =>
+        prev.map(n => n._id === id || n.id === id ? { ...n, is_read: true, isRead: true } : n)
+      )
+      setUnreadCount(prev => Math.max(0, prev - 1))
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error)
+    }
+  }, [])
+
+  const markAllAsRead = useCallback(async () => {
+    try {
+      const { notificationsAPI } = await import("@/lib/api")
+      await notificationsAPI.markAllAsRead()
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true, isRead: true })))
+      setUnreadCount(0)
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error)
+    }
+  }, [])
+
+  return { notifications, unreadCount, markAsRead, markAllAsRead, isLoading, refetch: fetchNotifications }
+}
+

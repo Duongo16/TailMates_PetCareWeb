@@ -103,7 +103,7 @@ export function BannerCarousel({ location, className = "" }: BannerCarouselProps
         <div className={`relative w-full overflow-hidden rounded-2xl ${className}`}>
             {/* Main Carousel Container */}
             <div
-                className="relative aspect-[4/1] sm:aspect-[5/1] lg:aspect-[6/1] overflow-hidden rounded-2xl"
+                className="relative aspect-[4/1] sm:aspect-[5/1] lg:aspect-[4/1] overflow-hidden rounded-2xl"
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}

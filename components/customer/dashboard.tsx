@@ -24,6 +24,7 @@ import {
   Star,
   Loader2,
   Zap,
+  FileText,
 } from "lucide-react"
 import Image from "next/image"
 import { aiAPI } from "@/lib/api"
@@ -349,8 +350,8 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                     count: orders?.filter((o: any) => ["PENDING", "PROCESSING"].includes(o.status)).length || 0
                   },
                   {
-                    icon: Bell,
-                    label: "Nhắc nhở",
+                    icon: FileText,
+                    label: "Sổ y tế",
                     color: "bg-green-600",
                     tab: "medical",
                     count: (bookings?.filter((b: any) => ["PENDING", "CONFIRMED"].includes(b.status)).length || 0) + (orders?.filter((o: any) => ["PENDING", "PROCESSING"].includes(o.status)).length || 0)
@@ -412,9 +413,8 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
         </div>
       </div>
 
-      {/* Magic Modal */}
       <Dialog open={magicModalOpen} onOpenChange={resetModal}>
-        <DialogContent className="max-w-md rounded-3xl">
+        <DialogContent className="w-[95vw] max-w-md rounded-3xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center">

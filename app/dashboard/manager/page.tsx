@@ -2,8 +2,10 @@
 
 import { DashboardShell } from "@/components/dashboard/shell"
 import { ManagerDashboardContent } from "@/components/manager/dashboard-content"
-import { useState } from "react"
-import { Home, TrendingUp, Package, Store, ImageIcon, Settings } from "lucide-react"
+import { useState, useEffect } from "react"
+import { useAuth } from "@/lib/auth-context"
+import { useRouter } from "next/navigation"
+import { Home, TrendingUp, Package, Store, ImageIcon, Settings, Loader2 } from "lucide-react"
 
 type ManagerTab = "dashboard" | "revenue" | "merchants" | "packages" | "banners" | "settings"
 
@@ -17,7 +19,30 @@ const tabs = [
 ]
 
 export default function ManagerDashboardPage() {
+  const { user, isLoading } = useAuth()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<ManagerTab>("dashboard")
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/login")
+    }
+  }, [user, isLoading, router])
+
+  // Show loading while checking auth
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-secondary">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  // Don't render dashboard if not logged in (will redirect)
+  if (!user) {
+    return null
+  }
 
   return (
     <DashboardShell tabs={tabs} activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as ManagerTab)}>
@@ -25,3 +50,4 @@ export default function ManagerDashboardPage() {
     </DashboardShell>
   )
 }
+

@@ -1550,5 +1550,18 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
     )
   }
 
+  // Settings Tab
+  if (activeTab === "settings") {
+    // Dynamically import to avoid circular dependencies
+    const { MerchantSettings } = require("./merchant-settings")
+    return <MerchantSettings />
+  }
+
+  // Medical Records Tab
+  if (activeTab === "medical-records") {
+    const { MerchantMedicalRecords } = require("./merchant-medical-records")
+    return <MerchantMedicalRecords />
+  }
+
   return null
 }

@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   title: "TailMates - Bạn Đồng Hành Thú Cưng",
   description: "Ứng dụng chăm sóc thú cưng thông minh dành cho Gen Z",
   generator: "v0.app",
+  icons: {
+    icon: "/images/logo.png",
+    shortcut: "/images/logo.png",
+    apple: "/images/logo.png",
+  },
 }
 
 export const viewport: Viewport = {

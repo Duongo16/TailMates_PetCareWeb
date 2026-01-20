@@ -6,12 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { ImageUpload } from "@/components/ui/image-upload"
-import { Progress } from "@/components/ui/progress"
-import { User, Mail, Phone, Lock, Save, Loader2, MapPin, AlertCircle, Globe, Bell } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { User, Mail, Phone, Lock, Save, Loader2, MapPin, AlertCircle, Bell } from "lucide-react"
 
 interface ProfileSettingsProps {
   user: any
@@ -29,15 +27,11 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
       city: "",
       postal_code: "",
     },
-    preferences: {
-      language: "vi",
-      notifications: {
-        email: true,
-        sms: false,
-        push: true,
-      },
-      newsletter: false,
-    },
+  })
+
+  const [preferences, setPreferences] = useState({
+    notifications: { email: true, sms: false, push: true },
+    newsletter: false,
   })
 
   const [passwordData, setPasswordData] = useState({
@@ -48,12 +42,13 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   useEffect(() => {
     if (user) {
       setProfileData({
-        full_name: user.full_name || "",
+        full_name: user.full_name || user.name || "",
         phone_number: user.phone_number || "",
         avatar_url: user.avatar?.url || user.avatar || "",
         avatar_public_id: user.avatar?.public_id || "",
@@ -62,33 +57,17 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
           city: user.address?.city || "",
           postal_code: user.address?.postal_code || "",
         },
-        preferences: {
-          language: user.preferences?.language || "vi",
-          notifications: {
-            email: user.preferences?.notifications?.email ?? true,
-            sms: user.preferences?.notifications?.sms ?? false,
-            push: user.preferences?.notifications?.push ?? true,
-          },
-          newsletter: user.preferences?.newsletter ?? false,
+      })
+      setPreferences({
+        notifications: {
+          email: user.preferences?.notifications?.email ?? true,
+          sms: user.preferences?.notifications?.sms ?? false,
+          push: user.preferences?.notifications?.push ?? true,
         },
+        newsletter: user.preferences?.newsletter ?? false,
       })
     }
   }, [user])
-
-  // Calculate profile completion
-  const calculateCompletion = () => {
-    const fields = [
-      profileData.full_name,
-      profileData.phone_number,
-      profileData.avatar_url,
-      profileData.address.street,
-      profileData.address.city,
-    ]
-    const filled = fields.filter(f => f && f.toString().trim()).length
-    return Math.round((filled / fields.length) * 100)
-  }
-
-  const completion = calculateCompletion()
 
   const handleUpdateProfile = async () => {
     setIsSubmitting(true)
@@ -98,7 +77,7 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
         full_name: profileData.full_name,
         phone_number: profileData.phone_number,
         address: profileData.address,
-        preferences: profileData.preferences,
+        preferences,
       }
 
       if (profileData.avatar_url) {
@@ -115,7 +94,7 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
       } else {
         setMessage({ type: "error", text: res.message || "Cập nhật thất bại" })
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "Lỗi khi cập nhật" })
     } finally {
       setIsSubmitting(false)
@@ -142,10 +121,11 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
       if (res.success) {
         setMessage({ type: "success", text: "Đổi mật khẩu thành công!" })
         setPasswordData({ current_password: "", new_password: "", confirm_password: "" })
+        setShowPasswordDialog(false)
       } else {
         setMessage({ type: "error", text: res.message || "Đổi mật khẩu thất bại" })
       }
-    } catch (error) {
+    } catch {
       setMessage({ type: "error", text: "Lỗi khi đổi mật khẩu" })
     } finally {
       setIsChangingPassword(false)
@@ -153,314 +133,244 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
   }
 
   return (
-    <div className="space-y-4 lg:space-y-6">
-      <div>
-        <h1 className="text-xl lg:text-2xl font-bold text-foreground">Cài đặt tài khoản</h1>
-        <p className="text-foreground/60 text-sm lg:text-base">Quản lý thông tin cá nhân của bạn</p>
-      </div>
-
-      {/* Profile Completion */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5">
-        <CardContent className="p-4 lg:p-5">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="font-semibold text-foreground">Độ hoàn thiện hồ sơ</p>
-              <p className="text-sm text-foreground/60">Hoàn thiện hồ sơ để trải nghiệm tốt hơn</p>
+    <div className="h-[calc(100vh-120px)] flex flex-col gap-4 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-shrink-0">
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Cài đặt tài khoản</h1>
+          <p className="text-foreground/60 text-sm">Quản lý thông tin cá nhân của bạn</p>
+        </div>
+        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="rounded-xl bg-transparent">
+              <Lock className="w-4 h-4 mr-1" /> Đổi mật khẩu
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="rounded-2xl max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Đổi mật khẩu</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div>
+                <Label className="text-xs">Mật khẩu hiện tại</Label>
+                <Input
+                  type="password"
+                  value={passwordData.current_password}
+                  onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
+                  placeholder="••••••••"
+                  className="rounded-lg h-9 mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Mật khẩu mới</Label>
+                <Input
+                  type="password"
+                  value={passwordData.new_password}
+                  onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
+                  placeholder="••••••••"
+                  className="rounded-lg h-9 mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Xác nhận mật khẩu</Label>
+                <Input
+                  type="password"
+                  value={passwordData.confirm_password}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
+                  placeholder="••••••••"
+                  className="rounded-lg h-9 mt-1"
+                />
+              </div>
+              <Button
+                className="w-full rounded-xl"
+                onClick={handleChangePassword}
+                disabled={isChangingPassword || !passwordData.current_password || !passwordData.new_password}
+              >
+                {isChangingPassword ? <Loader2 className="animate-spin" /> : "Xác nhận đổi mật khẩu"}
+              </Button>
             </div>
-            <div className="text-2xl font-bold text-primary">{completion}%</div>
-          </div>
-          <Progress value={completion} className="h-2" />
-        </CardContent>
-      </Card>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {/* Message Alert */}
       {message && (
         <div
-          className={`p-4 rounded-xl flex items-center gap-3 ${message.type === "success"
+          className={`p-3 rounded-xl flex items-center gap-2 text-sm flex-shrink-0 ${message.type === "success"
             ? "bg-green-100 text-green-700 border border-green-200"
             : "bg-red-100 text-red-700 border border-red-200"
             }`}
         >
-          <AlertCircle className="w-5 h-5" />
+          <AlertCircle className="w-4 h-4" />
           {message.text}
         </div>
       )}
 
-      {/* Profile Info Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="w-5 h-5 text-primary" />
-            Thông tin cá nhân
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 lg:space-y-6 p-4 lg:p-6">
-          {/* Avatar Upload */}
-          <ImageUpload
-            label="Ảnh đại diện"
-            value={profileData.avatar_url}
-            onChange={(url, publicId) => {
-              setProfileData({
-                ...profileData,
-                avatar_url: url,
-                avatar_public_id: publicId || profileData.avatar_public_id
-              })
-            }}
-          />
-
-          <Separator />
-
-          {/* Name */}
-          <div>
-            <Label className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              Họ và tên
-            </Label>
-            <Input
-              value={profileData.full_name}
-              onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-              placeholder="Nguyễn Văn A"
-              className="rounded-xl mt-1"
+      {/* Main Content - 2 Column Grid */}
+      <div className="grid lg:grid-cols-2 gap-4 flex-1 min-h-0 overflow-auto">
+        {/* Left Column - Personal Info */}
+        <Card className="h-fit">
+          <CardHeader className="py-3 px-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <User className="w-4 h-4 text-primary" />
+              Thông tin cá nhân
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 px-4 pb-4">
+            {/* Avatar compact */}
+            <ImageUpload
+              label="Ảnh đại diện"
+              value={profileData.avatar_url}
+              onChange={(url, publicId) => {
+                setProfileData({
+                  ...profileData,
+                  avatar_url: url,
+                  avatar_public_id: publicId || profileData.avatar_public_id
+                })
+              }}
             />
-          </div>
 
-          {/* Email (read-only) */}
-          <div>
-            <Label className="flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              Email
-            </Label>
-            <Input value={user?.email || ""} disabled className="rounded-xl mt-1 bg-secondary/50" />
-            <p className="text-xs text-foreground/50 mt-1">Email không thể thay đổi</p>
-          </div>
-
-          {/* Phone */}
-          <div>
-            <Label className="flex items-center gap-2">
-              <Phone className="w-4 h-4" />
-              Số điện thoại
-            </Label>
-            <Input
-              value={profileData.phone_number}
-              onChange={(e) => setProfileData({ ...profileData, phone_number: e.target.value })}
-              placeholder="0901234567"
-              className="rounded-xl mt-1"
-            />
-          </div>
-
-          <Separator />
-
-          {/* Address Section */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-foreground flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-primary" />
-              Địa chỉ
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>Địa chỉ</Label>
+                <Label className="text-xs flex items-center gap-1">
+                  <User className="w-3 h-3" /> Họ và tên
+                </Label>
                 <Input
-                  value={profileData.address.street}
+                  value={profileData.full_name}
+                  onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
+                  placeholder="Nguyễn Văn A"
+                  className="rounded-lg h-9 mt-1"
+                />
+              </div>
+              <div>
+                <Label className="text-xs flex items-center gap-1">
+                  <Phone className="w-3 h-3" /> Số điện thoại
+                </Label>
+                <Input
+                  value={profileData.phone_number}
+                  onChange={(e) => setProfileData({ ...profileData, phone_number: e.target.value })}
+                  placeholder="0901234567"
+                  className="rounded-lg h-9 mt-1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-xs flex items-center gap-1">
+                <Mail className="w-3 h-3" /> Email
+              </Label>
+              <Input value={user?.email || ""} disabled className="rounded-lg h-9 mt-1 bg-secondary/50 text-foreground/50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Right Column - Address & Notifications */}
+        <Card className="h-fit">
+          <CardHeader className="py-3 px-4">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <MapPin className="w-4 h-4 text-primary" />
+              Địa chỉ & Thông báo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 px-4 pb-4">
+            <div>
+              <Label className="text-xs">Địa chỉ</Label>
+              <Input
+                value={profileData.address.street}
+                onChange={(e) => setProfileData({
+                  ...profileData,
+                  address: { ...profileData.address, street: e.target.value }
+                })}
+                placeholder="Số nhà, tên đường"
+                className="rounded-lg h-9 mt-1"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Thành phố</Label>
+                <Input
+                  value={profileData.address.city}
                   onChange={(e) => setProfileData({
                     ...profileData,
-                    address: { ...profileData.address, street: e.target.value }
+                    address: { ...profileData.address, city: e.target.value }
                   })}
-                  placeholder="Số nhà, tên đường"
-                  className="rounded-xl mt-1"
+                  placeholder="Hà Nội"
+                  className="rounded-lg h-9 mt-1"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Thành phố</Label>
-                  <Input
-                    value={profileData.address.city}
-                    onChange={(e) => setProfileData({
-                      ...profileData,
-                      address: { ...profileData.address, city: e.target.value }
+              <div>
+                <Label className="text-xs">Mã bưu điện</Label>
+                <Input
+                  value={profileData.address.postal_code}
+                  onChange={(e) => setProfileData({
+                    ...profileData,
+                    address: { ...profileData.address, postal_code: e.target.value }
+                  })}
+                  placeholder="100000"
+                  className="rounded-lg h-9 mt-1"
+                />
+              </div>
+            </div>
+
+            {/* Notifications inline */}
+            <div className="pt-2 border-t space-y-2">
+              <h4 className="font-medium text-xs flex items-center gap-1 text-foreground/70">
+                <Bell className="w-3 h-3" /> Thông báo
+              </h4>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 text-xs">
+                  <Switch
+                    checked={preferences.notifications.email}
+                    onCheckedChange={(checked) => setPreferences({
+                      ...preferences,
+                      notifications: { ...preferences.notifications, email: checked }
                     })}
-                    placeholder="Hà Nội"
-                    className="rounded-xl mt-1"
+                    className="scale-75"
                   />
-                </div>
-                <div>
-                  <Label>Mã bưu điện</Label>
-                  <Input
-                    value={profileData.address.postal_code}
-                    onChange={(e) => setProfileData({
-                      ...profileData,
-                      address: { ...profileData.address, postal_code: e.target.value }
+                  Email
+                </label>
+                <label className="flex items-center gap-2 text-xs">
+                  <Switch
+                    checked={preferences.notifications.sms}
+                    onCheckedChange={(checked) => setPreferences({
+                      ...preferences,
+                      notifications: { ...preferences.notifications, sms: checked }
                     })}
-                    placeholder="100000"
-                    className="rounded-xl mt-1"
+                    className="scale-75"
                   />
-                </div>
+                  SMS
+                </label>
+                <label className="flex items-center gap-2 text-xs">
+                  <Switch
+                    checked={preferences.notifications.push}
+                    onCheckedChange={(checked) => setPreferences({
+                      ...preferences,
+                      notifications: { ...preferences.notifications, push: checked }
+                    })}
+                    className="scale-75"
+                  />
+                  Push
+                </label>
               </div>
-            </div>
-          </div>
-
-          <Button className="w-full rounded-xl" onClick={handleUpdateProfile} disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Lưu thay đổi</>}
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Preferences Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Globe className="w-5 h-5 text-primary" />
-            Tùy chọn
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 lg:space-y-5 p-4 lg:p-6">
-          {/* Language */}
-          <div>
-            <Label>Ngôn ngữ</Label>
-            <Select
-              value={profileData.preferences.language}
-              onValueChange={(val) => setProfileData({
-                ...profileData,
-                preferences: { ...profileData.preferences, language: val }
-              })}
-            >
-              <SelectTrigger className="rounded-xl mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="vi">Tiếng Việt</SelectItem>
-                <SelectItem value="en">English</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator />
-
-          {/* Notifications */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-foreground flex items-center gap-2">
-              <Bell className="w-4 h-4" />
-              Thông báo
-            </h4>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">Email</p>
-                  <p className="text-xs text-foreground/60">Nhận thông báo qua email</p>
-                </div>
+              <label className="flex items-center gap-2 text-xs pt-1">
                 <Switch
-                  checked={profileData.preferences.notifications.email}
-                  onCheckedChange={(checked) => setProfileData({
-                    ...profileData,
-                    preferences: {
-                      ...profileData.preferences,
-                      notifications: { ...profileData.preferences.notifications, email: checked }
-                    }
-                  })}
+                  checked={preferences.newsletter}
+                  onCheckedChange={(checked) => setPreferences({ ...preferences, newsletter: checked })}
+                  className="scale-75"
                 />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">SMS</p>
-                  <p className="text-xs text-foreground/60">Nhận thông báo qua tin nhắn</p>
-                </div>
-                <Switch
-                  checked={profileData.preferences.notifications.sms}
-                  onCheckedChange={(checked) => setProfileData({
-                    ...profileData,
-                    preferences: {
-                      ...profileData.preferences,
-                      notifications: { ...profileData.preferences.notifications, sms: checked }
-                    }
-                  })}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">Push</p>
-                  <p className="text-xs text-foreground/60">Nhận thông báo đẩy</p>
-                </div>
-                <Switch
-                  checked={profileData.preferences.notifications.push}
-                  onCheckedChange={(checked) => setProfileData({
-                    ...profileData,
-                    preferences: {
-                      ...profileData.preferences,
-                      notifications: { ...profileData.preferences.notifications, push: checked }
-                    }
-                  })}
-                />
-              </div>
+                Nhận tin tức & ưu đãi
+              </label>
             </div>
-          </div>
+          </CardContent>
+        </Card>
+      </div>
 
-          <Separator />
-
-          {/* Newsletter */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Newsletter</p>
-              <p className="text-sm text-foreground/60">Nhận tin tức và ưu đãi</p>
-            </div>
-            <Switch
-              checked={profileData.preferences.newsletter}
-              onCheckedChange={(checked) => setProfileData({
-                ...profileData,
-                preferences: { ...profileData.preferences, newsletter: checked }
-              })}
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Change Password Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lock className="w-5 h-5 text-primary" />
-            Đổi mật khẩu
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 p-4 lg:p-6">
-          <div>
-            <Label>Mật khẩu hiện tại</Label>
-            <Input
-              type="password"
-              value={passwordData.current_password}
-              onChange={(e) => setPasswordData({ ...passwordData, current_password: e.target.value })}
-              placeholder="••••••••"
-              className="rounded-xl mt-1"
-            />
-          </div>
-          <div>
-            <Label>Mật khẩu mới</Label>
-            <Input
-              type="password"
-              value={passwordData.new_password}
-              onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-              placeholder="••••••••"
-              className="rounded-xl mt-1"
-            />
-          </div>
-          <div>
-            <Label>Xác nhận mật khẩu mới</Label>
-            <Input
-              type="password"
-              value={passwordData.confirm_password}
-              onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-              placeholder="••••••••"
-              className="rounded-xl mt-1"
-            />
-          </div>
-          <Button
-            variant="outline"
-            className="w-full rounded-xl bg-transparent"
-            onClick={handleChangePassword}
-            disabled={isChangingPassword || !passwordData.current_password || !passwordData.new_password}
-          >
-            {isChangingPassword ? <Loader2 className="animate-spin" /> : "Đổi mật khẩu"}
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Fixed Save Button */}
+      <div className="flex-shrink-0 pt-2">
+        <Button className="w-full rounded-xl h-11" onClick={handleUpdateProfile} disabled={isSubmitting}>
+          {isSubmitting ? <Loader2 className="animate-spin" /> : <><Save className="w-4 h-4 mr-2" /> Lưu tất cả thay đổi</>}
+        </Button>
+      </div>
     </div>
   )
 }

@@ -201,12 +201,6 @@ export function Homepage() {
                 Cách hoạt động
               </a>
               <a
-                href="#pricing"
-                className="text-foreground/70 hover:text-primary transition-colors font-medium text-sm"
-              >
-                Bảng giá
-              </a>
-              <a
                 href="#testimonials"
                 className="text-foreground/70 hover:text-primary transition-colors font-medium text-sm"
               >
@@ -241,9 +235,6 @@ export function Homepage() {
               </a>
               <a href="#how-it-works" className="block text-foreground/70 hover:text-foreground font-medium">
                 Cách hoạt động
-              </a>
-              <a href="#pricing" className="block text-foreground/70 hover:text-foreground font-medium">
-                Bảng giá
               </a>
               <a href="#testimonials" className="block text-foreground/70 hover:text-foreground font-medium">
                 Đánh giá
@@ -312,7 +303,7 @@ export function Homepage() {
                 <Link href="/register">
                   <Button
                     size="lg"
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-2xl px-8 py-6 text-lg w-full sm:w-auto shadow-xl shadow-primary/25 hover:shadow-2xl hover:shadow-primary/30 hover:scale-105 transition-all group"
+                    className="bg-primary hover:bg-white text-primary-foreground hover:text-foreground font-bold rounded-2xl px-8 py-6 text-lg w-full sm:w-auto shadow-xl shadow-primary/25 hover:shadow-2xl hover:scale-105 transition-all group border-2 border-primary"
                   >
                     Bắt đầu miễn phí
                     <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -321,7 +312,7 @@ export function Homepage() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="font-bold rounded-2xl px-8 py-6 text-lg bg-card/50 backdrop-blur-sm w-full sm:w-auto hover:bg-card group"
+                  className="font-bold rounded-2xl px-8 py-6 text-lg w-full sm:w-auto border-2 border-foreground bg-transparent text-foreground hover:bg-primary hover:border-primary hover:text-white group transition-all"
                 >
                   <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                   Xem demo
@@ -385,20 +376,6 @@ export function Homepage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Trusted By Section */}
-      <section className="py-12 bg-card border-y border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-foreground/50 text-sm mb-6">Được tin tưởng bởi các thương hiệu lớn</p>
-          <div className="flex flex-wrap justify-center items-center gap-8 lg:gap-16 opacity-60">
-            {["PetMart", "VetCare", "PawShop", "AnimalClinic", "PetFood Pro"].map((brand) => (
-              <div key={brand} className="text-xl font-bold text-foreground/40">
-                {brand}
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -479,63 +456,6 @@ export function Homepage() {
                   <p className="text-foreground/60 text-sm">{step.description}</p>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section - Enhanced */}
-      <section id="pricing" className="py-20 lg:py-32 bg-gradient-to-b from-secondary/50 to-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-700 font-medium text-sm mb-4">
-              <CheckCircle2 className="w-4 h-4" />
-              Miễn phí trọn đời
-            </div>
-            <h2 className="text-3xl lg:text-5xl font-bold text-foreground mb-4">Chọn gói phù hợp với bạn</h2>
-            <p className="text-lg text-foreground/70">Bắt đầu miễn phí, nâng cấp khi cần thêm tính năng</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {finalPricingPlans.map((plan, index) => (
-              <Card
-                key={index}
-                className={`relative overflow-hidden transition-all duration-500 hover:-translate-y-2 ${plan.popular
-                  ? "border-2 border-primary shadow-2xl shadow-primary/20 scale-105 z-10"
-                  : "border-border hover:shadow-xl"
-                  }`}
-              >
-                {plan.popular && (
-                  <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-primary to-primary/70 text-primary-foreground py-2 text-center text-sm font-bold">
-                    Phổ biến nhất
-                  </div>
-                )}
-                <CardContent className={`p-6 ${plan.popular ? "pt-12" : ""}`}>
-                  <h3 className="text-xl font-bold text-foreground mb-2">{plan.name}</h3>
-                  <div className="flex items-baseline gap-1 mb-6">
-                    <span className="text-4xl font-bold text-foreground">{plan.price}</span>
-                    <span className="text-foreground/60">{plan.period}</span>
-                  </div>
-                  <ul className="space-y-3 mb-8">
-                    {plan.features.map((feature: string, i: number) => (
-                      <li key={i} className="flex items-center gap-3 text-foreground/80">
-                        <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link href="/register">
-                    <Button
-                      className={`w-full rounded-xl font-bold py-6 ${plan.popular
-                        ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/25"
-                        : "bg-foreground/10 hover:bg-foreground/20 text-foreground"
-                        }`}
-                    >
-                      {plan.cta}
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
             ))}
           </div>
         </div>
@@ -632,13 +552,6 @@ export function Homepage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             <div>
-              <Image
-                src="/images/avarta.png"
-                alt="TailMates"
-                width={120}
-                height={40}
-                className="h-10 w-auto brightness-0 invert mb-4"
-              />
               <p className="text-white/60 text-sm">Nền tảng chăm sóc thú cưng toàn diện với công nghệ AI tiên tiến.</p>
             </div>
             <div>
@@ -647,11 +560,6 @@ export function Homepage() {
                 <li>
                   <a href="#" className="hover:text-white transition-colors">
                     Tính năng
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Bảng giá
                   </a>
                 </li>
                 <li>
@@ -705,14 +613,11 @@ export function Homepage() {
           <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-white/50">© 2026 TailMates. Made with love for pets.</p>
             <div className="flex items-center gap-4">
-              <a href="#" className="text-white/50 hover:text-white transition-colors">
+              <a href="https://www.facebook.com/profile.php?id=61581718212794" className="text-white/50 hover:text-white transition-colors">
                 Facebook
               </a>
               <a href="#" className="text-white/50 hover:text-white transition-colors">
                 Instagram
-              </a>
-              <a href="#" className="text-white/50 hover:text-white transition-colors">
-                TikTok
               </a>
             </div>
           </div>

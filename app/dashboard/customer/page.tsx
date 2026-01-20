@@ -9,9 +9,11 @@ import { ServiceBooking } from "@/components/customer/service-booking"
 import { Subscription } from "@/components/customer/subscription"
 import { ProfileSettings } from "@/components/customer/profile-settings"
 import { OrderTracking } from "@/components/customer/order-tracking"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
+import { useRouter } from "next/navigation"
 import { Home, PawPrint, FileText, ShoppingBag, Calendar } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 type CustomerTab = "dashboard" | "pets" | "medical" | "marketplace" | "booking" | "orders" | "subscription" | "settings"
 
@@ -24,10 +26,32 @@ const tabs = [
 ]
 
 export default function CustomerDashboardPage() {
-  const { user, refreshUser } = useAuth()
+  const { user, isLoading, refreshUser } = useAuth()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<CustomerTab>("dashboard")
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null)
   const [shouldOpenAddPet, setShouldOpenAddPet] = useState(false)
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push("/login")
+    }
+  }, [user, isLoading, router])
+
+  // Show loading while checking auth
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-secondary">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  // Don't render dashboard if not logged in (will redirect)
+  if (!user) {
+    return null
+  }
 
   const handlePetSelect = (petId: string) => {
     setSelectedPetId(petId)

@@ -5,6 +5,12 @@ import Product from "@/models/Product";
 import User from "@/models/User";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 import { UserRole } from "@/models/User";
+import {
+  createNotification,
+  NotificationType,
+  getNewOrderTitle,
+  getNewOrderMessage,
+} from "@/lib/notification-service";
 
 // GET /api/v1/orders - Get orders (customer sees their orders, merchant sees orders for their products)
 export async function GET(request: NextRequest) {
@@ -102,6 +108,11 @@ export async function POST(request: NextRequest) {
       totalAmount += product.price * item.quantity;
     }
 
+    // Ensure we have a merchant
+    if (!merchantId) {
+      return apiResponse.error("Could not determine merchant for order");
+    }
+
     // Create order
     const order = await Order.create({
       customer_id: user!._id,
@@ -121,9 +132,24 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Notify merchant about new order
+    await createNotification({
+      userId: merchantId,
+      type: NotificationType.ORDER_UPDATE,
+      title: getNewOrderTitle(),
+      message: getNewOrderMessage(
+        order._id.toString(),
+        user!.full_name || "Khách hàng",
+        totalAmount
+      ),
+      redirectUrl: "/dashboard?tab=orders",
+      referenceId: order._id.toString(),
+    });
+
     return apiResponse.created(order, "Order placed successfully");
   } catch (error) {
     console.error("Create order error:", error);
     return apiResponse.serverError("Failed to create order");
   }
 }
+

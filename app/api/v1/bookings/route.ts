@@ -6,6 +6,12 @@ import Pet from "@/models/Pet";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 import { UserRole } from "@/models/User";
 import mongoose from "mongoose";
+import {
+  createNotification,
+  NotificationType,
+  getNewBookingTitle,
+  getNewBookingMessage,
+} from "@/lib/notification-service";
 
 // GET /api/v1/bookings - Get bookings
 export async function GET(request: NextRequest) {
@@ -113,9 +119,25 @@ export async function POST(request: NextRequest) {
       .populate("service_id", "name price_min price_max duration_minutes")
       .populate("pet_id", "name species breed");
 
+    // Notify merchant about new booking
+    await createNotification({
+      userId: service.merchant_id.toString(),
+      type: NotificationType.BOOKING_UPDATE,
+      title: getNewBookingTitle(),
+      message: getNewBookingMessage(
+        booking._id.toString(),
+        user!.full_name || "Khách hàng",
+        service.name,
+        bookingDate
+      ),
+      redirectUrl: "/dashboard?tab=bookings",
+      referenceId: booking._id.toString(),
+    });
+
     return apiResponse.created(populatedBooking, "Booking created successfully");
   } catch (error) {
     console.error("Create booking error:", error);
     return apiResponse.serverError("Failed to create booking");
   }
 }
+

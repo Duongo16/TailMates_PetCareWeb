@@ -15,11 +15,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Menu, X, LogOut, User, Bell, ShoppingCart, Package, Crown, Settings, type LucideIcon } from "lucide-react"
+import { Menu, X, LogOut, User, Bell, ShoppingCart, Package, Crown, Settings, Calendar, FileText, Info, CheckCheck, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { useCart } from "@/lib/cart-context"
 import { CartModal } from "@/components/ui/cart-modal"
+import { useNotifications, type Notification } from "@/lib/hooks"
 
 interface Tab {
   id: string
@@ -37,9 +38,52 @@ interface DashboardShellProps {
 export function DashboardShell({ children, tabs, activeTab, onTabChange }: DashboardShellProps) {
   const { user, logout } = useAuth()
   const { totalItems } = useCart()
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
+
+  // Notification helper functions
+  const getNotificationIcon = (type: Notification['type']) => {
+    switch (type) {
+      case 'ORDER_UPDATE': return <Package className="w-4 h-4 text-white" />
+      case 'BOOKING_UPDATE': return <Calendar className="w-4 h-4 text-white" />
+      case 'MEDICAL_RECORD': return <FileText className="w-4 h-4 text-white" />
+      case 'SUBSCRIPTION': return <Crown className="w-4 h-4 text-white" />
+      default: return <Info className="w-4 h-4 text-white" />
+    }
+  }
+
+  const getNotificationColor = (type: Notification['type']) => {
+    switch (type) {
+      case 'ORDER_UPDATE': return 'bg-green-500'
+      case 'BOOKING_UPDATE': return 'bg-blue-500'
+      case 'MEDICAL_RECORD': return 'bg-purple-500'
+      case 'SUBSCRIPTION': return 'bg-amber-500'
+      default: return 'bg-gray-500'
+    }
+  }
+
+  const formatTimeAgo = (date?: Date) => {
+    if (!date) return ''
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Vừa xong'
+    if (diffMins < 60) return `${diffMins} phút trước`
+    if (diffHours < 24) return `${diffHours} giờ trước`
+    return `${diffDays} ngày trước`
+  }
+
+  const handleNotificationClick = (notification: Notification) => {
+    markAsRead(notification._id || notification.id!)
+    if (notification.redirectTab) {
+      onTabChange(notification.redirectTab)
+    }
+  }
 
   const handleLogout = () => {
     logout()
@@ -119,12 +163,70 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
             </Button>
 
             {/* Notifications */}
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
-                3
-              </span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-screen sm:w-80 max-h-[420px] overflow-y-auto">
+                {/* Header */}
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+                  <span className="font-semibold text-foreground">Thông báo</span>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); markAllAsRead() }}
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                    >
+                      <CheckCheck className="w-3 h-3" /> Đọc tất cả
+                    </button>
+                  )}
+                </div>
+
+                {/* Notification List */}
+                {notifications.length === 0 ? (
+                  <div className="p-6 text-center text-foreground/60">
+                    <Bell className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">Không có thông báo</p>
+                  </div>
+                ) : (
+                  notifications.map((notification) => (
+                    <DropdownMenuItem
+                      key={notification.id}
+                      onClick={() => handleNotificationClick(notification)}
+                      className={cn(
+                        "flex items-start gap-3 p-3 cursor-pointer focus:bg-accent focus:text-accent-foreground group",
+                        !notification.isRead && "bg-primary/5"
+                      )}
+                    >
+                      {/* Icon */}
+                      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", getNotificationColor(notification.type))}>
+                        {getNotificationIcon(notification.type)}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <p className={cn("text-sm truncate font-medium", !notification.isRead ? "text-foreground font-bold" : "text-foreground group-focus:text-accent-foreground")}>
+                          {notification.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate group-focus:text-accent-foreground/90">{notification.message}</p>
+                        <p className="text-xs text-muted-foreground/80 mt-1 group-focus:text-accent-foreground/70">{formatTimeAgo(notification.createdAt)}</p>
+                      </div>
+
+                      {/* Unread Indicator */}
+                      {!notification.isRead && (
+                        <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2" />
+                      )}
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

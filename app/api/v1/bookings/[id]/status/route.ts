@@ -4,6 +4,12 @@ import Booking from "@/models/Booking";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 import { UserRole } from "@/models/User";
 import mongoose from "mongoose";
+import {
+  createNotification,
+  NotificationType,
+  getBookingStatusTitle,
+  getBookingStatusMessage,
+} from "@/lib/notification-service";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -31,7 +37,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return apiResponse.error("Invalid booking ID");
     }
 
-    const booking = await Booking.findById(id);
+    const booking = await Booking.findById(id).populate("service_id", "name");
 
     if (!booking) {
       return apiResponse.notFound("Booking not found");
@@ -66,8 +72,22 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return apiResponse.error("You can only cancel your booking");
     }
 
+    const previousStatus = booking.status;
     booking.status = status;
     await booking.save();
+
+    // Create notification for customer (only when merchant/admin updates)
+    if (!isCustomer && previousStatus !== status) {
+      const serviceName = (booking.service_id as any)?.name;
+      await createNotification({
+        userId: booking.customer_id.toString(),
+        type: NotificationType.BOOKING_UPDATE,
+        title: getBookingStatusTitle(status),
+        message: getBookingStatusMessage(booking._id.toString(), status, serviceName),
+        redirectUrl: "/dashboard?tab=bookings",
+        referenceId: booking._id.toString(),
+      });
+    }
 
     return apiResponse.success(booking, "Booking status updated successfully");
   } catch (error) {
@@ -75,3 +95,4 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     return apiResponse.serverError("Failed to update booking status");
   }
 }
+

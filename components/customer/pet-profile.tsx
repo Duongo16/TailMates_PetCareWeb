@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { usePets } from "@/lib/hooks"
 import { petsAPI } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -335,163 +335,164 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
     return `${ageMonths} tháng`
   }
 
-  // Pet Form Component (shared between Add and Edit)
-  const PetForm = ({ isEdit = false }: { isEdit?: boolean }) => {
-    const currentBreedOptions = BREED_OPTIONS[formData.species] || BREED_OPTIONS.Other
+  // Memoize breed options to prevent unnecessary recalculation
+  const currentBreedOptions = useMemo(() =>
+    BREED_OPTIONS[formData.species] || BREED_OPTIONS.Other
+    , [formData.species])
 
-    return (
-      <div className="flex flex-col md:flex-row gap-6" >
-        {/* Left Column - Image Upload */}
-        <div className="md:w-1/3 flex-shrink-0">
-          <ImageUpload
-            label="Hình ảnh thú cưng"
-            value={formData.image_url}
-            onChange={(url, publicId) => {
-              setFormData({
-                ...formData,
-                image_url: url,
-                image_public_id: publicId || formData.image_public_id
-              })
-            }}
-          />
-        </div>
+  // Render pet form fields inline (not as nested component to prevent focus loss)
+  const renderPetFormFields = (isEdit: boolean) => (
+    <div className="flex flex-col md:flex-row gap-6">
+      {/* Left Column - Image Upload */}
+      <div className="md:w-1/3 flex-shrink-0">
+        <ImageUpload
+          label="Hình ảnh thú cưng"
+          value={formData.image_url}
+          onChange={(url, publicId) => {
+            setFormData(prev => ({
+              ...prev,
+              image_url: url,
+              image_public_id: publicId || prev.image_public_id
+            }))
+          }}
+        />
+      </div>
 
-        {/* Right Column - Form Fields */}
-        <div className="flex-1 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <Label className="text-sm">Tên thú cưng *</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="VD: Mochi"
-                className="rounded-xl mt-1 h-9" style={{ width: '100%' }}
-              />
-            </div>
-            <div>
-              <Label className="text-sm">Loài *</Label>
-              <Select
-                value={formData.species}
-                onValueChange={(val) => setFormData({ ...formData, species: val, breed: "", customBreed: "" })}
-              >
-                <SelectTrigger className="rounded-xl mt-1 h-9" style={{ width: '100%' }}><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {SPECIES_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-sm">Giống</Label>
-              <Select
-                value={formData.breed}
-                onValueChange={(val) => setFormData({ ...formData, breed: val, customBreed: val === "Other" ? formData.customBreed : "" })}
-              >
-                <SelectTrigger className="rounded-xl mt-1 h-9" style={{ width: '100%' }}><SelectValue placeholder="Chọn giống" /></SelectTrigger>
-                <SelectContent>
-                  {currentBreedOptions.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Custom breed input when 'Other' is selected */}
-            {formData.breed === "Other" && (
-              <div className="col-span-2">
-                <Label className="text-sm">Nhập tên giống</Label>
-                <Input
-                  value={formData.customBreed}
-                  onChange={(e) => setFormData({ ...formData, customBreed: e.target.value })}
-                  placeholder="VD: Chó lai Phú Quốc"
-                  className="rounded-xl mt-1 h-9" style={{ width: '100%' }}
-                />
-              </div>
-            )}
-
-            <div>
-              <Label className="text-sm">Tuổi (tháng) *</Label>
-              <Input
-                type="number"
-                value={formData.age_months}
-                onChange={(e) => setFormData({ ...formData, age_months: e.target.value })}
-                placeholder="12"
-                className="rounded-xl mt-1 h-9"
-              />
-            </div>
-            <div>
-              <Label className="text-sm">Cân nặng (kg)</Label>
-              <Input
-                type="number"
-                step="0.1"
-                value={formData.weight_kg}
-                onChange={(e) => setFormData({ ...formData, weight_kg: e.target.value })}
-                placeholder="4.5"
-                className="rounded-xl mt-1 h-9"
-              />
-            </div>
-            <div>
-              <Label className="text-sm">Giới tính *</Label>
-              <Select value={formData.gender} onValueChange={(val) => setFormData({ ...formData, gender: val })}>
-                <SelectTrigger className="rounded-xl mt-1 h-9" style={{ width: '100%' }}><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {GENDER_OPTIONS.map(opt => (
-                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-sm">Màu lông</Label>
-              <Input
-                value={formData.color}
-                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                placeholder="VD: Trắng, vàng"
-                className="rounded-xl mt-1 h-9"
-              />
-            </div>
-            <div>
-              <Label className="text-sm">Số Microchip</Label>
-              <Input
-                value={formData.microchip}
-                onChange={(e) => setFormData({ ...formData, microchip: e.target.value })}
-                placeholder="VD: 900123456789012"
-                className="rounded-xl mt-1 h-9"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="sterilized"
-                checked={formData.sterilized}
-                onChange={(e) => setFormData({ ...formData, sterilized: e.target.checked })}
-                className="w-4 h-4 rounded"
-              />
-              <Label htmlFor="sterilized" className="cursor-pointer text-sm">Đã triệt sản</Label>
-            </div>
-            <div className="col-span-2">
-              <Label className="text-sm">Ghi chú</Label>
-              <Textarea
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="VD: Sợ tiếng ồn, thích chơi với bóng..."
-                className="rounded-xl mt-1 min-h-[60px] resize-none" style={{ width: '100%' }}
-              />
-            </div>
+      {/* Right Column - Form Fields */}
+      <div className="flex-1 space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="col-span-2">
+            <Label className="text-sm">Tên thú cưng *</Label>
+            <Input
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="VD: Mochi"
+              className="rounded-xl mt-1 h-9 w-full"
+            />
+          </div>
+          <div>
+            <Label className="text-sm">Loài *</Label>
+            <Select
+              value={formData.species}
+              onValueChange={(val) => setFormData(prev => ({ ...prev, species: val, breed: "", customBreed: "" }))}
+            >
+              <SelectTrigger className="rounded-xl mt-1 h-9 w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {SPECIES_OPTIONS.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm">Giống</Label>
+            <Select
+              value={formData.breed}
+              onValueChange={(val) => setFormData(prev => ({ ...prev, breed: val, customBreed: val === "Other" ? prev.customBreed : "" }))}
+            >
+              <SelectTrigger className="rounded-xl mt-1 h-9 w-full"><SelectValue placeholder="Chọn giống" /></SelectTrigger>
+              <SelectContent>
+                {currentBreedOptions.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <Button
-            className="w-full rounded-xl"
-            onClick={isEdit ? handleUpdatePet : handleAddPet}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? <Loader2 className="animate-spin" /> : isEdit ? "Cập nhật" : "Thêm thú cưng"}
-          </Button>
+          {/* Custom breed input when 'Other' is selected */}
+          {formData.breed === "Other" && (
+            <div className="col-span-2">
+              <Label className="text-sm">Nhập tên giống</Label>
+              <Input
+                value={formData.customBreed}
+                onChange={(e) => setFormData(prev => ({ ...prev, customBreed: e.target.value }))}
+                placeholder="VD: Chó lai Phú Quốc"
+                className="rounded-xl mt-1 h-9 w-full"
+              />
+            </div>
+          )}
+
+          <div>
+            <Label className="text-sm">Tuổi (tháng) *</Label>
+            <Input
+              type="number"
+              value={formData.age_months}
+              onChange={(e) => setFormData(prev => ({ ...prev, age_months: e.target.value }))}
+              placeholder="12"
+              className="rounded-xl mt-1 h-9"
+            />
+          </div>
+          <div>
+            <Label className="text-sm">Cân nặng (kg)</Label>
+            <Input
+              type="number"
+              step="0.1"
+              value={formData.weight_kg}
+              onChange={(e) => setFormData(prev => ({ ...prev, weight_kg: e.target.value }))}
+              placeholder="4.5"
+              className="rounded-xl mt-1 h-9"
+            />
+          </div>
+          <div>
+            <Label className="text-sm">Giới tính *</Label>
+            <Select value={formData.gender} onValueChange={(val) => setFormData(prev => ({ ...prev, gender: val }))}>
+              <SelectTrigger className="rounded-xl mt-1 h-9 w-full"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {GENDER_OPTIONS.map(opt => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm">Màu lông</Label>
+            <Input
+              value={formData.color}
+              onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+              placeholder="VD: Trắng, vàng"
+              className="rounded-xl mt-1 h-9"
+            />
+          </div>
+          <div>
+            <Label className="text-sm">Số Microchip</Label>
+            <Input
+              value={formData.microchip}
+              onChange={(e) => setFormData(prev => ({ ...prev, microchip: e.target.value }))}
+              placeholder="VD: 900123456789012"
+              className="rounded-xl mt-1 h-9"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id={isEdit ? "sterilized-edit" : "sterilized-add"}
+              checked={formData.sterilized}
+              onChange={(e) => setFormData(prev => ({ ...prev, sterilized: e.target.checked }))}
+              className="w-4 h-4 rounded"
+            />
+            <Label htmlFor={isEdit ? "sterilized-edit" : "sterilized-add"} className="cursor-pointer text-sm">Đã triệt sản</Label>
+          </div>
+          <div className="col-span-2">
+            <Label className="text-sm">Ghi chú</Label>
+            <Textarea
+              value={formData.notes}
+              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder="VD: Sợ tiếng ồn, thích chơi với bóng..."
+              className="rounded-xl mt-1 min-h-[60px] resize-none w-full"
+            />
+          </div>
         </div>
+
+        <Button
+          className="w-full rounded-xl"
+          onClick={isEdit ? handleUpdatePet : handleAddPet}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? <Loader2 className="animate-spin" /> : isEdit ? "Cập nhật" : "Thêm thú cưng"}
+        </Button>
       </div>
-    )
-  }
+    </div>
+  )
 
   if (isLoading) {
     return (
@@ -512,11 +513,11 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
               Thêm thú cưng ngay
             </Button>
           </DialogTrigger>
-          <DialogContent className="rounded-3xl ">
+          <DialogContent className="rounded-3xl w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Thêm thú cưng mới</DialogTitle>
             </DialogHeader>
-            <PetForm />
+            {renderPetFormFields(false)}
           </DialogContent>
         </Dialog>
       </div>
@@ -533,17 +534,17 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
 
       {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="rounded-3xl max-w-4xl">
+        <DialogContent className="rounded-3xl w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chỉnh sửa {selectedPet?.name}</DialogTitle>
           </DialogHeader>
-          <PetForm isEdit />
+          {renderPetFormFields(true)}
         </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent className="rounded-3xl max-w-sm">
+        <DialogContent className="rounded-3xl w-[95vw] max-w-sm">
           <DialogHeader>
             <DialogTitle>Xác nhận xóa</DialogTitle>
           </DialogHeader>
@@ -658,11 +659,11 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
                           <Plus className="w-4 h-4" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="rounded-3xl" style={{ width: '50%' }}>
+                      <DialogContent className="rounded-3xl w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Thêm thú cưng mới</DialogTitle>
                         </DialogHeader>
-                        <PetForm />
+                        {renderPetFormFields(false)}
                       </DialogContent>
                     </Dialog>
                     <Button
@@ -827,115 +828,53 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
             </TabsContent>
 
             <TabsContent value="personality" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-foreground">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    Phân tích tính cách (AI)
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {selectedPet.ai_analysis?.personality ? (
-                    <>
-                      <div className="flex flex-wrap gap-2">
-                        {(typeof selectedPet.ai_analysis.personality === 'string'
-                          ? [selectedPet.ai_analysis.personality]
-                          : selectedPet.ai_analysis.personality
-                        ).map((trait: string, index: number) => (
-                          <Badge
-                            key={index}
-                            className="bg-secondary text-foreground hover:bg-secondary/80 px-4 py-2 text-sm rounded-full"
-                          >
-                            {trait}
-                          </Badge>
-                        ))}
-                      </div>
-                      <div className="mt-4 p-4 bg-secondary/30 rounded-xl">
-                        <p className="text-foreground/80 text-sm leading-relaxed">
-                          {selectedPet.ai_analysis.care_tips || "Chưa có lời khuyên chăm sóc chi tiết."}
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center py-6">
-                      <p className="text-foreground/60 mb-3">Chưa có phân tích tính cách</p>
-                      <Button variant="outline" size="sm">
-                        <Sparkles className="w-4 h-4 mr-2" />
-                        Phân tích ngay
-                      </Button>
+              <Card className="border-dashed border-2">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-75" />
+                    <div className="relative w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                      <Sparkles className="w-8 h-8 text-primary animate-pulse" />
                     </div>
-                  )}
-                  <p className="text-foreground/60 text-sm flex items-center gap-1 mt-2">
-                    <Heart className="w-4 h-4 text-primary" />
-                    Phân tích dựa trên hành vi và thói quen của {selectedPet.name}
-                  </p>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Tính năng sắp ra mắt</h3>
+                    <p className="text-sm text-foreground/60 max-w-[250px] mx-auto mt-2">
+                      AI phân tích tính cách thú cưng sẽ sớm được ra mắt. Vui lòng quay lại sau!
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="border-primary text-primary">
+                    Đang phát triển
+                  </Badge>
                 </CardContent>
               </Card>
             </TabsContent>
 
             <TabsContent value="health" className="mt-4 space-y-4">
-              {/* Allergies */}
-              {selectedPet.allergies && selectedPet.allergies.length > 0 && (
-                <Card className="border-destructive/30 bg-destructive/5">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-                        <AlertTriangle className="w-5 h-5 text-destructive" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-foreground">Dị ứng</p>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {selectedPet.allergies.map((allergy: string, index: number) => (
-                            <Badge key={index} variant="destructive" className="bg-destructive/20 text-destructive">
-                              {allergy}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Notes */}
-              {selectedPet.notes && (
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
-                        <StickyNote className="w-5 h-5 text-foreground" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-foreground">Ghi chú</p>
-                        <p className="text-foreground/70 mt-1">{selectedPet.notes}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Dietary Advice from AI */}
-              {selectedPet.ai_analysis?.dietary_advice && (
-                <Card className="bg-green-50 border-green-100">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                        <Cake className="w-5 h-5 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-green-800">Lời khuyên dinh dưỡng (AI)</p>
-                        <p className="text-green-700 mt-1 text-sm">{selectedPet.ai_analysis.dietary_advice}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* View Full Medical Records */}
-              <Button onClick={onViewMedical} className="w-full rounded-xl py-6">
+              {/* View Full Medical Records - Keep this accessible */}
+              <Button onClick={onViewMedical} className="w-full rounded-xl py-6 mb-4">
                 Xem sổ y tế đầy đủ
                 <ChevronRight className="w-5 h-5 ml-2" />
               </Button>
+
+              <Card className="border-dashed border-2">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping opacity-75" />
+                    <div className="relative w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center">
+                      <Heart className="w-8 h-8 text-green-600 animate-pulse" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground">Tính năng sắp ra mắt</h3>
+                    <p className="text-sm text-foreground/60 max-w-[250px] mx-auto mt-2">
+                      Phân tích sức khỏe nâng cao và lời khuyên dinh dưỡng từ AI sẽ sớm có mặt.
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="border-green-600 text-green-600">
+                    Đang phát triển
+                  </Badge>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         </>
