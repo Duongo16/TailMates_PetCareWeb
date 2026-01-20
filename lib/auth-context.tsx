@@ -1,8 +1,10 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
-import { authAPI } from "@/lib/api"
+import { authAPI, petsAPI } from "@/lib/api"
 import { AuthPromptModal } from "@/components/ui/auth-prompt-modal"
+
+const TEMP_PET_DATA_KEY = "temp_pet_data"
 
 export type UserRole = "customer" | "merchant" | "manager" | "admin"
 
@@ -73,6 +75,53 @@ function mapApiUserToUser(apiUser: any): User {
   }
 }
 
+// Helper to sync onboarding pet data after login/register
+async function syncOnboardingPet(): Promise<void> {
+  try {
+    const tempDataStr = localStorage.getItem(TEMP_PET_DATA_KEY)
+    if (!tempDataStr) return
+
+    const tempData = JSON.parse(tempDataStr)
+    if (!tempData.name || !tempData.species) return
+
+    // Create the pet via API
+    await petsAPI.create({
+      name: tempData.name,
+      species: tempData.species,
+      age_months: tempData.age_months || 24,
+      gender: tempData.gender || "MALE",
+    })
+
+    // Clear the temporary data
+    localStorage.removeItem(TEMP_PET_DATA_KEY)
+    console.log("Onboarding pet synced successfully:", tempData.name)
+  } catch (error) {
+    console.error("Failed to sync onboarding pet:", error)
+    // Don't throw - we don't want to break the login/register flow
+  }
+}
+
+// Helper to check profile/pet completeness and create reminder notifications
+async function checkProfileNotifications(): Promise<void> {
+  try {
+    const token = localStorage.getItem("tailmates_token")
+    if (!token) return
+
+    await fetch("/api/v1/notifications/check-profile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    console.log("Profile notifications checked")
+  } catch (error) {
+    console.error("Failed to check profile notifications:", error)
+    // Don't throw - this is a non-critical operation
+  }
+}
+
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -131,6 +180,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("tailmates_user", JSON.stringify(mappedUser))
         setUser(mappedUser)
 
+        // Auto-sync onboarding pet data if exists (for customers only)
+        if (mappedUser.role === "customer") {
+          await syncOnboardingPet()
+          // Check for incomplete profile/pet data and create notifications
+          await checkProfileNotifications()
+        }
+
         return { success: true }
       }
 
@@ -173,6 +229,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("tailmates_token", token)
         localStorage.setItem("tailmates_user", JSON.stringify(mappedUser))
         setUser(mappedUser)
+
+        // Auto-sync onboarding pet data if exists (for customers only)
+        if (mappedUser.role === "customer") {
+          await syncOnboardingPet()
+          // Check for incomplete profile/pet data and create notifications
+          await checkProfileNotifications()
+        }
 
         return { success: true }
       }

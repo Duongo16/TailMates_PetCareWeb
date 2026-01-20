@@ -4,6 +4,7 @@ import { Nunito } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/lib/auth-context"
 import { CartProvider } from "@/lib/cart-context"
+import { SakuraPetalsWrapper } from "@/components/sakura-wrapper"
 import "./globals.css"
 
 const nunito = Nunito({ subsets: ["latin", "vietnamese"] })
@@ -33,6 +34,7 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className={`font-sans antialiased`}>
+        <SakuraPetalsWrapper />
         <AuthProvider>
           <CartProvider>
             {children}

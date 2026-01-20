@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useDashboardData } from "@/lib/hooks"
 import { useAuth } from "@/lib/auth-context"
+import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
@@ -29,6 +30,7 @@ import {
 import Image from "next/image"
 import { aiAPI } from "@/lib/api"
 import { BannerCarousel } from "@/components/ui/banner-carousel"
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion-wrappers"
 
 interface CustomerDashboardProps {
   onPetSelect: (petId: string) => void
@@ -149,9 +151,13 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
   return (
     <div className="space-y-4">
       {/* Greeting Section with Magic Button */}
-      <div className="flex items-center justify-between">
+      <FadeIn className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="relative">
+          <motion.div
+            className="relative"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center overflow-hidden shadow-lg shadow-primary/25">
               <Image
                 src={user?.avatar || "/cute-girl-avatar-with-cat-ears-anime-style.jpg"}
@@ -161,8 +167,12 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                 className="object-cover"
               />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-card" />
-          </div>
+            <motion.div
+              className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-card"
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+            />
+          </motion.div>
           <div>
             <h1 className="text-xl lg:text-2xl font-bold text-foreground">
               {greeting}, {user?.name?.split(" ").pop() || "bạn"}!
@@ -171,15 +181,20 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
           </div>
         </div>
         {/* Magic Button - Compact Version */}
-        <Button
-          onClick={() => setMagicModalOpen(true)}
-          className="magic-button bg-gradient-to-r from-primary via-primary/90 to-accent text-white hover:opacity-90 font-bold px-4 py-5 rounded-2xl text-sm shadow-xl hover:scale-105 transition-transform hidden sm:flex"
-          disabled={!pets || pets.length === 0}
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          <Sparkles className="w-4 h-4 mr-2" />
-          Nút Diệu Kỳ
-        </Button>
-      </div>
+          <Button
+            onClick={() => setMagicModalOpen(true)}
+            className="magic-button bg-gradient-to-r from-primary via-primary/90 to-accent text-white hover:opacity-90 font-bold px-4 py-5 rounded-2xl text-sm shadow-xl transition-transform hidden sm:flex"
+            disabled={!pets || pets.length === 0}
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Nút Diệu Kỳ
+          </Button>
+        </motion.div>
+      </FadeIn>
 
       {/* Banner Carousel */}
       <BannerCarousel location="HOME" />
@@ -357,15 +372,25 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                     count: (bookings?.filter((b: any) => ["PENDING", "CONFIRMED"].includes(b.status)).length || 0) + (orders?.filter((o: any) => ["PENDING", "PROCESSING"].includes(o.status)).length || 0)
                   },
                 ].map((action, index) => (
-                  <div
+                  <motion.div
                     key={index}
                     onClick={() => onTabChange?.(action.tab)}
                     className="card-hover cursor-pointer group text-center p-2 rounded-xl bg-secondary/30 hover:bg-secondary/50 transition-colors h-full flex flex-col items-center justify-center relative"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 + index * 0.1 }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     {!!action.count && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg">
+                      <motion.span
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold shadow-lg"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 500 }}
+                      >
                         {action.count}
-                      </span>
+                      </motion.span>
                     )}
                     <div
                       className={`w-10 h-10 ${action.color} rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition-transform shadow-lg`}
@@ -373,7 +398,7 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                       <action.icon className="w-5 h-5 text-white" />
                     </div>
                     <p className="text-xs font-medium text-foreground">{action.label}</p>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </CardContent>

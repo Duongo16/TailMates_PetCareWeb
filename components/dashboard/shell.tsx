@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
+import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -119,7 +120,7 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/images/avarta.png" alt="TailMates" width={100} height={40} className="h-8 w-auto" />
+              <Image src="/images/logo-ngang.png" alt="TailMates" width={100} height={40} className="h-8 w-auto sm:h-16" />
             </Link>
           </div>
 
@@ -127,19 +128,27 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
           <nav className="hidden lg:flex items-center gap-1 bg-secondary/50 p-1 rounded-xl">
             {tabs.map((tab) => {
               const Icon = tab.icon
+              const isActive = activeTab === tab.id
               return (
                 <button
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
                   className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all",
-                    activeTab === tab.id
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-foreground/70 hover:text-foreground hover:bg-secondary",
+                    "relative flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors z-10",
+                    isActive
+                      ? "text-primary-foreground"
+                      : "text-foreground/70 hover:text-foreground",
                   )}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span>{tab.label}</span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute inset-0 bg-primary rounded-lg shadow-sm"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <Icon className="w-4 h-4 relative z-10" />
+                  <span className="relative z-10">{tab.label}</span>
                 </button>
               )
             })}
@@ -272,33 +281,52 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
         </div>
 
         {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <nav className="lg:hidden border-t border-border bg-card">
-            <div className="p-2 space-y-1">
-              {tabs.map((tab) => {
-                const Icon = tab.icon
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      onTabChange(tab.id)
-                      setMobileMenuOpen(false)
-                    }}
-                    className={cn(
-                      "flex items-center gap-3 w-full px-4 py-3 rounded-xl font-medium transition-all",
-                      activeTab === tab.id
-                        ? "bg-primary text-primary-foreground"
-                        : "text-foreground/70 hover:bg-secondary",
-                    )}
-                  >
-                    <Icon className="w-5 h-5" />
-                    <span>{tab.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </nav>
-        )}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.nav
+              className="lg:hidden border-t border-border bg-card overflow-hidden"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+            >
+              <div className="p-2 space-y-1">
+                {tabs.map((tab, index) => {
+                  const Icon = tab.icon
+                  const isActive = activeTab === tab.id
+                  return (
+                    <motion.button
+                      key={tab.id}
+                      onClick={() => {
+                        onTabChange(tab.id)
+                        setMobileMenuOpen(false)
+                      }}
+                      className={cn(
+                        "relative flex items-center gap-3 w-full px-4 py-3 rounded-xl font-medium transition-colors",
+                        isActive
+                          ? "text-primary-foreground"
+                          : "text-foreground/70 hover:bg-secondary",
+                      )}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeMobileTab"
+                          className="absolute inset-0 bg-primary rounded-xl"
+                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                        />
+                      )}
+                      <Icon className="w-5 h-5 relative z-10" />
+                      <span className="relative z-10">{tab.label}</span>
+                    </motion.button>
+                  )
+                })}
+              </div>
+            </motion.nav>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* Main Content */}
@@ -309,17 +337,25 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
         <div className="flex justify-around py-2">
           {tabs.slice(0, 4).map((tab) => {
             const Icon = tab.icon
+            const isActive = activeTab === tab.id
             return (
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 className={cn(
-                  "flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[60px]",
-                  activeTab === tab.id ? "text-primary" : "text-foreground/50",
+                  "relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors min-w-[60px]",
+                  isActive ? "text-primary" : "text-foreground/50",
                 )}
               >
-                <Icon className="w-5 h-5" />
-                <span className="text-xs font-medium">{tab.label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeBottomTab"
+                    className="absolute inset-0 bg-primary/10 rounded-xl"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <Icon className="w-5 h-5 relative z-10" />
+                <span className="text-xs font-medium relative z-10">{tab.label}</span>
               </button>
             )
           })}

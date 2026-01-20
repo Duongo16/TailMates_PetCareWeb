@@ -7,11 +7,13 @@ import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Eye, EyeOff, ArrowLeft, PawPrint, Sparkles, Shield, CheckCircle2, Star } from "lucide-react"
+import { FadeIn, StaggerContainer, StaggerItem, HoverScale } from "@/components/ui/motion-wrappers"
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -76,83 +78,95 @@ export default function LoginPage() {
 
           <Card className="border-0 shadow-none bg-transparent">
             <CardHeader className="px-0">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/25">
-                  <PawPrint className="w-7 h-7 text-white" />
+              <FadeIn delay={0.1}>
+                <div className="flex items-center gap-3 mb-6">
+                  <motion.div
+                    className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/25"
+                    whileHover={{ scale: 1.05, rotate: 5 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <PawPrint className="w-7 h-7 text-white" />
+                  </motion.div>
+                  <Image src="/images/avarta.png" alt="TailMates" width={120} height={40} className="h-10 w-auto" />
                 </div>
-                <Image src="/images/avarta.png" alt="TailMates" width={120} height={40} className="h-10 w-auto" />
-              </div>
-              <CardTitle className="text-3xl font-bold text-foreground">Chào mừng trở lại!</CardTitle>
-              <CardDescription className="text-foreground/60 text-base">
-                Đăng nhập để tiếp tục chăm sóc bé cưng của bạn
-              </CardDescription>
+              </FadeIn>
+              <FadeIn delay={0.2}>
+                <CardTitle className="text-3xl font-bold text-foreground">Chào mừng trở lại!</CardTitle>
+              </FadeIn>
+              <FadeIn delay={0.3}>
+                <CardDescription className="text-foreground/60 text-base">
+                  Đăng nhập để tiếp tục chăm sóc bé cưng của bạn
+                </CardDescription>
+              </FadeIn>
             </CardHeader>
             <CardContent className="px-0">
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-foreground font-medium">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="email@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="rounded-xl h-12 bg-background border-border focus:border-primary focus:ring-primary"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-foreground font-medium">
-                      Mật khẩu
+              <FadeIn delay={0.4}>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-foreground font-medium">
+                      Email
                     </Label>
-                    <a href="#" className="text-sm text-primary hover:underline">
-                      Quên mật khẩu?
-                    </a>
-                  </div>
-                  <div className="relative">
                     <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Nhập mật khẩu"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="rounded-xl h-12 pr-12 bg-background border-border focus:border-primary focus:ring-primary"
+                      id="email"
+                      type="email"
+                      placeholder="email@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="rounded-xl h-12 bg-background border-border focus:border-primary focus:ring-primary"
                       required
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
                   </div>
-                </div>
-
-                {error && (
-                  <div className="p-3 rounded-xl bg-destructive/10 text-destructive text-sm border border-destructive/20">
-                    {error}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password" className="text-foreground font-medium">
+                        Mật khẩu
+                      </Label>
+                      <a href="#" className="text-sm text-primary hover:underline">
+                        Quên mật khẩu?
+                      </a>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Nhập mật khẩu"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="rounded-xl h-12 pr-12 bg-background border-border focus:border-primary focus:ring-primary"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
                   </div>
-                )}
 
-                <Button
-                  type="submit"
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 font-bold text-base shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Đang đăng nhập...
-                    </span>
-                  ) : (
-                    "Đăng nhập"
+                  {error && (
+                    <div className="p-3 rounded-xl bg-destructive/10 text-destructive text-sm border border-destructive/20">
+                      {error}
+                    </div>
                   )}
-                </Button>
-              </form>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 font-bold text-base shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Đang đăng nhập...
+                      </span>
+                    ) : (
+                      "Đăng nhập"
+                    )}
+                  </Button>
+                </form>
+              </FadeIn>
 
               {isLocalhost && (
                 <div className="mt-8">
@@ -165,10 +179,10 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="mt-4 grid grid-cols-2 gap-2">
-                    {demoAccounts.map((account) => {
+                    {demoAccounts.map((account, index) => {
                       const Icon = account.icon
                       return (
-                        <button
+                        <motion.button
                           key={account.email}
                           type="button"
                           onClick={() => {
@@ -176,6 +190,11 @@ export default function LoginPage() {
                             setPassword("123456")
                           }}
                           className="p-3 rounded-xl border border-border text-sm font-medium text-foreground hover:bg-secondary hover:border-primary/30 transition-all text-left group"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.5 + index * 0.1 }}
+                          whileHover={{ scale: 1.02, y: -2 }}
+                          whileTap={{ scale: 0.98 }}
                         >
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center group-hover:bg-primary/10 transition-colors">
@@ -183,7 +202,7 @@ export default function LoginPage() {
                             </div>
                             <span>{account.label}</span>
                           </div>
-                        </button>
+                        </motion.button>
                       )
                     })}
                   </div>
@@ -226,14 +245,14 @@ export default function LoginPage() {
           </p>
 
           {/* Benefits list */}
-          <div className="text-left space-y-3 bg-white/10 rounded-2xl p-6 backdrop-blur-sm">
+          <StaggerContainer className="text-left space-y-3 bg-white/10 rounded-2xl p-6 backdrop-blur-sm">
             {benefits.map((benefit, index) => (
-              <div key={index} className="flex items-center gap-3">
+              <StaggerItem key={index} className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-green-400 flex-shrink-0" />
                 <span className="text-white/90">{benefit}</span>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </div>
     </div>

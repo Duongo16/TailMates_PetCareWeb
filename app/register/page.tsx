@@ -7,12 +7,14 @@ import { useAuth, type UserRole } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
+import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Eye, EyeOff, ArrowLeft, PawPrint, User, Store, CheckCircle2, Sparkles, Shield, Gift } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion-wrappers"
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -112,16 +114,16 @@ export default function RegisterPage() {
             Hơn 10,000 Sen đã tin tưởng TailMates để chăm sóc thú cưng của mình
           </p>
 
-          <div className="space-y-3 text-left bg-white/10 rounded-2xl p-6 backdrop-blur-sm">
+          <StaggerContainer className="space-y-3 text-left bg-white/10 rounded-2xl p-6 backdrop-blur-sm">
             {customerBenefits.map((benefit, index) => (
-              <div key={index} className="flex items-center gap-3">
+              <StaggerItem key={index} className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
                   <benefit.icon className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-white/90">{benefit.text}</span>
-              </div>
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerContainer>
         </div>
       </div>
 
@@ -138,16 +140,26 @@ export default function RegisterPage() {
 
           <Card className="border-0 shadow-none bg-transparent">
             <CardHeader className="px-0">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/25">
-                  <PawPrint className="w-7 h-7 text-white" />
+              <FadeIn delay={0.1}>
+                <div className="flex items-center gap-3 mb-4">
+                  <motion.div
+                    className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/25"
+                    whileHover={{ scale: 1.05, rotate: 5 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <PawPrint className="w-7 h-7 text-white" />
+                  </motion.div>
+                  <Image src="/images/avarta.png" alt="TailMates" width={120} height={40} className="h-10 w-auto" />
                 </div>
-                <Image src="/images/avarta.png" alt="TailMates" width={120} height={40} className="h-10 w-auto" />
-              </div>
-              <CardTitle className="text-3xl font-bold text-foreground">Tạo tài khoản</CardTitle>
-              <CardDescription className="text-foreground/60 text-base">
-                Đăng ký miễn phí và bắt đầu chăm sóc bé cưng
-              </CardDescription>
+              </FadeIn>
+              <FadeIn delay={0.2}>
+                <CardTitle className="text-3xl font-bold text-foreground">Tạo tài khoản</CardTitle>
+              </FadeIn>
+              <FadeIn delay={0.3}>
+                <CardDescription className="text-foreground/60 text-base">
+                  Đăng ký miễn phí và bắt đầu chăm sóc bé cưng
+                </CardDescription>
+              </FadeIn>
             </CardHeader>
             <CardContent className="px-0">
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -155,10 +167,10 @@ export default function RegisterPage() {
                 <div className="space-y-3">
                   <Label className="text-foreground font-medium">Bạn là</Label>
                   <div className="grid grid-cols-1 gap-3">
-                    {roleOptions.map((option) => {
+                    {roleOptions.map((option, index) => {
                       const Icon = option.icon
                       return (
-                        <button
+                        <motion.button
                           key={option.id}
                           type="button"
                           onClick={() => setRole(option.id)}
@@ -168,27 +180,44 @@ export default function RegisterPage() {
                               ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
                               : "border-border hover:border-primary/50 hover:bg-secondary/50",
                           )}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.4 + index * 0.1 }}
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
                         >
                           <div className="flex items-start gap-4">
-                            <div
+                            <motion.div
                               className={cn(
                                 "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors",
                                 role === option.id
                                   ? "bg-gradient-to-br from-primary to-primary/70 text-white shadow-lg shadow-primary/25"
                                   : "bg-secondary text-foreground",
                               )}
+                              animate={role === option.id ? { scale: [1, 1.1, 1] } : {}}
+                              transition={{ duration: 0.3 }}
                             >
                               <Icon className="w-6 h-6" />
-                            </div>
+                            </motion.div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
                                 <p className="font-bold text-foreground">{option.label}</p>
-                                {role === option.id && <CheckCircle2 className="w-5 h-5 text-primary" />}
+                                <AnimatePresence>
+                                  {role === option.id && (
+                                    <motion.div
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      exit={{ scale: 0 }}
+                                    >
+                                      <CheckCircle2 className="w-5 h-5 text-primary" />
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
                               </div>
                               <p className="text-sm text-foreground/60 mt-1">{option.description}</p>
                             </div>
                           </div>
-                        </button>
+                        </motion.button>
                       )
                     })}
                   </div>
