@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/lib/auth-context"
 import { CartProvider } from "@/lib/cart-context"
 import { SakuraPetalsWrapper } from "@/components/sakura-wrapper"
+import { ServiceWorkerRegister } from "@/components/service-worker-register"
 import "./globals.css"
 
 const nunito = Nunito({ subsets: ["latin", "vietnamese"] })
@@ -13,10 +14,16 @@ export const metadata: Metadata = {
   title: "TailMates - Bạn Đồng Hành Thú Cưng",
   description: "Ứng dụng chăm sóc thú cưng thông minh dành cho Gen Z",
   generator: "v0.app",
+  manifest: "/manifest.json",
   icons: {
     icon: "/images/logo.png",
     shortcut: "/images/logo.png",
-    apple: "/images/logo.png",
+    apple: "/icons/icon-192x192.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "TailMates",
   },
 }
 
@@ -34,6 +41,7 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className={`font-sans antialiased`}>
+        <ServiceWorkerRegister />
         <SakuraPetalsWrapper />
         <AuthProvider>
           <CartProvider>
