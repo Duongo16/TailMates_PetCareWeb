@@ -45,6 +45,11 @@ export async function POST(request: NextRequest) {
       gender,
       sterilized,
       image,
+      color,
+      fur_type,
+      microchip,
+      allergies,
+      notes,
     } = body;
 
     // Validation
@@ -64,6 +69,11 @@ export async function POST(request: NextRequest) {
       weight_kg,
       gender,
       sterilized: sterilized || false,
+      color,
+      fur_type,
+      microchip,
+      allergies,
+      notes,
       image,
     });
 
