@@ -7,6 +7,7 @@ export enum PetSpecies {
   RABBIT = "Rabbit",
   HAMSTER = "Hamster",
   BIRD = "Bird",
+  FISH = "Fish",
   OTHER = "Other",
 }
 
@@ -39,6 +40,7 @@ export interface IPet extends Document {
   gender: PetGender;
   sterilized: boolean;
   color?: string;
+  fur_type?: string;
   microchip?: string;
   allergies?: string[];
   notes?: string;
@@ -104,6 +106,10 @@ const PetSchema = new Schema<IPet>(
       default: false,
     },
     color: {
+      type: String,
+      trim: true,
+    },
+    fur_type: {
       type: String,
       trim: true,
     },

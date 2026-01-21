@@ -5,9 +5,10 @@ import { ManagerDashboardContent } from "@/components/manager/dashboard-content"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
-import { Home, TrendingUp, Package, Store, ImageIcon, Settings, Loader2 } from "lucide-react"
+import { Home, TrendingUp, Package, Store, ImageIcon, Settings, Loader2, Newspaper } from "lucide-react"
+import BlogApproval from "@/components/manager/blog-approval"
 
-type ManagerTab = "dashboard" | "revenue" | "merchants" | "packages" | "banners" | "settings"
+type ManagerTab = "dashboard" | "revenue" | "merchants" | "packages" | "banners" | "blog" | "settings"
 
 const tabs = [
   { id: "dashboard" as ManagerTab, label: "Tổng quan", icon: Home },
@@ -15,6 +16,7 @@ const tabs = [
   { id: "merchants" as ManagerTab, label: "Merchant", icon: Store },
   { id: "packages" as ManagerTab, label: "Gói đăng ký", icon: Package },
   { id: "banners" as ManagerTab, label: "Banner", icon: ImageIcon },
+  { id: "blog" as ManagerTab, label: "Quản lý Blog", icon: Newspaper },
   { id: "settings" as ManagerTab, label: "Cài đặt", icon: Settings },
 ]
 
@@ -46,7 +48,7 @@ export default function ManagerDashboardPage() {
 
   return (
     <DashboardShell tabs={tabs} activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as ManagerTab)}>
-      <ManagerDashboardContent activeTab={activeTab} />
+      {activeTab === "blog" ? <BlogApproval /> : <ManagerDashboardContent activeTab={activeTab} />}
     </DashboardShell>
   )
 }

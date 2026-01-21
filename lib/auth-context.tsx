@@ -5,6 +5,7 @@ import { authAPI, petsAPI } from "@/lib/api"
 import { AuthPromptModal } from "@/components/ui/auth-prompt-modal"
 
 const TEMP_PET_DATA_KEY = "temp_pet_data"
+const TOKEN_EXPIRY_HOURS = 1 // Token expires after 1 hour
 
 export type UserRole = "customer" | "merchant" | "manager" | "admin"
 
@@ -84,12 +85,15 @@ async function syncOnboardingPet(): Promise<void> {
     const tempData = JSON.parse(tempDataStr)
     if (!tempData.name || !tempData.species) return
 
-    // Create the pet via API
+    // Create the pet via API with all collected data
     await petsAPI.create({
       name: tempData.name,
       species: tempData.species,
+      breed: tempData.breed,
       age_months: tempData.age_months || 24,
       gender: tempData.gender || "MALE",
+      color: tempData.color,
+      fur_type: tempData.fur_type,
     })
 
     // Clear the temporary data
@@ -142,8 +146,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkSession = async () => {
       const token = localStorage.getItem("tailmates_token")
       const savedUser = localStorage.getItem("tailmates_user")
+      const tokenExpiry = localStorage.getItem("tailmates_token_expiry")
 
       if (token && savedUser) {
+        // Check if token has expired
+        if (tokenExpiry) {
+          const expiryTime = parseInt(tokenExpiry, 10)
+          const now = Date.now()
+
+          if (now > expiryTime) {
+            // Token expired, clear storage
+            localStorage.removeItem("tailmates_token")
+            localStorage.removeItem("tailmates_user")
+            localStorage.removeItem("tailmates_token_expiry")
+            setIsLoading(false)
+            return
+          }
+        }
+
         try {
           // Verify token is still valid by fetching current user
           const response = await authAPI.getMe()
@@ -155,6 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Token invalid, clear storage
             localStorage.removeItem("tailmates_token")
             localStorage.removeItem("tailmates_user")
+            localStorage.removeItem("tailmates_token_expiry")
           }
         } catch {
           // Network error, use cached user
@@ -175,9 +196,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { user: apiUser, token } = response.data
         const mappedUser = mapApiUserToUser(apiUser)
 
-        // Save token and user
+        // Calculate token expiry time (1 hour from now)
+        const expiryTime = Date.now() + (TOKEN_EXPIRY_HOURS * 60 * 60 * 1000)
+
+        // Save token, user, and expiry time
         localStorage.setItem("tailmates_token", token)
         localStorage.setItem("tailmates_user", JSON.stringify(mappedUser))
+        localStorage.setItem("tailmates_token_expiry", expiryTime.toString())
         setUser(mappedUser)
 
         // Auto-sync onboarding pet data if exists (for customers only)
@@ -225,9 +250,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { user: apiUser, token } = response.data
         const mappedUser = mapApiUserToUser(apiUser)
 
-        // Save token and user
+        // Calculate token expiry time (1 hour from now)
+        const expiryTime = Date.now() + (TOKEN_EXPIRY_HOURS * 60 * 60 * 1000)
+
+        // Save token, user, and expiry time
         localStorage.setItem("tailmates_token", token)
         localStorage.setItem("tailmates_user", JSON.stringify(mappedUser))
+        localStorage.setItem("tailmates_token_expiry", expiryTime.toString())
         setUser(mappedUser)
 
         // Auto-sync onboarding pet data if exists (for customers only)
@@ -251,6 +280,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     localStorage.removeItem("tailmates_token")
     localStorage.removeItem("tailmates_user")
+    localStorage.removeItem("tailmates_token_expiry")
   }
 
   const refreshUser = async () => {

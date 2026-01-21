@@ -9,8 +9,8 @@ import { Upload, Link as LinkIcon, X, Loader2, Image as ImageIcon } from "lucide
 import Image from "next/image"
 
 interface ImageUploadProps {
-    value?: string
-    onChange: (url: string, publicId?: string) => void
+    value?: { url: string; public_id?: string } | string | null
+    onChange: (image: { url: string; public_id?: string } | null) => void
     label?: string
     required?: boolean
     className?: string
@@ -19,7 +19,7 @@ interface ImageUploadProps {
 export function ImageUpload({ value, onChange, label, required, className = "" }: ImageUploadProps) {
     const [uploadMethod, setUploadMethod] = useState<"upload" | "url">("upload")
     const [isUploading, setIsUploading] = useState(false)
-    const [urlInput, setUrlInput] = useState(value || "")
+    const [urlInput, setUrlInput] = useState("")
     const [error, setError] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -61,7 +61,7 @@ export function ImageUpload({ value, onChange, label, required, className = "" }
             }
 
             const data = await response.json()
-            onChange(data.secure_url, data.public_id)
+            onChange({ url: data.secure_url, public_id: data.public_id })
         } catch (err: any) {
             setError(err.message || "Lỗi khi tải ảnh lên")
             console.error("Upload error:", err)
@@ -100,14 +100,14 @@ export function ImageUpload({ value, onChange, label, required, className = "" }
 
         try {
             new URL(urlInput)
-            onChange(urlInput)
+            onChange({ url: urlInput })
         } catch {
             setError("URL không hợp lệ")
         }
     }
 
     const handleRemove = () => {
-        onChange("")
+        onChange(null)
         setUrlInput("")
         if (fileInputRef.current) {
             fileInputRef.current.value = ""
@@ -150,7 +150,7 @@ export function ImageUpload({ value, onChange, label, required, className = "" }
                         ) : value ? (
                             <div className="space-y-3">
                                 <div className="relative w-32 h-32 mx-auto rounded-xl overflow-hidden bg-secondary">
-                                    <Image src={value} alt="Preview" fill className="object-cover" />
+                                    <Image src={typeof value === 'string' ? value : value.url} alt="Preview" fill className="object-cover" />
                                 </div>
                                 <p className="text-sm text-foreground/60">Click để thay đổi ảnh</p>
                             </div>
@@ -194,7 +194,7 @@ export function ImageUpload({ value, onChange, label, required, className = "" }
                     </div>
                     {value && uploadMethod === "url" && (
                         <div className="relative w-32 h-32 rounded-xl overflow-hidden bg-secondary">
-                            <Image src={value} alt="Preview" fill className="object-cover" />
+                            <Image src={typeof value === 'string' ? value : value.url} alt="Preview" fill className="object-cover" />
                         </div>
                     )}
                 </TabsContent>

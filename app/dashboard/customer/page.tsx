@@ -12,10 +12,11 @@ import { OrderTracking } from "@/components/customer/order-tracking"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
-import { Home, PawPrint, FileText, ShoppingBag, Calendar } from "lucide-react"
+import { Home, PawPrint, FileText, ShoppingBag, Calendar, Newspaper } from "lucide-react"
 import { Loader2 } from "lucide-react"
+import BlogList from "@/components/customer/blog-list"
 
-type CustomerTab = "dashboard" | "pets" | "medical" | "marketplace" | "booking" | "orders" | "subscription" | "settings"
+type CustomerTab = "dashboard" | "pets" | "medical" | "marketplace" | "booking" | "orders" | "blog" | "subscription" | "settings"
 
 const tabs = [
   { id: "dashboard" as CustomerTab, label: "Trang chủ", icon: Home },
@@ -23,6 +24,7 @@ const tabs = [
   { id: "marketplace" as CustomerTab, label: "Mua sắm", icon: ShoppingBag },
   { id: "booking" as CustomerTab, label: "Đặt lịch", icon: Calendar },
   { id: "medical" as CustomerTab, label: "Sổ y tế", icon: FileText },
+  { id: "blog" as CustomerTab, label: "Blog", icon: Newspaper },
 ]
 
 export default function CustomerDashboardPage() {
@@ -99,6 +101,8 @@ export default function CustomerDashboardPage() {
         return <Marketplace />
       case "orders":
         return <OrderTracking />
+      case "blog":
+        return <BlogList />
       case "subscription":
         return <Subscription />
       case "settings":

@@ -31,3 +31,10 @@ export type { ISubscriptionLog } from "./SubscriptionLog";
 
 export { default as Banner, BannerLocation } from "./Banner";
 export type { IBanner } from "./Banner";
+
+export { default as BlogPost, BlogStatus } from "./BlogPost";
+export type { IBlogPost } from "./BlogPost";
+
+export { default as BlogVote, VoteType } from "./BlogVote";
+export type { IBlogVote } from "./BlogVote";
+

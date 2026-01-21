@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
     ArrowLeft,
     ArrowRight,
@@ -258,7 +257,7 @@ export function OnboardingWizard() {
     const currentProgress = step === 7 ? progressSteps : Math.min(step, progressSteps)
 
     return (
-        <div className="h-screen bg-gradient-to-br from-secondary/50 via-background to-muted/50 flex flex-col overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-secondary/50 via-background to-muted/50 flex flex-col">
             {/* Header */}
             <header className="p-4 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2">
@@ -278,7 +277,7 @@ export function OnboardingWizard() {
             </header>
 
             {/* Progress Bar */}
-            <div className="px-4 mb-4">
+            <div className="px-4 mb-8">
                 <div className="max-w-md mx-auto">
                     <div className="flex items-center justify-between mb-2">
                         {Array.from({ length: progressSteps }).map((_, i) => (
@@ -307,7 +306,7 @@ export function OnboardingWizard() {
             </div>
 
             {/* Main Content */}
-            <div className="flex-1 flex items-center justify-center px-4 pb-4 overflow-y-auto">
+            <div className="flex-1 flex items-center justify-center px-4 pb-8">
                 <div className="w-full max-w-2xl">
                     <AnimatePresence mode="wait" custom={direction}>
                         {/* Step 1: Pet Species Selection */}
@@ -487,46 +486,48 @@ export function OnboardingWizard() {
                                     </p>
                                 </div>
 
-                                <Card className="border-2 border-border">
-                                    <CardContent className="p-6 space-y-6">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="breed" className="text-foreground font-medium">
-                                                Giống
-                                            </Label>
-                                            <Select value={formData.breed} onValueChange={handleBreedSelect}>
-                                                <SelectTrigger className="h-14 text-lg rounded-xl border-border focus:border-primary">
-                                                    <SelectValue placeholder="Chọn giống..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {(BREED_OPTIONS[formData.species] || BREED_OPTIONS.Other).map((breed) => (
-                                                        <SelectItem key={breed.value} value={breed.value}>
-                                                            {breed.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            {formData.breed && (
-                                                <motion.p
-                                                    initial={{ opacity: 0, y: -10 }}
-                                                    animate={{ opacity: 1, y: 0 }}
-                                                    className="text-sm text-primary font-medium flex items-center gap-1"
-                                                >
-                                                    <Check className="w-4 h-4" />
-                                                    Đã chọn: {(BREED_OPTIONS[formData.species] || BREED_OPTIONS.Other).find(b => b.value === formData.breed)?.label}
-                                                </motion.p>
-                                            )}
-                                        </div>
-
-                                        <Button
-                                            onClick={nextStep}
-                                            disabled={!canProceedStep3}
-                                            className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/25 transition-all"
+                                <div className="grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto p-1">
+                                    {(BREED_OPTIONS[formData.species] || BREED_OPTIONS.Other).map((breed, index) => (
+                                        <motion.div
+                                            key={breed.value}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ delay: index * 0.05 }}
                                         >
-                                            Tiếp tục
-                                            <ArrowRight className="w-5 h-5 ml-2" />
-                                        </Button>
-                                    </CardContent>
-                                </Card>
+                                            <Card
+                                                className={cn(
+                                                    "cursor-pointer border-2 transition-all hover:shadow-lg",
+                                                    formData.breed === breed.value
+                                                        ? "border-primary bg-primary/5 shadow-xl shadow-primary/20"
+                                                        : "border-border hover:border-primary/50"
+                                                )}
+                                                onClick={() => handleBreedSelect(breed.value)}
+                                            >
+                                                <CardContent className="p-3 text-center">
+                                                    <p className="font-semibold text-foreground text-sm">{breed.label}</p>
+                                                    {formData.breed === breed.value && (
+                                                        <motion.div
+                                                            initial={{ scale: 0 }}
+                                                            animate={{ scale: 1 }}
+                                                            className="mt-2"
+                                                        >
+                                                            <Check className="w-4 h-4 text-primary mx-auto" />
+                                                        </motion.div>
+                                                    )}
+                                                </CardContent>
+                                            </Card>
+                                        </motion.div>
+                                    ))}
+                                </div>
+
+                                <Button
+                                    onClick={nextStep}
+                                    disabled={!canProceedStep3}
+                                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/25 transition-all"
+                                >
+                                    Tiếp tục
+                                    <ArrowRight className="w-5 h-5 ml-2" />
+                                </Button>
                             </motion.div>
                         )}
 

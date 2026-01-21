@@ -109,6 +109,8 @@ export const petsAPI = {
     weight_kg?: number;
     gender: string;
     sterilized?: boolean;
+    color?: string;
+    fur_type?: string;
     image?: { url: string; public_id: string };
   }) =>
     fetchWithAuth("/pets", {
@@ -500,4 +502,96 @@ export const notificationsAPI = {
       method: "POST",
     }),
 };
+
+// ==================== Blog API ====================
+export const blogAPI = {
+  // Public
+  list: (params?: {
+    category?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+    sort?: string;
+  }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.category) searchParams.append("category", params.category);
+    if (params?.search) searchParams.append("search", params.search);
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.sort) searchParams.append("sort", params.sort);
+    return fetchWithAuth<any>(`/blog?${searchParams.toString()}`);
+  },
+
+  get: (id: string) => fetchWithAuth<any>(`/blog/${id}`),
+
+  getCategories: () => fetchWithAuth<string[]>(`/blog/categories`),
+
+  // Authenticated - User
+  create: (data: {
+    title: string;
+    content: string;
+    excerpt?: string;
+    featured_image?: { url: string; public_id: string };
+    category: string;
+    tags?: string[];
+    status?: string;
+  }) =>
+    fetchWithAuth("/blog", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: Record<string, unknown>) =>
+    fetchWithAuth(`/blog/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  delete: (id: string) =>
+    fetchWithAuth(`/blog/${id}`, {
+      method: "DELETE",
+    }),
+
+  submit: (id: string) =>
+    fetchWithAuth(`/blog/${id}/submit`, {
+      method: "POST",
+    }),
+
+  vote: (id: string, voteType: "LIKE" | "DISLIKE" | null) =>
+    fetchWithAuth(`/blog/${id}/vote`, {
+      method: "POST",
+      body: JSON.stringify({ vote_type: voteType }),
+    }),
+
+  // User's posts
+  myPosts: (params?: { status?: string; page?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.append("status", params.status);
+    if (params?.page) searchParams.append("page", params.page.toString());
+    return fetchWithAuth<any>(`/blog/my-posts?${searchParams.toString()}`);
+  },
+};
+
+// ==================== Manager Blog API ====================
+export const managerBlogAPI = {
+  list: (params?: { status?: string; page?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.append("status", params.status);
+    if (params?.page) searchParams.append("page", params.page.toString());
+    return fetchWithAuth<any>(`/manager/blog?${searchParams.toString()}`);
+  },
+
+  approve: (id: string, managerNote?: string) =>
+    fetchWithAuth(`/manager/blog/${id}/approve`, {
+      method: "POST",
+      body: JSON.stringify({ action: "APPROVE", manager_note: managerNote }),
+    }),
+
+  reject: (id: string, managerNote: string) =>
+    fetchWithAuth(`/manager/blog/${id}/approve`, {
+      method: "POST",
+      body: JSON.stringify({ action: "REJECT", manager_note: managerNote }),
+    }),
+};
+
 

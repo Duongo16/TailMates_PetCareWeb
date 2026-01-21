@@ -209,6 +209,12 @@ export function Homepage() {
                 >
                   Đánh giá
                 </a>
+                <Link
+                  href="/blog"
+                  className="text-foreground/70 hover:text-primary transition-colors font-medium text-sm"
+                >
+                  Blog
+                </Link>
               </nav>
 
               <div className="hidden md:flex items-center gap-3">
@@ -242,6 +248,9 @@ export function Homepage() {
                 <a href="#testimonials" className="block text-foreground/70 hover:text-foreground font-medium">
                   Đánh giá
                 </a>
+                <Link href="/blog" className="block text-foreground/70 hover:text-foreground font-medium">
+                  Blog
+                </Link>
                 <div className="flex flex-col gap-2 pt-4 border-t border-border">
                   <Link href="/login">
                     <Button variant="outline" className="w-full bg-transparent rounded-xl">

@@ -30,6 +30,7 @@ import {
   Loader2,
   Plus,
   Trash2,
+  Check,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -104,6 +105,29 @@ const GENDER_OPTIONS = [
   { value: "FEMALE", label: "Cái" },
 ]
 
+// Color options (same as onboarding)
+const COLOR_OPTIONS = [
+  { id: "white", label: "Trắng", hex: "#FFFFFF", border: "#E5E7EB" },
+  { id: "black", label: "Đen", hex: "#000000" },
+  { id: "brown", label: "Nâu", hex: "#8B4513" },
+  { id: "gray", label: "Xám", hex: "#808080" },
+  { id: "yellow", label: "Vàng", hex: "#FFD700" },
+  { id: "cream", label: "Kem", hex: "#FFFACD" },
+  { id: "orange", label: "Cam", hex: "#FF8C00" },
+  { id: "red", label: "Đỏ", hex: "#DC2626" },
+  { id: "blue", label: "Xanh dương", hex: "#3B82F6" },
+  { id: "green", label: "Xanh lá", hex: "#22C55E" },
+]
+
+// Fur type options (same as onboarding)
+const FUR_TYPE_OPTIONS = [
+  { id: "short", label: "Lông ngắn", emoji: "✂️" },
+  { id: "medium", label: "Lông trung bình", emoji: "📏" },
+  { id: "long", label: "Lông dài", emoji: "💇" },
+  { id: "hairless", label: "Không lông", emoji: "🦴" },
+  { id: "curly", label: "Lông xoăn", emoji: "🌀" },
+]
+
 export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOpenAddDialog, onAddDialogClose }: PetProfileProps) {
   const { data: pets, isLoading, refetch } = usePets()
   const [showQR, setShowQR] = useState(false)
@@ -125,7 +149,8 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
     weight_kg: "",
     gender: "MALE",
     sterilized: false,
-    color: "",
+    colors: [] as string[],
+    furType: "",
     microchip: "",
     notes: "",
     image_url: "",
@@ -163,7 +188,8 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
       weight_kg: "",
       gender: "MALE",
       sterilized: false,
-      color: "",
+      colors: [],
+      furType: "",
       microchip: "",
       notes: "",
       image_url: "",
@@ -177,6 +203,19 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
       const speciesBreeds = BREED_OPTIONS[selectedPet.species] || BREED_OPTIONS.Other
       const isCustomBreed = selectedPet.breed && !speciesBreeds.some(b => b.value === selectedPet.breed)
 
+      // Parse colors from comma-separated string to array
+      const colorsArray = selectedPet.color
+        ? selectedPet.color.split(",").map((c: string) => c.trim()).map((colorLabel: string) => {
+          const foundColor = COLOR_OPTIONS.find(co => co.label === colorLabel)
+          return foundColor ? foundColor.id : null
+        }).filter(Boolean) as string[]
+        : []
+
+      // Parse fur_type from label to id
+      const furTypeId = selectedPet.fur_type
+        ? FUR_TYPE_OPTIONS.find(f => f.label === selectedPet.fur_type)?.id || ""
+        : ""
+
       setFormData({
         name: selectedPet.name || "",
         species: selectedPet.species || "Dog",
@@ -186,7 +225,8 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
         weight_kg: String(selectedPet.weight_kg || ""),
         gender: selectedPet.gender || "MALE",
         sterilized: selectedPet.sterilized || false,
-        color: selectedPet.color || "",
+        colors: colorsArray,
+        furType: furTypeId,
         microchip: selectedPet.microchip || "",
         notes: selectedPet.notes || "",
         image_url: selectedPet.image?.url || "",
@@ -205,6 +245,17 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
     setIsSubmitting(true)
     try {
       const finalBreed = formData.breed === "Other" ? formData.customBreed : formData.breed
+
+      // Convert colors array to comma-separated string
+      const colorString = formData.colors.length > 0
+        ? formData.colors.map(c => COLOR_OPTIONS.find(co => co.id === c)?.label).join(", ")
+        : undefined
+
+      // Get fur type label
+      const furTypeLabel = formData.furType
+        ? FUR_TYPE_OPTIONS.find(f => f.id === formData.furType)?.label
+        : undefined
+
       const petData: any = {
         name: formData.name,
         species: formData.species,
@@ -213,7 +264,8 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
         weight_kg: formData.weight_kg ? parseFloat(formData.weight_kg) : undefined,
         gender: formData.gender,
         sterilized: formData.sterilized,
-        color: formData.color || undefined,
+        color: colorString,
+        fur_type: furTypeLabel,
         microchip: formData.microchip || undefined,
         notes: formData.notes || undefined,
       }
@@ -250,6 +302,17 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
     setIsSubmitting(true)
     try {
       const finalBreed = formData.breed === "Other" ? formData.customBreed : formData.breed
+
+      // Convert colors array to comma-separated string
+      const colorString = formData.colors.length > 0
+        ? formData.colors.map(c => COLOR_OPTIONS.find(co => co.id === c)?.label).join(", ")
+        : undefined
+
+      // Get fur type label
+      const furTypeLabel = formData.furType
+        ? FUR_TYPE_OPTIONS.find(f => f.id === formData.furType)?.label
+        : undefined
+
       const updateData: any = {
         name: formData.name,
         species: formData.species,
@@ -258,7 +321,8 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
         weight_kg: formData.weight_kg ? parseFloat(formData.weight_kg) : undefined,
         gender: formData.gender,
         sterilized: formData.sterilized,
-        color: formData.color || undefined,
+        color: colorString,
+        fur_type: furTypeLabel,
         microchip: formData.microchip || undefined,
         notes: formData.notes || undefined,
       }
@@ -444,15 +508,86 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
               </SelectContent>
             </Select>
           </div>
-          <div>
+
+          {/* Color Selection - Multi-select */}
+          <div className="col-span-2">
             <Label className="text-sm">Màu lông</Label>
-            <Input
-              value={formData.color}
-              onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-              placeholder="VD: Trắng, vàng"
-              className="rounded-xl mt-1 h-9"
-            />
+            <div className="grid grid-cols-5 gap-2 mt-2">
+              {COLOR_OPTIONS.map((color) => {
+                const isSelected = formData.colors.includes(color.id)
+                return (
+                  <div
+                    key={color.id}
+                    className="cursor-pointer"
+                    onClick={() => {
+                      const currentColors = formData.colors || []
+                      if (currentColors.includes(color.id)) {
+                        setFormData(prev => ({ ...prev, colors: currentColors.filter((c: string) => c !== color.id) }))
+                      } else {
+                        setFormData(prev => ({ ...prev, colors: [...currentColors, color.id] }))
+                      }
+                    }}
+                  >
+                    <Card
+                      className={`border-2 transition-all ${isSelected ? 'border-primary shadow-md' : 'border-border hover:border-primary/50'
+                        }`}
+                    >
+                      <CardContent className="p-2 space-y-1">
+                        <div
+                          className="w-full h-8 rounded"
+                          style={{
+                            backgroundColor: color.hex,
+                            border: color.border ? `1px solid ${color.border}` : 'none'
+                          }}
+                        />
+                        <p className="text-xs font-medium text-center truncate">
+                          {color.label}
+                        </p>
+                        {isSelected && (
+                          <div className="flex justify-center">
+                            <Check className="w-3 h-3 text-primary" />
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )
+              })}
+            </div>
+            {formData.colors.length > 0 && (
+              <p className="text-xs text-foreground/70 mt-2">
+                Đã chọn: {formData.colors.map((c: string) => COLOR_OPTIONS.find(co => co.id === c)?.label).join(", ")}
+              </p>
+            )}
           </div>
+
+          {/* Fur Type Selection */}
+          {formData.species !== "Fish" && formData.species !== "Bird" && (
+            <div className="col-span-2">
+              <Label className="text-sm">Loại lông</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {FUR_TYPE_OPTIONS.map((furType) => (
+                  <Card
+                    key={furType.id}
+                    className={`cursor-pointer border-2 transition-all ${formData.furType === furType.id
+                      ? 'border-primary bg-primary/5 shadow-lg'
+                      : 'border-border hover:border-primary/50'
+                      }`}
+                    onClick={() => setFormData(prev => ({ ...prev, furType: furType.id }))}
+                  >
+                    <CardContent className="p-3 text-center">
+                      <div className="text-2xl mb-1">{furType.emoji}</div>
+                      <p className="font-medium text-xs">{furType.label}</p>
+                      {formData.furType === furType.id && (
+                        <Check className="w-3 h-3 text-primary mx-auto mt-1" />
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <Label className="text-sm">Số Microchip</Label>
             <Input
@@ -462,6 +597,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
               className="rounded-xl mt-1 h-9"
             />
           </div>
+
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -806,6 +942,21 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
                     </div>
                   </CardContent>
                 </Card>
+                {selectedPet.fur_type && (
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                          <Sparkles className="w-5 h-5 text-purple-500" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-foreground/60">Loại lông</p>
+                          <p className="font-bold text-foreground">{selectedPet.fur_type}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
 
               {/* Microchip */}

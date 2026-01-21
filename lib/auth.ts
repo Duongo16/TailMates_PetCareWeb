@@ -147,6 +147,9 @@ export const apiResponse = {
   error: (message: string, status = 400) =>
     NextResponse.json({ success: false, message }, { status }),
 
+  badRequest: (message = "Bad request") =>
+    NextResponse.json({ success: false, message }, { status: 400 }),
+
   created: (data: unknown, message = "Created successfully") =>
     NextResponse.json({ success: true, message, data }, { status: 201 }),
 
@@ -162,3 +165,4 @@ export const apiResponse = {
   serverError: (message = "Internal server error") =>
     NextResponse.json({ success: false, message }, { status: 500 }),
 };
+
