@@ -48,12 +48,24 @@ export async function PUT(request: NextRequest) {
     if (phone_number) updateData.phone_number = phone_number;
 
     // Handle avatar update - delete old avatar from Cloudinary
-    if (avatar) {
-      const oldAvatarPublicId = user!.avatar?.public_id;
-      if (oldAvatarPublicId && avatar.public_id !== oldAvatarPublicId) {
-        await deleteFromCloudinary(oldAvatarPublicId);
+    if (avatar !== undefined) {
+      if (avatar === null) {
+        if (user!.avatar?.public_id) {
+          await deleteFromCloudinary(user!.avatar.public_id);
+        }
+        updateData.avatar = null;
+      } else if (typeof avatar === 'object' && avatar.url && avatar.public_id) {
+        const oldAvatarPublicId = user!.avatar?.public_id;
+        if (oldAvatarPublicId && avatar.public_id !== oldAvatarPublicId) {
+          await deleteFromCloudinary(oldAvatarPublicId);
+        }
+        updateData.avatar = {
+          url: avatar.url,
+          public_id: avatar.public_id
+        };
+      } else {
+        console.error('Invalid avatar format:', avatar);
       }
-      updateData.avatar = avatar;
     }
 
     // Update merchant profile if applicable

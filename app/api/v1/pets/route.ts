@@ -59,6 +59,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate and prepare image data
+    let validatedImage = undefined;
+    if (image) {
+      if (typeof image === 'object' && image.url && image.public_id) {
+        validatedImage = {
+          url: image.url,
+          public_id: image.public_id
+        };
+      } else {
+        console.error('Invalid image format during pet creation:', image);
+      }
+    }
+
     // Create pet
     const pet = await Pet.create({
       owner_id: user!._id,
@@ -74,7 +87,7 @@ export async function POST(request: NextRequest) {
       microchip,
       allergies,
       notes,
-      image,
+      image: validatedImage,
     });
 
     return apiResponse.created(pet, "Pet added successfully");

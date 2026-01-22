@@ -17,19 +17,22 @@ import {
     ChevronRight,
     ArrowRight,
 } from "lucide-react";
+import { SiteHeader } from "@/components/site-header";
+import { BlogCarousel3D } from "@/components/blog/blog-carousel-3d";
 
 const BLOG_CATEGORIES = [
     "Tất cả bài viết",
     "Hướng Dẫn Sử Dụng",
-    "Kinh nghiệm nuôi chó",
-    "Kinh nghiệm nuôi mèo",
-    "Kinh nghiệm nuôi pet",
+    "Kinh nghiệm nuôi Chó",
+    "Kinh nghiệm nuôi Mèo",
+    "Kinh nghiệm nuôi Pet",
     "Tin Tức Thú Cưng",
     "Uncategorized",
 ];
 
 export default function BlogPage() {
     const [posts, setPosts] = useState<any[]>([]);
+    const [featuredPosts, setFeaturedPosts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState("Tất cả bài viết");
     const [searchQuery, setSearchQuery] = useState("");
@@ -49,12 +52,27 @@ export default function BlogPage() {
         fetchPosts();
     }, [selectedCategory, currentPage, debouncedSearch]);
 
+    // Fetch featured posts for carousel
+    useEffect(() => {
+        const loadFeatured = async () => {
+            try {
+                const response = await blogAPI.list({ sort: "popular", limit: 8 });
+                if (response.success && response.data) {
+                    setFeaturedPosts(response.data.posts || []);
+                }
+            } catch (error) {
+                console.error("Failed to fetch featured posts", error);
+            }
+        };
+        loadFeatured();
+    }, []);
+
     const fetchPosts = async () => {
         try {
             setLoading(true);
             const params: any = {
                 page: currentPage,
-                limit: 13, // 1 featured + 12 grid
+                limit: 12, // Standard grid of 12
             };
 
             if (selectedCategory !== "Tất cả bài viết") {
@@ -85,94 +103,35 @@ export default function BlogPage() {
         });
     };
 
-    const featuredPost = posts.length > 0 && currentPage === 1 ? posts[0] : null;
-    const gridPosts = currentPage === 1 ? posts.slice(1) : posts;
+
 
     return (
         <div className="min-h-screen bg-background text-foreground">
-            {/* Hero Section */}
-            <section className="relative py-20 bg-gradient-to-br from-primary/5 via-primary/10 to-transparent overflow-hidden">
-                {/* Decorative elements */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-200 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2" />
+            {/* Site Header */}
+            <SiteHeader showBlogLink={false} />
 
-                <div className="container mx-auto px-4 relative z-10">
-                    <div className="text-center max-w-2xl mx-auto mb-12">
+            {/* Hero Section */}
+            {/* 3D Carousel Hero Section */}
+            <section className="relative bg-gradient-to-br from-primary/5 via-primary/10 to-transparent overflow-hidden">
+                {/* Decorative elements */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-200 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+
+                <div className="container mx-auto px-4 relative z-10 pt-12 pb-4">
+                    <div className="text-center max-w-2xl mx-auto mb-8">
                         <h1 className="text-4xl md:text-5xl font-bold font-heading mb-4 leading-tight">
                             Góc chia sẻ <span className="text-primary">Kiến thức</span>
                         </h1>
                         <p className="text-lg text-muted-foreground">
-                            Khám phá những bài viết hữu ích về chăm sóc thú cưng, dinh dưỡng và
-                            mẹo vặt từ chuyên gia của TailMates.
+                            Khám phá những bài viết nổi bật nhất từ cộng đồng TailMates
                         </p>
                     </div>
 
-                    {/* Featured Post Card */}
-                    {loading ? (
-                        <div className="w-full h-[400px] bg-muted/50 rounded-3xl animate-pulse" />
-                    ) : featuredPost ? (
-                        <Link href={`/blog/${featuredPost._id}`} className="block group">
-                            <div className="relative bg-card rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 hover:shadow-3xl border border-border/50">
-                                <div className="grid md:grid-cols-2 gap-0">
-                                    <div className="relative h-[300px] md:h-[450px] overflow-hidden">
-                                        <Image
-                                            src={
-                                                featuredPost.featured_image?.url ||
-                                                "/placeholder-blog.jpg"
-                                            }
-                                            alt={featuredPost.title}
-                                            fill
-                                            className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent md:hidden" />
-                                    </div>
-                                    <div className="p-8 md:p-12 flex flex-col justify-center relative">
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground px-3 py-1 text-sm rounded-full">
-                                                {featuredPost.category}
-                                            </Badge>
-                                            <span className="flex items-center text-sm text-muted-foreground">
-                                                <Calendar className="w-4 h-4 mr-1" />
-                                                {formatDate(featuredPost.published_at || featuredPost.created_at)}
-                                            </span>
-                                        </div>
-                                        <h2 className="text-2xl md:text-3xl font-bold mb-4 line-clamp-3 group-hover:text-primary transition-colors">
-                                            {featuredPost.title}
-                                        </h2>
-                                        <p className="text-muted-foreground mb-6 line-clamp-3 md:line-clamp-4 text-base md:text-lg">
-                                            {featuredPost.excerpt}
-                                        </p>
-                                        <div className="flex items-center justify-between mt-auto">
-                                            <div className="flex items-center gap-3">
-                                                <Avatar className="h-10 w-10 border-2 border-background">
-                                                    <AvatarImage src={featuredPost.author_avatar?.url} />
-                                                    <AvatarFallback>
-                                                        {featuredPost.author_name?.charAt(0) || "U"}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p className="font-semibold text-sm">
-                                                        {featuredPost.author_name}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        Tác giả
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center text-primary font-medium group/btn">
-                                                Đọc tiếp
-                                                <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover/btn:translate-x-1" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </Link>
+                    {featuredPosts.length > 0 ? (
+                        <BlogCarousel3D posts={featuredPosts} />
                     ) : (
-                        <div className="text-center py-20 bg-muted/20 rounded-3xl">
-                            <p className="text-muted-foreground">
-                                Chưa có bài viết nổi bật nào.
-                            </p>
+                        <div className="h-[500px] flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
                         </div>
                     )}
                 </div>
@@ -218,7 +177,6 @@ export default function BlogPage() {
                     </div>
                 </div>
 
-                {/* Posts Grid */}
                 {loading && currentPage !== 1 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -228,9 +186,9 @@ export default function BlogPage() {
                             />
                         ))}
                     </div>
-                ) : gridPosts.length > 0 ? (
+                ) : posts.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {gridPosts.map((post) => (
+                        {posts.map((post) => (
                             <Link key={post._id} href={`/blog/${post._id}`}>
                                 <Card className="h-full border-none shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-card group overflow-hidden rounded-2xl">
                                     {/* Image */}

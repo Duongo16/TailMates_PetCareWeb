@@ -13,8 +13,6 @@ import {
   Heart,
   Star,
   CheckCircle2,
-  Menu,
-  X,
   Play,
   ArrowRight,
   Zap,
@@ -26,6 +24,8 @@ import {
 import { useState, useEffect } from "react"
 import { useCustomerPackages, useMerchantPackages } from "@/lib/hooks"
 import { OnboardingModal } from "@/components/onboarding-modal"
+import { SiteHeader } from "@/components/site-header"
+import { useAuth } from "@/lib/auth-context"
 
 const features = [
   {
@@ -116,7 +116,7 @@ const howItWorks = [
 ]
 
 export function Homepage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { user } = useAuth()
   const [activeTestimonial, setActiveTestimonial] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
   const [showOnboarding, setShowOnboarding] = useState(false)
@@ -183,90 +183,7 @@ export function Homepage() {
     <>
       <div className="min-h-screen bg-background overflow-hidden">
         {/* Header */}
-        <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <Link href="/" className="flex items-center gap-2">
-                <Image src="/images/logo-ngang.png" alt="TailMates" width={120} height={40} className="sm:h-16 h-8 w-auto" />
-              </Link>
-
-              <nav className="hidden md:flex items-center gap-8">
-                <a
-                  href="#features"
-                  className="text-foreground/70 hover:text-primary transition-colors font-medium text-sm"
-                >
-                  Tính năng
-                </a>
-                <a
-                  href="#how-it-works"
-                  className="text-foreground/70 hover:text-primary transition-colors font-medium text-sm"
-                >
-                  Cách hoạt động
-                </a>
-                <a
-                  href="#testimonials"
-                  className="text-foreground/70 hover:text-primary transition-colors font-medium text-sm"
-                >
-                  Đánh giá
-                </a>
-                <Link
-                  href="/blog"
-                  className="text-foreground/70 hover:text-primary transition-colors font-medium text-sm"
-                >
-                  Blog
-                </Link>
-              </nav>
-
-              <div className="hidden md:flex items-center gap-3">
-                <Link href="/login">
-                  <Button variant="ghost" className="font-medium rounded-xl">
-                    Đăng nhập
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all">
-                    Đăng ký miễn phí
-                  </Button>
-                </Link>
-              </div>
-
-              <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-            </div>
-          </div>
-
-          {mobileMenuOpen && (
-            <div className="md:hidden bg-card border-t border-border animate-in slide-in-from-top-2">
-              <div className="px-4 py-4 space-y-4">
-                <a href="#features" className="block text-foreground/70 hover:text-foreground font-medium">
-                  Tính năng
-                </a>
-                <a href="#how-it-works" className="block text-foreground/70 hover:text-foreground font-medium">
-                  Cách hoạt động
-                </a>
-                <a href="#testimonials" className="block text-foreground/70 hover:text-foreground font-medium">
-                  Đánh giá
-                </a>
-                <Link href="/blog" className="block text-foreground/70 hover:text-foreground font-medium">
-                  Blog
-                </Link>
-                <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                  <Link href="/login">
-                    <Button variant="outline" className="w-full bg-transparent rounded-xl">
-                      Đăng nhập
-                    </Button>
-                  </Link>
-                  <Link href="/register">
-                    <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
-                      Đăng ký miễn phí
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          )}
-        </header>
+        <SiteHeader />
 
         {/* Hero Section - Redesigned */}
         <section className="relative overflow-hidden">
@@ -312,14 +229,16 @@ export function Homepage() {
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button
-                    size="lg"
-                    onClick={() => setShowOnboarding(true)}
-                    className="bg-primary hover:bg-white text-primary-foreground hover:text-foreground font-bold rounded-2xl px-8 py-6 text-lg w-full sm:w-auto shadow-xl shadow-primary/25 hover:shadow-2xl hover:scale-105 transition-all group border-2 border-primary"
-                  >
-                    Bắt đầu miễn phí
-                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
+                  {!user && (
+                    <Button
+                      size="lg"
+                      onClick={() => setShowOnboarding(true)}
+                      className="bg-primary hover:bg-white text-primary-foreground hover:text-foreground font-bold rounded-2xl px-8 py-6 text-lg w-full sm:w-auto shadow-xl shadow-primary/25 hover:shadow-2xl hover:scale-105 transition-all group border-2 border-primary"
+                    >
+                      Bắt đầu miễn phí
+                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  )}
                   <Button
                     size="lg"
                     variant="outline"
@@ -536,23 +455,27 @@ export function Homepage() {
               Đăng ký miễn phí và khám phá tất cả tính năng tuyệt vời của TailMates. Không cần thẻ tín dụng.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                onClick={() => setShowOnboarding(true)}
-                className="bg-white hover:bg-white/90 text-navy font-bold rounded-2xl px-10 py-6 text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all"
-              >
-                <PawPrint className="w-5 h-5 mr-2" />
-                Bắt đầu miễn phí
-              </Button>
-              <Link href="/login">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-white/30 text-white hover:bg-white/10 font-bold rounded-2xl px-10 py-6 text-lg bg-transparent"
-                >
-                  Đã có tài khoản? Đăng nhập
-                </Button>
-              </Link>
+              {!user && (
+                <>
+                  <Button
+                    size="lg"
+                    onClick={() => setShowOnboarding(true)}
+                    className="bg-white hover:bg-white/90 text-navy font-bold rounded-2xl px-10 py-6 text-lg shadow-xl hover:shadow-2xl hover:scale-105 transition-all"
+                  >
+                    <PawPrint className="w-5 h-5 mr-2" />
+                    Bắt đầu miễn phí
+                  </Button>
+                  <Link href="/login">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="border-white/30 text-white hover:bg-white/10 font-bold rounded-2xl px-10 py-6 text-lg bg-transparent"
+                    >
+                      Đã có tài khoản? Đăng nhập
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </section>

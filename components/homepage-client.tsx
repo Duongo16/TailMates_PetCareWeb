@@ -1,20 +1,10 @@
 "use client"
 
 import { useAuth } from "@/lib/auth-context"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
 import { Homepage } from "@/components/homepage"
 
 export function HomepageClient() {
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    if (!isLoading && user) {
-      // Redirect logged in users to their dashboard
-      router.push(`/dashboard/${user.role}`)
-    }
-  }, [user, isLoading, router])
+  const { isLoading } = useAuth()
 
   if (isLoading) {
     return (

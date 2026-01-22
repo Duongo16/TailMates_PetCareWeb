@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { blogAPI } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -18,11 +19,13 @@ import {
     MessageSquare,
     Clock,
 } from "lucide-react";
+import { SiteHeader } from "@/components/site-header";
 
 export default function BlogDetailPage() {
     const params = useParams();
     const router = useRouter();
     const { id } = params;
+    const { user, requireAuth } = useAuth();
 
     const [post, setPost] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -55,6 +58,7 @@ export default function BlogDetailPage() {
 
     const handleVote = async (voteType: "LIKE" | "DISLIKE") => {
         if (!post) return;
+        if (!requireAuth()) return;
 
         try {
             // Optimistic update
@@ -136,6 +140,7 @@ export default function BlogDetailPage() {
 
     return (
         <div className="min-h-screen bg-background pb-20">
+            <SiteHeader />
             {/* Article Header */}
             <div className="bg-muted/30 border-b border-border/50">
                 <div className="container mx-auto px-4 py-12 max-w-4xl">

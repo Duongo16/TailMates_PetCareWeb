@@ -270,10 +270,10 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
         notes: formData.notes || undefined,
       }
 
-      if (formData.image_url) {
+      if (formData.image_url && formData.image_url.trim()) {
         petData.image = {
           url: formData.image_url,
-          public_id: formData.image_public_id || `pet_${Date.now()}`
+          public_id: (formData.image_public_id && formData.image_public_id.trim()) || `pet_${Date.now()}`
         }
       }
 
@@ -327,10 +327,10 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
         notes: formData.notes || undefined,
       }
 
-      if (formData.image_url) {
+      if (formData.image_url && formData.image_url.trim()) {
         updateData.image = {
           url: formData.image_url,
-          public_id: formData.image_public_id || selectedPet.image?.public_id || `pet_${Date.now()}`
+          public_id: (formData.image_public_id && formData.image_public_id.trim()) || selectedPet.image?.public_id || `pet_${Date.now()}`
         }
       }
 
@@ -411,12 +411,12 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
       <div className="md:w-1/3 flex-shrink-0">
         <ImageUpload
           label="Hình ảnh thú cưng"
-          value={formData.image_url}
-          onChange={(url, publicId) => {
+          value={formData.image_url ? { url: formData.image_url, public_id: formData.image_public_id } : null}
+          onChange={(image) => {
             setFormData(prev => ({
               ...prev,
-              image_url: url,
-              image_public_id: publicId || prev.image_public_id
+              image_url: image?.url || "",
+              image_public_id: image?.public_id || ""
             }))
           }}
         />

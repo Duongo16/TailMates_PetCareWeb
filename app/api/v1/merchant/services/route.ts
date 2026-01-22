@@ -53,6 +53,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate and prepare image data
+    let validatedImage = undefined;
+    if (image) {
+      if (typeof image === 'object' && image.url && image.public_id) {
+        validatedImage = {
+          url: image.url,
+          public_id: image.public_id
+        };
+      } else {
+        console.error('Invalid image format during service creation:', image);
+      }
+    }
+
     const service = await Service.create({
       merchant_id: user!._id,
       name,
@@ -60,7 +73,7 @@ export async function POST(request: NextRequest) {
       price_max,
       duration_minutes,
       description,
-      image,
+      image: validatedImage,
       is_active: true,
     });
 

@@ -639,12 +639,12 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                 </div>
                 <ImageUpload
                   label="Hình ảnh sản phẩm"
-                  value={newProduct.image_url}
-                  onChange={(url, publicId) => {
+                  value={newProduct.image_url ? { url: newProduct.image_url, public_id: newProduct.image_public_id } : null}
+                  onChange={(image) => {
                     setNewProduct({
                       ...newProduct,
-                      image_url: url,
-                      image_public_id: publicId || newProduct.image_public_id
+                      image_url: image?.url || "",
+                      image_public_id: image?.public_id || ""
                     })
                   }}
                 />
@@ -830,12 +830,12 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                 </div>
                 <ImageUpload
                   label="Hình ảnh sản phẩm"
-                  value={editingProduct.image_url}
-                  onChange={(url, publicId) => {
+                  value={editingProduct.image_url ? { url: editingProduct.image_url, public_id: editingProduct.images?.[0]?.public_id || "" } : null}
+                  onChange={(image) => {
                     setEditingProduct({
                       ...editingProduct,
-                      image_url: url,
-                      image_public_id: publicId || editingProduct.image_public_id
+                      image_url: image?.url || "",
+                      image_public_id: image?.public_id || ""
                     })
                   }}
                 />
@@ -1125,12 +1125,12 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                 </div>
                 <ImageUpload
                   label="Hình ảnh dịch vụ"
-                  value={newService.image_url}
-                  onChange={(url, publicId) => {
+                  value={newService.image_url ? { url: newService.image_url, public_id: newService.image_public_id } : null}
+                  onChange={(image) => {
                     setNewService({
                       ...newService,
-                      image_url: url,
-                      image_public_id: publicId || newService.image_public_id
+                      image_url: image?.url || "",
+                      image_public_id: image?.public_id || ""
                     })
                   }}
                 />
@@ -1203,12 +1203,12 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                 </div>
                 <ImageUpload
                   label="Hình ảnh dịch vụ"
-                  value={editingService.image_url}
-                  onChange={(url, publicId) => {
+                  value={editingService.image_url ? { url: editingService.image_url, public_id: editingService.image?.public_id || "" } : null}
+                  onChange={(image) => {
                     setEditingService({
                       ...editingService,
-                      image_url: url,
-                      image_public_id: publicId || editingService.image_public_id
+                      image_url: image?.url || "",
+                      image_public_id: image?.public_id || ""
                     })
                   }}
                 />

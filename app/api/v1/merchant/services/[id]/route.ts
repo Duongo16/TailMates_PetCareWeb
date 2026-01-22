@@ -43,7 +43,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       "price_max",
       "duration_minutes",
       "description",
-      "image",
       "is_active",
     ];
 
@@ -51,6 +50,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     for (const field of updateFields) {
       if (body[field] !== undefined) {
         updateData[field] = body[field];
+      }
+    }
+
+    // Handle image update separately with validation
+    if (body.image !== undefined) {
+      if (body.image === null) {
+        // Allow removing image
+        updateData.image = undefined;
+      } else if (typeof body.image === 'object' && body.image.url && body.image.public_id) {
+        // Valid image object
+        updateData.image = {
+          url: body.image.url,
+          public_id: body.image.public_id
+        };
+      } else {
+        // Invalid image format, log and skip
+        console.error('Invalid image format:', body.image);
       }
     }
 

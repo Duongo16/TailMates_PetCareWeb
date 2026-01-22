@@ -220,12 +220,12 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
             {/* Avatar compact */}
             <ImageUpload
               label="Ảnh đại diện"
-              value={profileData.avatar_url}
-              onChange={(url, publicId) => {
+              value={profileData.avatar_url ? { url: profileData.avatar_url, public_id: profileData.avatar_public_id } : null}
+              onChange={(image) => {
                 setProfileData({
                   ...profileData,
-                  avatar_url: url,
-                  avatar_public_id: publicId || profileData.avatar_public_id
+                  avatar_url: image?.url || "",
+                  avatar_public_id: image?.public_id || ""
                 })
               }}
             />
