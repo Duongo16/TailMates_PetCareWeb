@@ -44,6 +44,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       "duration_minutes",
       "description",
       "is_active",
+      "category",
     ];
 
     const updateData: Record<string, unknown> = {};

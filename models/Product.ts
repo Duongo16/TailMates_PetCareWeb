@@ -7,6 +7,8 @@ import {
   HEALTH_TAGS,
   IProductSpecifications,
   INutritionalInfo,
+  Texture,
+  PrimaryProteinSource,
 } from "@/lib/product-constants";
 
 // Re-export for backward compatibility with server-side imports
@@ -16,6 +18,8 @@ export {
   LifeStage,
   BreedSize,
   HEALTH_TAGS,
+  Texture,
+  PrimaryProteinSource,
   type IProductSpecifications,
 };
 
@@ -32,6 +36,7 @@ export interface IProduct extends Document {
   name: string;
   category: ProductCategory;
   price: number;
+  sale_price?: number;
   description?: string;
   images: ICloudinaryImage[];
   stock_quantity: number;
@@ -58,6 +63,9 @@ const NutritionalInfoSchema = new Schema<INutritionalInfo>(
     fiber: { type: Number, min: 0, max: 100 },
     moisture: { type: Number, min: 0, max: 100 },
     calories: { type: Number, min: 0 },
+    calcium: { type: Number, min: 0 },
+    phosphorus: { type: Number, min: 0 },
+    taurine: { type: Number, min: 0 },
   },
   { _id: false }
 );
@@ -80,6 +88,20 @@ const ProductSpecificationsSchema = new Schema<IProductSpecifications>(
     nutritionalInfo: NutritionalInfoSchema,
     ingredients: [{ type: String }],
     isSterilized: { type: Boolean },
+
+    // New fields
+    caloricDensity: {
+      amount: { type: Number },
+      unit: { type: String },
+    },
+    texture: {
+      type: String,
+      enum: Object.values(Texture),
+    },
+    primaryProteinSource: {
+      type: String,
+      enum: Object.values(PrimaryProteinSource),
+    },
   },
   { _id: false }
 );
@@ -104,6 +126,10 @@ const ProductSchema = new Schema<IProduct>(
     price: {
       type: Number,
       required: [true, "Price is required"],
+      min: 0,
+    },
+    sale_price: {
+      type: Number,
       min: 0,
     },
     description: {

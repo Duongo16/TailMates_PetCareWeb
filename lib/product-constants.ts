@@ -31,6 +31,20 @@ export enum ProductCategory {
 }
 
 // Predefined Health Tags for consistency
+export enum Texture {
+    PATE = "PATE",
+    JELLY = "JELLY",
+    GRAVY = "GRAVY",
+    KIBBLE_SMALL = "KIBBLE_SMALL",
+    KIBBLE_LARGE = "KIBBLE_LARGE",
+}
+
+export enum PrimaryProteinSource {
+    TUNA = "TUNA",
+    CHICKEN = "CHICKEN",
+    BEEF = "BEEF",
+}
+
 export const HEALTH_TAGS = [
     "Hairball Control",
     "Weight Management",
@@ -53,7 +67,10 @@ export interface INutritionalInfo {
     fat?: number;        // %
     fiber?: number;      // %
     moisture?: number;   // %
-    calories?: number;   // kcal/kg
+    calories?: number;   // kcal/kg (Legacy)
+    calcium?: number;    // %
+    phosphorus?: number; // %
+    taurine?: number;    // % or mg/kg
 }
 
 export interface IProductSpecifications {
@@ -64,4 +81,11 @@ export interface IProductSpecifications {
     nutritionalInfo?: INutritionalInfo;
     ingredients?: string[];
     isSterilized?: boolean;
+    // New fields
+    caloricDensity?: {
+        amount: number;
+        unit: string;
+    };
+    texture?: Texture;
+    primaryProteinSource?: PrimaryProteinSource;
 }

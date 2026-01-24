@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useMerchantProducts, useMerchantServices, useOrders, useBookings } from "@/lib/hooks"
-import { HEALTH_TAGS, TargetSpecies, LifeStage, BreedSize } from "@/lib/product-constants"
+import { HEALTH_TAGS, TargetSpecies, LifeStage, BreedSize, Texture, PrimaryProteinSource } from "@/lib/product-constants"
 import { merchantAPI, ordersAPI, bookingsAPI } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -28,18 +28,31 @@ import {
   TrendingUp,
   Package,
   ShoppingCart,
-  Star,
-  Edit,
-  Trash2,
-  Eye,
-  Phone,
-  MapPin,
-  User,
-  Loader2,
+  FileText,
   XCircle,
+  Eye,
+  Trash2,
+  Edit,
+  User,
+  MapPin,
+  Phone,
+  Star,
+  Loader2,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
+import dynamic from "next/dynamic"
+
+const MerchantSettings = dynamic(() => import("./merchant-settings").then((mod) => mod.MerchantSettings), {
+  loading: () => <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
+})
+const MerchantMedicalRecords = dynamic(() => import("./merchant-medical-records").then((mod) => mod.MerchantMedicalRecords), {
+  loading: () => <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
+})
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell } from "recharts"
 import Image from "next/image"
+import { useToast } from "@/components/ui/use-toast"
 
 interface MerchantDashboardContentProps {
   activeTab: string
@@ -52,6 +65,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
   const { data: services, isLoading: servicesLoading, refetch: refetchServices } = useMerchantServices()
   const { data: orders, isLoading: ordersLoading, refetch: refetchOrders } = useOrders()
   const { data: bookings, isLoading: bookingsLoading, refetch: refetchBookings } = useBookings()
+  const { toast } = useToast()
 
   const [scanResult, setScanResult] = useState<string | null>(null)
   const [showAddProduct, setShowAddProduct] = useState(false)
@@ -62,6 +76,128 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
   const [editingProduct, setEditingProduct] = useState<any | null>(null)
   const [editingService, setEditingService] = useState<any | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedBooking, setSelectedBooking] = useState<any | null>(null)
+  const [showBookingDetails, setShowBookingDetails] = useState(false)
+
+  // Filter States
+  const [filterName, setFilterName] = useState("")
+  const [filterCategory, setFilterCategory] = useState("ALL")
+  const [filterStock, setFilterStock] = useState("ALL")
+
+  // Service Filter States
+  const [filterServiceName, setFilterServiceName] = useState("")
+  const [filterServiceCategory, setFilterServiceCategory] = useState("ALL")
+
+  // Order & Booking Gradient Filter States
+  const [orderFilter, setOrderFilter] = useState("ALL")
+  const [bookingFilter, setBookingFilter] = useState("ALL") // "ALL" | "TODAY" | "PENDING" | ...
+
+  const filteredProducts = useMemo(() => {
+    if (!products) return []
+    return products.filter((product: any) => {
+      const matchesName = product.name.toLowerCase().includes(filterName.toLowerCase())
+      const matchesCategory = filterCategory === "ALL" || product.category === filterCategory
+      const matchesStock = filterStock === "ALL" ||
+        (filterStock === "IN_STOCK" && product.stock_quantity > 0) ||
+        (filterStock === "OUT_OF_STOCK" && product.stock_quantity === 0)
+
+      return matchesName && matchesCategory && matchesStock
+    })
+  }, [products, filterName, filterCategory, filterStock])
+
+  // Pagination
+  // Pagination
+  const ITEMS_PER_PAGE = 6
+  const [currentPage, setCurrentPage] = useState(1) // Products
+  const [currentServicePage, setCurrentServicePage] = useState(1)
+  const [currentOrderPage, setCurrentOrderPage] = useState(1)
+  const [currentBookingPage, setCurrentBookingPage] = useState(1)
+
+  const [orderTab, setOrderTab] = useState("all")
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filterName, filterCategory, filterStock])
+
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  }, [filteredProducts, currentPage])
+
+  const totalPages = Math.ceil((filteredProducts?.length || 0) / ITEMS_PER_PAGE)
+
+  // Services Filtering
+  const filteredServices = useMemo(() => {
+    if (!services) return []
+    return services.filter((service: any) => {
+      const matchesName = service.name.toLowerCase().includes(filterServiceName.toLowerCase())
+      const matchesCategory = filterServiceCategory === "ALL" || service.category === filterServiceCategory
+      return matchesName && matchesCategory
+    })
+  }, [services, filterServiceName, filterServiceCategory])
+
+  // Reset service pagination when filters change
+  useEffect(() => {
+    setCurrentServicePage(1)
+  }, [filterServiceName, filterServiceCategory])
+
+  // Services Pagination
+  const paginatedServices = useMemo(() => {
+    const startIndex = (currentServicePage - 1) * ITEMS_PER_PAGE
+    return filteredServices.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  }, [filteredServices, currentServicePage])
+
+  const totalServicePages = Math.ceil((filteredServices?.length || 0) / ITEMS_PER_PAGE)
+
+  // Orders Pagination
+  useEffect(() => {
+    setCurrentOrderPage(1)
+  }, [orderFilter])
+
+  const filteredOrders = useMemo(() => {
+    if (!orders) return []
+    if (orderFilter === "ALL") return orders
+    return orders.filter((o: any) => o.status === orderFilter)
+  }, [orders, orderFilter])
+
+  const paginatedOrders = useMemo(() => {
+    const startIndex = (currentOrderPage - 1) * ITEMS_PER_PAGE
+    return filteredOrders.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  }, [filteredOrders, currentOrderPage])
+
+  const totalOrderPages = Math.ceil((filteredOrders?.length || 0) / ITEMS_PER_PAGE)
+
+  // Bookings Filtering
+  const filteredBookings = useMemo(() => {
+    if (!bookings) return []
+    const now = new Date()
+
+    return bookings.filter((b: any) => {
+      // Today Filter
+      if (bookingFilter === "TODAY") {
+        const bookingDate = new Date(b.booking_time)
+        return bookingDate.getDate() === now.getDate() &&
+          bookingDate.getMonth() === now.getMonth() &&
+          bookingDate.getFullYear() === now.getFullYear()
+      }
+
+      // Status Filter
+      if (bookingFilter !== "ALL") {
+        return b.status === bookingFilter
+      }
+
+      return true
+    })
+  }, [bookings, bookingFilter])
+
+  // Bookings Pagination
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (currentBookingPage - 1) * ITEMS_PER_PAGE
+    return filteredBookings.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  }, [filteredBookings, currentBookingPage])
+
+  const totalBookingPages = Math.ceil((filteredBookings?.length || 0) / ITEMS_PER_PAGE)
 
   // Form States with image support
   const [newProduct, setNewProduct] = useState({
@@ -84,8 +220,24 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
     calories: "",
     ingredients: "",
     isSterilized: false,
+    caloric_density_amount: "",
+    caloric_density_unit: "kcal/kg",
+    texture: "",
+    primary_protein_source: "",
+    calcium: "",
+    phosphorus: "",
+    taurine: "",
   })
-  const [newService, setNewService] = useState({ name: "", category: "spa", price_min: "", price_max: "", duration_minutes: "", description: "", image_url: "", image_public_id: "" })
+  const [newService, setNewService] = useState({
+    name: "",
+    category: "SPA",
+    price_min: "",
+    price_max: "",
+    duration_minutes: "",
+    description: "",
+    image_url: "",
+    image_public_id: ""
+  })
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -95,20 +247,21 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
   }
 
   const getStatusBadge = (status: string) => {
+    const commonClasses = "border font-medium px-2.5 py-0.5 rounded-full text-xs shadow-sm bg-opacity-50"
     switch (status) {
       case "PENDING":
-        return <Badge className="bg-orange-100 text-orange-700">Chờ xử lý</Badge>
+        return <Badge variant="outline" className={`${commonClasses} bg-yellow-50 text-yellow-700 border-yellow-200`}>Chờ xử lý</Badge>
       case "SHIPPING":
-        return <Badge className="bg-blue-100 text-blue-700">Đang giao</Badge>
+        return <Badge variant="outline" className={`${commonClasses} bg-purple-50 text-purple-700 border-purple-200`}>Đang giao</Badge>
       case "COMPLETED":
-      case "DONE": // Handling both if inconsistent
-        return <Badge className="bg-green-100 text-green-700">Hoàn thành</Badge>
+      case "DONE":
+        return <Badge variant="outline" className={`${commonClasses} bg-green-50 text-green-700 border-green-200`}>Hoàn thành</Badge>
       case "CONFIRMED":
-        return <Badge className="bg-green-100 text-green-700">Đã xác nhận</Badge>
+        return <Badge variant="outline" className={`${commonClasses} bg-blue-50 text-blue-700 border-blue-200`}>Đã xác nhận</Badge>
       case "CANCELLED":
-        return <Badge className="bg-red-100 text-red-700">Đã hủy</Badge>
+        return <Badge variant="outline" className={`${commonClasses} bg-red-50 text-red-700 border-red-200`}>Đã hủy</Badge>
       default:
-        return <Badge>{status}</Badge>
+        return <Badge variant="outline" className={`${commonClasses} bg-gray-50 text-gray-700 border-gray-200`}>{status}</Badge>
     }
   }
 
@@ -162,6 +315,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
         name: newProduct.name,
         category: newProduct.category,
         price: Number(newProduct.price),
+        sale_price: newProduct.sale_price ? Number(newProduct.sale_price) : undefined,
         stock_quantity: Number(newProduct.stock),
         description: newProduct.description,
       }
@@ -177,6 +331,17 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
         if (newProduct.healthTags.length > 0) specifications.healthTags = newProduct.healthTags
         if (newProduct.ingredients) specifications.ingredients = newProduct.ingredients.split(",").map((i: string) => i.trim())
         specifications.isSterilized = newProduct.isSterilized
+
+        // New specification fields
+        if (newProduct.texture) specifications.texture = newProduct.texture
+        if (newProduct.primary_protein_source) specifications.primaryProteinSource = newProduct.primary_protein_source
+        if (newProduct.caloric_density_amount) {
+          specifications.caloricDensity = {
+            amount: Number(newProduct.caloric_density_amount),
+            unit: newProduct.caloric_density_unit
+          }
+        }
+
         // Nutritional info
         const nutritionalInfo: any = {}
         if (newProduct.protein) nutritionalInfo.protein = Number(newProduct.protein)
@@ -184,6 +349,10 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
         if (newProduct.fiber) nutritionalInfo.fiber = Number(newProduct.fiber)
         if (newProduct.moisture) nutritionalInfo.moisture = Number(newProduct.moisture)
         if (newProduct.calories) nutritionalInfo.calories = Number(newProduct.calories)
+        // Extended nutritional info
+        if (newProduct.calcium) nutritionalInfo.calcium = Number(newProduct.calcium)
+        if (newProduct.phosphorus) nutritionalInfo.phosphorus = Number(newProduct.phosphorus)
+        if (newProduct.taurine) nutritionalInfo.taurine = Number(newProduct.taurine)
         if (Object.keys(nutritionalInfo).length > 0) specifications.nutritionalInfo = nutritionalInfo
         if (Object.keys(specifications).length > 0) productData.specifications = specifications
       }
@@ -192,15 +361,29 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
         setShowAddProduct(false)
         refetchProducts()
         setNewProduct({
-          name: "", category: "FOOD", price: "", stock: "", description: "", image_url: "", image_public_id: "",
+          name: "", category: "FOOD", price: "", sale_price: "", stock: "", description: "", image_url: "", image_public_id: "",
           targetSpecies: "", lifeStage: "", breedSize: "", healthTags: [],
           protein: "", fat: "", fiber: "", moisture: "", calories: "", ingredients: "", isSterilized: false,
+          caloric_density_amount: "", caloric_density_unit: "kcal/kg", texture: "", primary_protein_source: "",
+          calcium: "", phosphorus: "", taurine: "",
+        })
+        toast({
+          title: "Thêm sản phẩm thành công",
+          description: "Sản phẩm mới đã được thêm vào cửa hàng của bạn.",
         })
       } else {
-        alert(res.message)
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: res.message || "Không thể thêm sản phẩm",
+        })
       }
     } catch {
-      alert("Lỗi khi tạo sản phẩm")
+      toast({
+        variant: "destructive",
+        title: "Lỗi hệ thống",
+        description: "Đã xảy ra lỗi khi tạo sản phẩm",
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -214,6 +397,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
         name: editingProduct.name,
         category: editingProduct.category,
         price: Number(editingProduct.price),
+        sale_price: editingProduct.sale_price ? Number(editingProduct.sale_price) : undefined,
         stock_quantity: Number(editingProduct.stock_quantity),
         description: editingProduct.description,
       }
@@ -229,6 +413,16 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
         if (editingProduct.healthTags?.length > 0) specifications.healthTags = editingProduct.healthTags
         if (editingProduct.ingredients?.length > 0) specifications.ingredients = editingProduct.ingredients
         specifications.isSterilized = editingProduct.isSterilized || false
+
+        // New specification fields
+        if (editingProduct.texture) specifications.texture = editingProduct.texture
+        if (editingProduct.primary_protein_source) specifications.primaryProteinSource = editingProduct.primary_protein_source
+        if (editingProduct.caloric_density_amount) {
+          specifications.caloricDensity = {
+            amount: Number(editingProduct.caloric_density_amount),
+            unit: editingProduct.caloric_density_unit || "kcal/kg"
+          }
+        }
         // Nutritional info
         const nutritionalInfo: any = {}
         if (editingProduct.protein) nutritionalInfo.protein = Number(editingProduct.protein)
@@ -236,6 +430,10 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
         if (editingProduct.fiber) nutritionalInfo.fiber = Number(editingProduct.fiber)
         if (editingProduct.moisture) nutritionalInfo.moisture = Number(editingProduct.moisture)
         if (editingProduct.calories) nutritionalInfo.calories = Number(editingProduct.calories)
+        // Extended nutritional info
+        if (editingProduct.calcium) nutritionalInfo.calcium = Number(editingProduct.calcium)
+        if (editingProduct.phosphorus) nutritionalInfo.phosphorus = Number(editingProduct.phosphorus)
+        if (editingProduct.taurine) nutritionalInfo.taurine = Number(editingProduct.taurine)
         if (Object.keys(nutritionalInfo).length > 0) specifications.nutritionalInfo = nutritionalInfo
         if (Object.keys(specifications).length > 0) productData.specifications = specifications
       }
@@ -244,11 +442,23 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
         setShowEditProduct(false)
         setEditingProduct(null)
         refetchProducts()
+        toast({
+          title: "Cập nhật thành công",
+          description: "Thông tin sản phẩm đã được cập nhật.",
+        })
       } else {
-        alert(res.message)
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: res.message || "Không thể cập nhật sản phẩm",
+        })
       }
     } catch {
-      alert("Lỗi khi cập nhật sản phẩm")
+      toast({
+        variant: "destructive",
+        title: "Lỗi hệ thống",
+        description: "Đã xảy ra lỗi khi cập nhật sản phẩm",
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -260,11 +470,23 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
       const res = await merchantAPI.deleteProduct(productId)
       if (res.success) {
         refetchProducts()
+        toast({
+          title: "Đã xóa sản phẩm",
+          description: "Sản phẩm đã được xóa khỏi cửa hàng.",
+        })
       } else {
-        alert(res.message)
+        toast({
+          variant: "destructive",
+          title: "Lỗi",
+          description: res.message || "Không thể xóa sản phẩm",
+        })
       }
     } catch {
-      alert("Lỗi khi xóa sản phẩm")
+      toast({
+        variant: "destructive",
+        title: "Lỗi hệ thống",
+        description: "Đã xảy ra lỗi khi xóa sản phẩm",
+      })
     }
   }
 
@@ -285,6 +507,14 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
       fiber: specs.nutritionalInfo?.fiber?.toString() || "",
       moisture: specs.nutritionalInfo?.moisture?.toString() || "",
       calories: specs.nutritionalInfo?.calories?.toString() || "",
+      // New fields mapping
+      texture: specs.texture || "",
+      primary_protein_source: specs.primaryProteinSource || "",
+      caloric_density_amount: specs.caloricDensity?.amount?.toString() || "",
+      caloric_density_unit: specs.caloricDensity?.unit || "kcal/kg",
+      calcium: specs.nutritionalInfo?.calcium?.toString() || "",
+      phosphorus: specs.nutritionalInfo?.phosphorus?.toString() || "",
+      taurine: specs.nutritionalInfo?.taurine?.toString() || "",
     })
     setShowEditProduct(true)
   }
@@ -294,6 +524,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
     try {
       const serviceData: any = {
         name: newService.name,
+        category: newService.category,
         price_min: Number(newService.price_min),
         price_max: Number(newService.price_max) || Number(newService.price_min),
         duration_minutes: Number(newService.duration_minutes),
@@ -306,7 +537,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
       if (res.success) {
         setShowAddService(false)
         refetchServices()
-        setNewService({ name: "", category: "spa", price_min: "", price_max: "", duration_minutes: "", description: "", image_url: "", image_public_id: "" })
+        setNewService({ name: "", category: "SPA", price_min: "", price_max: "", duration_minutes: "", description: "", image_url: "", image_public_id: "" })
       } else {
         alert(res.message)
       }
@@ -323,6 +554,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
     try {
       const serviceData: any = {
         name: editingService.name,
+        category: editingService.category,
         price_min: Number(editingService.price_min),
         price_max: Number(editingService.price_max) || Number(editingService.price_min),
         duration_minutes: Number(editingService.duration_minutes),
@@ -573,7 +805,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Quản lý sản phẩm</h1>
-            <p className="text-foreground/60">{products?.length} sản phẩm đang bán</p>
+            <p className="text-foreground/60">{filteredProducts?.length || 0} / {products?.length || 0} sản phẩm</p>
           </div>
           <Dialog open={showAddProduct} onOpenChange={setShowAddProduct}>
             <DialogTrigger asChild>
@@ -623,6 +855,16 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                       value={newProduct.price}
                       onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                       placeholder="0"
+                      className="rounded-xl mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label>Giá khuyến mãi (VND)</Label>
+                    <Input
+                      type="number"
+                      value={newProduct.sale_price}
+                      onChange={(e) => setNewProduct({ ...newProduct, sale_price: e.target.value })}
+                      placeholder="0 (Tuỳ chọn)"
                       className="rounded-xl mt-1"
                     />
                   </div>
@@ -699,6 +941,55 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                         </Select>
                       </div>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Kết cấu (Texture)</Label>
+                        <Select value={newProduct.texture} onValueChange={(val) => setNewProduct({ ...newProduct, texture: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn kết cấu" /></SelectTrigger>
+                          <SelectContent>
+                            {Object.values(Texture).map((t) => (
+                              <SelectItem key={t} value={t}>{t}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Nguồn Protein chính</Label>
+                        <Select value={newProduct.primary_protein_source} onValueChange={(val) => setNewProduct({ ...newProduct, primary_protein_source: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn nguồn protein" /></SelectTrigger>
+                          <SelectContent>
+                            {Object.values(PrimaryProteinSource).map((p) => (
+                              <SelectItem key={p} value={p}>{p}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Mật độ năng lượng (Amount)</Label>
+                        <Input
+                          type="number"
+                          value={newProduct.caloric_density_amount}
+                          onChange={(e) => setNewProduct({ ...newProduct, caloric_density_amount: e.target.value })}
+                          placeholder="3500"
+                          className="rounded-lg mt-1 h-9"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Đơn vị (Unit)</Label>
+                        <Select value={newProduct.caloric_density_unit} onValueChange={(val) => setNewProduct({ ...newProduct, caloric_density_unit: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Đơn vị" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="kcal/kg">kcal/kg</SelectItem>
+                            <SelectItem value="kcal/cup">kcal/cup</SelectItem>
+                            <SelectItem value="kcal/100g">kcal/100g</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                     <div>
                       <Label className="text-xs">Lợi ích sức khỏe</Label>
                       <div className="flex flex-wrap gap-1 mt-1">
@@ -729,7 +1020,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                         className="rounded-lg mt-1 h-9"
                       />
                     </div>
-                    <div className="grid grid-cols-5 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                       <div>
                         <Label className="text-xs">Protein %</Label>
                         <Input type="number" value={newProduct.protein} onChange={(e) => setNewProduct({ ...newProduct, protein: e.target.value })} className="rounded-lg mt-1 h-9" />
@@ -747,8 +1038,20 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                         <Input type="number" value={newProduct.moisture} onChange={(e) => setNewProduct({ ...newProduct, moisture: e.target.value })} className="rounded-lg mt-1 h-9" />
                       </div>
                       <div>
-                        <Label className="text-xs">Kcal/kg</Label>
+                        <Label className="text-xs">Calories (Legacy)</Label>
                         <Input type="number" value={newProduct.calories} onChange={(e) => setNewProduct({ ...newProduct, calories: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Calcium %</Label>
+                        <Input type="number" value={newProduct.calcium} onChange={(e) => setNewProduct({ ...newProduct, calcium: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Phosphorus %</Label>
+                        <Input type="number" value={newProduct.phosphorus} onChange={(e) => setNewProduct({ ...newProduct, phosphorus: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Taurine %</Label>
+                        <Input type="number" value={newProduct.taurine} onChange={(e) => setNewProduct({ ...newProduct, taurine: e.target.value })} className="rounded-lg mt-1 h-9" />
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -815,6 +1118,15 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                       type="number"
                       value={editingProduct.price}
                       onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value })}
+                      className="rounded-xl mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label>Giá khuyến mãi (VND)</Label>
+                    <Input
+                      type="number"
+                      value={editingProduct.sale_price || ""}
+                      onChange={(e) => setEditingProduct({ ...editingProduct, sale_price: e.target.value })}
                       className="rounded-xl mt-1"
                     />
                   </div>
@@ -889,6 +1201,55 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                         </Select>
                       </div>
                     </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Kết cấu (Texture)</Label>
+                        <Select value={editingProduct.texture || ""} onValueChange={(val) => setEditingProduct({ ...editingProduct, texture: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn kết cấu" /></SelectTrigger>
+                          <SelectContent>
+                            {Object.values(Texture).map((t) => (
+                              <SelectItem key={t} value={t}>{t}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Nguồn Protein chính</Label>
+                        <Select value={editingProduct.primary_protein_source || ""} onValueChange={(val) => setEditingProduct({ ...editingProduct, primary_protein_source: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn nguồn protein" /></SelectTrigger>
+                          <SelectContent>
+                            {Object.values(PrimaryProteinSource).map((p) => (
+                              <SelectItem key={p} value={p}>{p}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Mật độ năng lượng (Amount)</Label>
+                        <Input
+                          type="number"
+                          value={editingProduct.caloric_density_amount || ""}
+                          onChange={(e) => setEditingProduct({ ...editingProduct, caloric_density_amount: e.target.value })}
+                          placeholder="3500"
+                          className="rounded-lg mt-1 h-9"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Đơn vị (Unit)</Label>
+                        <Select value={editingProduct.caloric_density_unit || "kcal/kg"} onValueChange={(val) => setEditingProduct({ ...editingProduct, caloric_density_unit: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Đơn vị" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="kcal/kg">kcal/kg</SelectItem>
+                            <SelectItem value="kcal/cup">kcal/cup</SelectItem>
+                            <SelectItem value="kcal/100g">kcal/100g</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                     <div>
                       <Label className="text-xs">Lợi ích sức khỏe</Label>
                       <div className="flex flex-wrap gap-1 mt-1">
@@ -920,7 +1281,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                         className="rounded-lg mt-1 h-9"
                       />
                     </div>
-                    <div className="grid grid-cols-5 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                       <div>
                         <Label className="text-xs">Protein %</Label>
                         <Input type="number" value={editingProduct.protein || ""} onChange={(e) => setEditingProduct({ ...editingProduct, protein: e.target.value })} className="rounded-lg mt-1 h-9" />
@@ -938,8 +1299,20 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                         <Input type="number" value={editingProduct.moisture || ""} onChange={(e) => setEditingProduct({ ...editingProduct, moisture: e.target.value })} className="rounded-lg mt-1 h-9" />
                       </div>
                       <div>
-                        <Label className="text-xs">Kcal/kg</Label>
+                        <Label className="text-xs">Calories (Legacy)</Label>
                         <Input type="number" value={editingProduct.calories || ""} onChange={(e) => setEditingProduct({ ...editingProduct, calories: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Calcium %</Label>
+                        <Input type="number" value={editingProduct.calcium || ""} onChange={(e) => setEditingProduct({ ...editingProduct, calcium: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Phosphorus %</Label>
+                        <Input type="number" value={editingProduct.phosphorus || ""} onChange={(e) => setEditingProduct({ ...editingProduct, phosphorus: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Taurine %</Label>
+                        <Input type="number" value={editingProduct.taurine || ""} onChange={(e) => setEditingProduct({ ...editingProduct, taurine: e.target.value })} className="rounded-lg mt-1 h-9" />
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -966,28 +1339,82 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
           </DialogContent>
         </Dialog>
 
+        {/* Product Filters */}
+        <div className="flex flex-wrap gap-4 items-center bg-card p-4 rounded-xl border shadow-sm">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Tìm kiếm sản phẩm..."
+              value={filterName}
+              onChange={(e) => setFilterName(e.target.value)}
+              className="pl-9 rounded-xl"
+            />
+          </div>
+          <div className="w-[180px]">
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="rounded-xl">
+                <SelectValue placeholder="Danh mục" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả danh mục</SelectItem>
+                <SelectItem value="FOOD">Thức ăn</SelectItem>
+                <SelectItem value="TOY">Đồ chơi</SelectItem>
+                <SelectItem value="ACCESSORY">Phụ kiện</SelectItem>
+                <SelectItem value="MEDICINE">Thuốc & Y tế</SelectItem>
+                <SelectItem value="HYGIENE">Vệ sinh</SelectItem>
+                <SelectItem value="OTHER">Khác</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="w-[180px]">
+            <Select value={filterStock} onValueChange={setFilterStock}>
+              <SelectTrigger className="rounded-xl">
+                <SelectValue placeholder="Tình trạng kho" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả tình trạng</SelectItem>
+                <SelectItem value="IN_STOCK">Còn hàng</SelectItem>
+                <SelectItem value="OUT_OF_STOCK">Hết hàng</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {(filterName || filterCategory !== "ALL" || filterStock !== "ALL") && (
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setFilterName("")
+                setFilterCategory("ALL")
+                setFilterStock("ALL")
+              }}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Xóa bộ lọc
+            </Button>
+          )}
+        </div>
+
         {productsLoading ? (
           <div className="flex justify-center p-8"><Loader2 className="animate-spin text-primary" /></div>
         ) : (
-          <Card>
+          <Card className="border-none shadow-md bg-white/50 backdrop-blur-sm overflow-hidden">
             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[80px]">Ảnh</TableHead>
-                  <TableHead>Tên sản phẩm</TableHead>
-                  <TableHead>Danh mục</TableHead>
-                  <TableHead className="text-right">Giá</TableHead>
-                  <TableHead className="text-center">Kho</TableHead>
-                  <TableHead className="text-center">Đã bán</TableHead>
-                  <TableHead className="text-center">Trạng thái</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
+              <TableHeader className="bg-muted/30">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-[80px] font-semibold text-muted-foreground">ẢNH</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground max-w-[250px]">TÊN SẢN PHẨM</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground">DANH MỤC</TableHead>
+                  <TableHead className="text-right font-semibold text-muted-foreground">GIÁ</TableHead>
+                  <TableHead className="text-center font-semibold text-muted-foreground">KHO</TableHead>
+                  <TableHead className="text-center font-semibold text-muted-foreground">ĐÃ BÁN</TableHead>
+                  <TableHead className="text-center font-semibold text-muted-foreground">TRẠNG THÁI</TableHead>
+                  <TableHead className="text-right font-semibold text-muted-foreground pr-6">THAO TÁC</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {products?.map((product: any) => (
-                  <TableRow key={product._id}>
-                    <TableCell>
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary">
+                {paginatedProducts?.map((product: any) => (
+                  <TableRow key={product._id} className="hover:bg-muted/50 transition-colors">
+                    <TableCell className="py-4 pl-4">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary border shadow-sm">
                         <Image
                           src={product.images?.[0]?.url || "/placeholder.svg"}
                           alt={product.name}
@@ -997,16 +1424,25 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                         />
                       </div>
                     </TableCell>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{product.category}</Badge>
+                    <TableCell className="font-medium text-foreground py-4 max-w-[250px] truncate" title={product.name}>
+                      {product.name}
                     </TableCell>
-                    <TableCell className="text-right font-bold text-primary">
-                      {formatPrice(product.price)}
+                    <TableCell className="py-4">
+                      <Badge variant="outline" className="bg-background/50 font-normal">{product.category}</Badge>
                     </TableCell>
-                    <TableCell className="text-center">{product.stock_quantity}</TableCell>
-                    <TableCell className="text-center">{product.sold_quantity || 0}</TableCell>
-                    <TableCell className="text-center">
+                    <TableCell className="text-right font-bold text-primary py-4">
+                      {product.sale_price ? (
+                        <div className="flex flex-col items-end">
+                          <span className="text-red-500">{formatPrice(product.sale_price)}</span>
+                          <span className="text-xs text-muted-foreground line-through">{formatPrice(product.price)}</span>
+                        </div>
+                      ) : (
+                        formatPrice(product.price)
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center py-4">{product.stock_quantity}</TableCell>
+                    <TableCell className="text-center py-4 text-muted-foreground">{product.sold_quantity || 0}</TableCell>
+                    <TableCell className="text-center py-4">
                       <div className="flex items-center justify-center gap-2">
                         <Switch
                           checked={product.is_active !== false}
@@ -1019,17 +1455,17 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                             }
                           }}
                         />
-                        <span className={`text-xs ${product.is_active !== false ? "text-green-600" : "text-foreground/50"}`}>
+                        <span className={`text-xs font-medium ${product.is_active !== false ? "text-green-600" : "text-muted-foreground"}`}>
                           {product.is_active !== false ? "Hiển thị" : "Ẩn"}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right pr-6 py-4">
                       <div className="flex justify-end gap-2">
                         <Button
                           size="icon"
                           variant="outline"
-                          className="rounded-lg h-8 w-8"
+                          className="rounded-lg h-8 w-8 hover:bg-primary/5 hover:text-primary transition-colors"
                           onClick={() => openEditProduct(product)}
                         >
                           <Edit className="w-3.5 h-3.5" />
@@ -1037,7 +1473,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                         <Button
                           size="icon"
                           variant="outline"
-                          className="rounded-lg h-8 w-8 text-destructive hover:text-destructive"
+                          className="rounded-lg h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
                           onClick={() => handleDeleteProduct(product._id)}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -1046,15 +1482,41 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                     </TableCell>
                   </TableRow>
                 ))}
-                {!products?.length && (
+                {!paginatedProducts?.length && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-10 text-foreground/50">
+                    <TableCell colSpan={8} className="text-center py-10 text-muted-foreground">
                       Chưa có sản phẩm nào
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
+            {/* Pagination Controls ... */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-end p-4 gap-2 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded-lg"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm text-foreground/60">
+                  Trang {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="rounded-lg"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </Card>
         )}
       </div>
@@ -1091,6 +1553,22 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                     className="rounded-xl mt-1"
                   />
                 </div>
+                <div>
+                  <Label>Danh mục *</Label>
+                  <Select value={newService.category} onValueChange={(val) => setNewService({ ...newService, category: val })}>
+                    <SelectTrigger className="rounded-xl mt-1">
+                      <SelectValue placeholder="Chọn danh mục" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SPA">Spa & Grooming</SelectItem>
+                      <SelectItem value="MEDICAL">Khám bệnh</SelectItem>
+                      <SelectItem value="VACCINATION">Tiêm phòng</SelectItem>
+                      <SelectItem value="DEWORMING">Tẩy giun</SelectItem>
+                      <SelectItem value="PET_CARE">Chăm sóc thú cưng</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Giá thấp nhất (VND) *</Label>
@@ -1156,6 +1634,34 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
           </Dialog>
         </div>
 
+        {/* Service Filters */}
+        <div className="flex flex-wrap gap-4 items-center bg-card p-4 rounded-xl border shadow-sm">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Tìm kiếm dịch vụ..."
+              value={filterServiceName}
+              onChange={(e) => setFilterServiceName(e.target.value)}
+              className="pl-9 rounded-xl"
+            />
+          </div>
+          <div className="w-[200px]">
+            <Select value={filterServiceCategory} onValueChange={setFilterServiceCategory}>
+              <SelectTrigger className="rounded-xl">
+                <SelectValue placeholder="Danh mục" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả danh mục</SelectItem>
+                <SelectItem value="SPA">Spa & Grooming</SelectItem>
+                <SelectItem value="MEDICAL">Khám bệnh</SelectItem>
+                <SelectItem value="VACCINATION">Tiêm phòng</SelectItem>
+                <SelectItem value="DEWORMING">Tẩy giun</SelectItem>
+                <SelectItem value="PET_CARE">Chăm sóc thú cưng</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {/* Edit Service Dialog */}
         <Dialog open={showEditService} onOpenChange={setShowEditService}>
           <DialogContent className="rounded-3xl max-w-lg">
@@ -1171,6 +1677,21 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                     onChange={(e) => setEditingService({ ...editingService, name: e.target.value })}
                     className="rounded-xl mt-1"
                   />
+                </div>
+                <div>
+                  <Label>Danh mục *</Label>
+                  <Select value={editingService.category} onValueChange={(val) => setEditingService({ ...editingService, category: val })}>
+                    <SelectTrigger className="rounded-xl mt-1">
+                      <SelectValue placeholder="Chọn danh mục" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SPA">Spa & Grooming</SelectItem>
+                      <SelectItem value="MEDICAL">Khám bệnh</SelectItem>
+                      <SelectItem value="VACCINATION">Tiêm phòng</SelectItem>
+                      <SelectItem value="DEWORMING">Tẩy giun</SelectItem>
+                      <SelectItem value="PET_CARE">Chăm sóc thú cưng</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -1233,23 +1754,24 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
           </DialogContent>
         </Dialog>
 
-        <Card>
+        <Card className="border-none shadow-md bg-white/50 backdrop-blur-sm overflow-hidden">
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[80px]">Ảnh</TableHead>
-                <TableHead>Tên dịch vụ</TableHead>
-                <TableHead>Trạng thái</TableHead>
-                <TableHead className="text-center">Thời gian</TableHead>
-                <TableHead className="text-right">Giá</TableHead>
-                <TableHead className="text-right">Thao tác</TableHead>
+            <TableHeader className="bg-muted/30">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="w-[80px] font-semibold text-muted-foreground">ẢNH</TableHead>
+                <TableHead className="font-semibold text-muted-foreground">TÊN DỊCH VỤ</TableHead>
+                <TableHead className="font-semibold text-muted-foreground">DANH MỤC</TableHead>
+                <TableHead className="text-center font-semibold text-muted-foreground">TRẠNG THÁI</TableHead>
+                <TableHead className="text-center font-semibold text-muted-foreground">THỜI GIAN</TableHead>
+                <TableHead className="text-right font-semibold text-muted-foreground">GIÁ</TableHead>
+                <TableHead className="text-right font-semibold text-muted-foreground pr-6">THAO TÁC</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {services?.map((service: any) => (
-                <TableRow key={service._id}>
-                  <TableCell>
-                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary">
+              {paginatedServices?.map((service: any) => (
+                <TableRow key={service._id} className="hover:bg-muted/50 transition-colors">
+                  <TableCell className="py-4 pl-4">
+                    <div className="w-12 h-12 rounded-lg overflow-hidden bg-secondary border shadow-sm">
                       <Image
                         src={service.image?.url || "/placeholder.svg"}
                         alt={service.name}
@@ -1259,25 +1781,28 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                       />
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{service.name}</TableCell>
-                  <TableCell>
-                    <Badge className={service.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
+                  <TableCell className="font-medium text-foreground py-4">{service.name}</TableCell>
+                  <TableCell className="py-4">
+                    <Badge variant="outline" className="bg-background/50 font-normal">{service.category || "SPA"}</Badge>
+                  </TableCell>
+                  <TableCell className="text-center py-4">
+                    <Badge variant="outline" className={service.is_active ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-100 text-gray-700"}>
                       {service.is_active ? "Hoạt động" : "Tạm ngưng"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-center">{service.duration_minutes} phút</TableCell>
-                  <TableCell className="text-right font-bold text-primary">
+                  <TableCell className="text-center py-4 text-muted-foreground">{service.duration_minutes} phút</TableCell>
+                  <TableCell className="text-right font-bold text-primary py-4">
                     {formatPrice(service.price_min)}
-                    {service.price_max && service.price_max !== service.price_min && (
-                      <span className="text-foreground/50 font-normal"> - {formatPrice(service.price_max)}</span>
+                    {service.price_max && service.price_max > service.price_min && (
+                      <span className="text-xs text-muted-foreground font-normal block"> - {formatPrice(service.price_max)}</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right pr-6 py-4">
                     <div className="flex justify-end gap-2">
                       <Button
                         size="icon"
                         variant="outline"
-                        className="rounded-lg h-8 w-8"
+                        className="rounded-lg h-8 w-8 hover:bg-primary/5 hover:text-primary transition-colors"
                         onClick={() => openEditService(service)}
                       >
                         <Edit className="w-3.5 h-3.5" />
@@ -1285,7 +1810,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                       <Button
                         size="icon"
                         variant="outline"
-                        className="rounded-lg h-8 w-8 text-destructive hover:text-destructive"
+                        className="rounded-lg h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
                         onClick={() => {
                           if (confirm("Xóa dịch vụ này?")) {
                             merchantAPI.deleteService(service._id).then(() => refetchServices())
@@ -1298,15 +1823,42 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
                   </TableCell>
                 </TableRow>
               ))}
-              {!services?.length && (
+              {!paginatedServices?.length && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-foreground/50">
+                  <TableCell colSpan={7} className="text-center py-10 text-muted-foreground">
                     Chưa có dịch vụ nào
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
+
+          {/* Service Pagination Controls */}
+          {totalServicePages > 1 && (
+            <div className="flex items-center justify-end p-4 gap-2 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentServicePage(p => Math.max(1, p - 1))}
+                disabled={currentServicePage === 1}
+                className="rounded-lg"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="text-sm text-foreground/60">
+                Trang {currentServicePage} / {totalServicePages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentServicePage(p => Math.min(totalServicePages, p + 1))}
+                disabled={currentServicePage === totalServicePages}
+                className="rounded-lg"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </Card>
       </div>
     )
@@ -1319,66 +1871,142 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Đơn hàng</h1>
-            <p className="text-foreground/60">{orders?.length} đơn hàng</p>
+            <p className="text-foreground/60">{filteredOrders?.length} đơn hàng</p>
           </div>
         </div>
 
-        <Tabs defaultValue="all">
-          <TabsList className="bg-card rounded-xl">
-            <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Tất cả</TabsTrigger>
-            <TabsTrigger value="pending" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Chờ xử lý</TabsTrigger>
-            <TabsTrigger value="shipping" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Đang giao</TabsTrigger>
-            <TabsTrigger value="done" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Hoàn thành</TabsTrigger>
-          </TabsList>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+          {[
+            { label: "Tất cả", value: "ALL", count: orders?.length || 0, color: "bg-blue-50 text-blue-700 border-blue-200", icon: FileText, gradient: "from-blue-50 to-blue-100" },
+            { label: "Chờ xử lý", value: "PENDING", count: orders?.filter((o: any) => o.status === "PENDING").length || 0, color: "bg-yellow-50 text-yellow-700 border-yellow-200", icon: Clock, gradient: "from-yellow-50 to-yellow-100" },
+            { label: "Đang giao", value: "SHIPPING", count: orders?.filter((o: any) => o.status === "SHIPPING").length || 0, color: "bg-purple-50 text-purple-700 border-purple-200", icon: Truck, gradient: "from-purple-50 to-purple-100" },
+            { label: "Hoàn thành", value: "COMPLETED", count: orders?.filter((o: any) => ["COMPLETED", "DONE"].includes(o.status)).length || 0, color: "bg-green-50 text-green-700 border-green-200", icon: CheckCircle2, gradient: "from-green-50 to-green-100" },
+            { label: "Đã hủy", value: "CANCELLED", count: orders?.filter((o: any) => o.status === "CANCELLED").length || 0, color: "bg-red-50 text-red-700 border-red-200", icon: XCircle, gradient: "from-red-50 to-red-100" },
+          ].map((status) => (
+            <div
+              key={status.value}
+              onClick={() => setOrderFilter(status.value)}
+              className={`
+                cursor-pointer rounded-2xl p-4 border transition-all duration-300
+                bg-gradient-to-r ${status.gradient}
+                ${orderFilter === status.value ? "ring-2 ring-primary ring-offset-2 scale-105 shadow-md" : "hover:scale-105 hover:shadow-sm opacity-80 hover:opacity-100"}
+              `}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className={`p-2 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm ${status.color.split(" ")[1]}`}>
+                  <status.icon className="w-5 h-5" />
+                </div>
+                {orderFilter === status.value && (
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground/70">{status.label}</p>
+                <p className="text-2xl font-bold text-foreground">{status.count}</p>
+              </div>
+            </div>
+          ))}
+        </div>
 
-          <TabsContent value="all" className="mt-4 space-y-4">
-            {/* Filter orders based on tab logic if needed, but for "all" we show all. 
-                For specific tabs we would filter. Here we just show all for simplicity or duplicate the list with filter */}
-            {orders?.map((order: any) => (
-              <Card
-                key={order._id}
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => setSelectedOrder(order)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      {/* Icon based on status */}
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-secondary`}>
-                        <Package className="w-6 h-6 text-foreground/60" />
+        <div className="space-y-4">
+          <Card className="border-none shadow-md bg-white/50 backdrop-blur-sm overflow-hidden">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="font-semibold text-muted-foreground w-[100px]">MÃ ĐƠN</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground">KHÁCH HÀNG</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground">NGÀY ĐẶT</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground text-center">SỐ LƯỢNG</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground text-right">TỔNG TIỀN</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground text-center">TRẠNG THÁI</TableHead>
+                  <TableHead className="font-semibold text-muted-foreground text-right pr-6">THAO TÁC</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedOrders?.map((order: any) => (
+                  <TableRow
+                    key={order._id}
+                    className="hover:bg-muted/50 transition-colors cursor-pointer group"
+                    onClick={() => setSelectedOrder(order)}
+                  >
+                    <TableCell className="font-medium text-foreground py-4 pl-4">
+                      #{order._id.slice(-6).toUpperCase()}
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-medium text-foreground">{order.customer_id?.full_name}</span>
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Phone className="w-3 h-3" /> {order.customer_id?.phone_number}
+                        </span>
                       </div>
-                      <div>
-                        <p className="font-bold text-foreground">#{order._id.slice(-6).toUpperCase()}</p>
-                        <p className="text-sm text-foreground/60">{order.customer_id?.full_name}</p>
-                        <p className="text-sm text-foreground/80">
-                          Total items: {order.items.length}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
+                    </TableCell>
+                    <TableCell className="text-muted-foreground py-4">
+                      {new Date(order.created_at).toLocaleDateString("vi-VN", { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    </TableCell>
+                    <TableCell className="text-center font-medium text-foreground py-4">
+                      {order.items.length}
+                    </TableCell>
+                    <TableCell className="text-right font-bold text-primary py-4">
+                      {formatPrice(order.total_amount)}
+                    </TableCell>
+                    <TableCell className="text-center py-4">
                       {getStatusBadge(order.status)}
-                      <p className="font-bold text-primary mt-2">{formatPrice(order.total_amount)}</p>
-                      <p className="text-xs text-foreground/50">{new Date(order.created_at).toLocaleDateString("vi-VN")}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
-          {/* We can implement other tab contents similarly by filtering `orders` */}
-          <TabsContent value="pending" className="mt-4 space-y-4">
-            {orders?.filter((o: any) => o.status === 'PENDING').map((order: any) => (
-              // Duplicate card code or componentize it ideally
-              <Card key={order._id} className="cursor-pointer" onClick={() => setSelectedOrder(order)}>
-                <CardContent className="p-4 flex justify-between items-center">
-                  <div>#{order._id.slice(-6)} - {order.customer_id?.full_name}</div>
-                  {getStatusBadge(order.status)}
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
-          {/* ... other tabs ... */}
-        </Tabs>
+                    </TableCell>
+                    <TableCell className="text-right pr-6 py-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground group-hover:text-primary transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedOrder(order);
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Chi tiết
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!paginatedOrders?.length && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-10 text-foreground/50">
+                      Không có đơn hàng nào
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+
+            {/* Pagination Controls */}
+            {totalOrderPages > 1 && (
+              <div className="flex items-center justify-end p-4 gap-2 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentOrderPage(p => Math.max(1, p - 1))}
+                  disabled={currentOrderPage === 1}
+                  className="rounded-lg"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm text-foreground/60">
+                  Trang {currentOrderPage} / {totalOrderPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentOrderPage(p => Math.min(totalOrderPages, p + 1))}
+                  disabled={currentOrderPage === totalOrderPages}
+                  className="rounded-lg"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </Card>
+        </div>
+
 
         {/* Order Detail Modal */}
         <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
@@ -1449,7 +2077,7 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
             )}
           </DialogContent>
         </Dialog>
-      </div>
+      </div >
     )
   }
 
@@ -1462,52 +2090,293 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
           <p className="text-foreground/60">{bookings?.length} lịch hẹn</p>
         </div>
 
-        <div className="space-y-4">
-          {bookings?.map((booking: any) => (
-            <Card key={booking._id}>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center">
-                      <Calendar className="w-6 h-6 text-accent" />
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+          {[
+            { label: "Tất cả", value: "ALL", count: bookings?.length || 0, color: "bg-blue-50 text-blue-700 border-blue-200", icon: FileText, gradient: "from-blue-50 to-blue-100" },
+            {
+              label: "Hôm nay", value: "TODAY", count: bookings?.filter((b: any) => {
+                const now = new Date()
+                const bookingDate = new Date(b.booking_time)
+                return bookingDate.getDate() === now.getDate() && bookingDate.getMonth() === now.getMonth() && bookingDate.getFullYear() === now.getFullYear()
+              }).length || 0, color: "bg-violet-50 text-violet-700 border-violet-200", icon: Calendar, gradient: "from-violet-50 to-violet-100"
+            },
+            { label: "Chờ xác nhận", value: "PENDING", count: bookings?.filter((b: any) => b.status === "PENDING").length || 0, color: "bg-yellow-50 text-yellow-700 border-yellow-200", icon: Clock, gradient: "from-yellow-50 to-yellow-100" },
+            { label: "Đã xác nhận", value: "CONFIRMED", count: bookings?.filter((b: any) => b.status === "CONFIRMED").length || 0, color: "bg-cyan-50 text-cyan-700 border-cyan-200", icon: CheckCircle2, gradient: "from-cyan-50 to-cyan-100" },
+            { label: "Hoàn thành", value: "COMPLETED", count: bookings?.filter((b: any) => b.status === "COMPLETED").length || 0, color: "bg-green-50 text-green-700 border-green-200", icon: CheckCircle2, gradient: "from-green-50 to-green-100" },
+            { label: "Đã hủy", value: "CANCELLED", count: bookings?.filter((b: any) => b.status === "CANCELLED").length || 0, color: "bg-red-50 text-red-700 border-red-200", icon: XCircle, gradient: "from-red-50 to-red-100" },
+          ].map((status) => (
+            <div
+              key={status.value}
+              onClick={() => setBookingFilter(status.value)}
+              className={`
+                cursor-pointer rounded-2xl p-4 border transition-all duration-300
+                bg-gradient-to-r ${status.gradient}
+                ${bookingFilter === status.value ? "ring-2 ring-primary ring-offset-2 scale-105 shadow-md" : "hover:scale-105 hover:shadow-sm opacity-80 hover:opacity-100"}
+              `}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className={`p-2 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm ${status.color.split(" ")[1]}`}>
+                  <status.icon className="w-5 h-5" />
+                </div>
+                {bookingFilter === status.value && (
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground/70">{status.label}</p>
+                <p className="text-2xl font-bold text-foreground">{status.count}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <Card className="border-none shadow-md bg-white/50 backdrop-blur-sm overflow-hidden">
+          <Table>
+            <TableHeader className="bg-muted/30">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="font-semibold text-muted-foreground w-[150px]">DỊCH VỤ</TableHead>
+                <TableHead className="font-semibold text-muted-foreground">KHÁCH HÀNG</TableHead>
+                <TableHead className="font-semibold text-muted-foreground">THÚ CƯNG</TableHead>
+                <TableHead className="font-semibold text-muted-foreground">THỜI GIAN</TableHead>
+                <TableHead className="font-semibold text-muted-foreground w-[200px]">GHI CHÚ</TableHead>
+                <TableHead className="font-semibold text-muted-foreground text-center">TRẠNG THÁI</TableHead>
+                <TableHead className="font-semibold text-muted-foreground text-right pr-6">THAO TÁC</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedBookings?.map((booking: any) => (
+                <TableRow key={booking._id} className="hover:bg-muted/50 transition-colors">
+                  <TableCell className="font-medium text-foreground py-4 pl-4">
+                    {booking.service_id?.name || "Dịch vụ"}
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium text-foreground">{booking.customer_id?.full_name}</span>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Phone className="w-3 h-3" /> {booking.customer_id?.phone_number}
+                      </span>
                     </div>
-                    <div>
-                      <p className="font-bold text-foreground">{booking.service_id?.name || "Dịch vụ"}</p>
-                      <p className="text-sm text-foreground/60">
-                        {booking.customer_id?.full_name} - {booking.customer_id?.phone_number}
-                      </p>
-                      <p className="text-sm text-foreground/80">Thú cưng: {booking.pet_id?.name}</p>
-                      <p className="text-xs text-foreground/50 mt-1">Ghi chú: {booking.note || "Không có"}</p>
+                  </TableCell>
+                  <TableCell className="py-4 font-medium text-foreground">{booking.pet_id?.name}</TableCell>
+                  <TableCell className="py-4 text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {new Date(booking.booking_time).toLocaleString("vi-VN", {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        day: '2-digit',
+                        month: '2-digit'
+                      })}
                     </div>
-                  </div>
-                  <div className="text-right">
-                    {getStatusBadge(booking.status)}
-                    <p className="font-bold text-foreground mt-2">
-                      {new Date(booking.booking_time).toLocaleString("vi-VN")}
+                  </TableCell>
+                  <TableCell className="py-4 max-w-[200px]">
+                    <p className="truncate text-muted-foreground text-sm" title={booking.note}>
+                      {booking.note || "---"}
                     </p>
+                  </TableCell>
+                  <TableCell className="text-center py-4">
+                    {getStatusBadge(booking.status)}
+                  </TableCell>
+                  <TableCell className="text-right pr-6 py-4">
                     {booking.status === "PENDING" && (
-                      <div className="flex gap-2 mt-2">
-                        <Button size="sm" className="rounded-lg" onClick={() => handleUpdateBookingStatus(booking._id, "CONFIRMED")}>
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="sm"
+                          className="h-8 rounded-lg bg-primary hover:bg-primary/90 shadow-sm"
+                          onClick={() => handleUpdateBookingStatus(booking._id, "CONFIRMED")}
+                        >
                           Xác nhận
                         </Button>
-                        <Button size="sm" variant="outline" className="rounded-lg bg-transparent" onClick={() => handleUpdateBookingStatus(booking._id, "CANCELLED")}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 rounded-lg text-destructive border-destructive/20 hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => handleUpdateBookingStatus(booking._id, "CANCELLED")}
+                        >
                           Từ chối
                         </Button>
+
                       </div>
                     )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-cyan-600 hover:bg-cyan-50"
+                      onClick={() => {
+                        setSelectedBooking(booking)
+                        setShowBookingDetails(true)
+                      }}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
                     {booking.status === "CONFIRMED" && (
-                      <Button size="sm" variant="ghost" className="mt-2 text-green-600" onClick={() => handleUpdateBookingStatus(booking._id, "COMPLETED")}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 rounded-lg text-green-600 hover:text-green-700 hover:bg-green-50 font-medium"
+                        onClick={() => handleUpdateBookingStatus(booking._id, "COMPLETED")}
+                      >
+                        <CheckCircle2 className="w-4 h-4 mr-1" />
                         Hoàn thành
                       </Button>
                     )}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!paginatedBookings?.length && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-10 text-foreground/50">
+                    Chưa có lịch hẹn nào
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+
+          {/* Bookings Pagination Controls */}
+          {totalBookingPages > 1 && (
+            <div className="flex items-center justify-end p-4 gap-2 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentBookingPage(p => Math.max(1, p - 1))}
+                disabled={currentBookingPage === 1}
+                className="rounded-lg"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <span className="text-sm text-foreground/60">
+                Trang {currentBookingPage} / {totalBookingPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentBookingPage(p => Math.min(totalBookingPages, p + 1))}
+                disabled={currentBookingPage === totalBookingPages}
+                className="rounded-lg"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+        </Card>
+
+        <Dialog open={showBookingDetails} onOpenChange={setShowBookingDetails}>
+          <DialogContent className="max-w-2xl rounded-3xl">
+            <DialogHeader>
+              <DialogTitle>Chi tiết lịch hẹn</DialogTitle>
+            </DialogHeader>
+            {selectedBooking && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-lg text-primary mb-2 flex items-center gap-2">
+                      <User className="w-5 h-5" />
+                      Thông tin khách hàng
+                    </h3>
+                    <div className="bg-secondary/30 p-4 rounded-xl space-y-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Họ và tên</p>
+                        <p className="font-medium">{selectedBooking.customer_id?.full_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Số điện thoại</p>
+                        <p className="font-medium">{selectedBooking.customer_id?.phone_number}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Email</p>
+                        <p className="font-medium">{selectedBooking.customer_id?.email || "---"}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Địa chỉ</p>
+                        <p className="font-medium">{selectedBooking.customer_id?.address || "---"}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-lg text-orange-600 mb-2 flex items-center gap-2">
+                      <Clock className="w-5 h-5" />
+                      Thông tin dịch vụ
+                    </h3>
+                    <div className="bg-secondary/30 p-4 rounded-xl space-y-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Dịch vụ</p>
+                        <p className="font-medium text-lg">{selectedBooking.service_id?.name}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Thời gian</p>
+                          <p className="font-medium">
+                            {new Date(selectedBooking.booking_time).toLocaleDateString("vi-VN")}
+                          </p>
+                          <p className="text-sm font-medium text-primary">
+                            {new Date(selectedBooking.booking_time).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Thời lượng</p>
+                          <p className="font-medium">{selectedBooking.service_id?.duration_minutes} phút</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Ghi chú</p>
+                        <p className="font-medium italic text-foreground/80">"{selectedBooking.note || "Không có ghi chú"}"</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-          {!bookings?.length && <p className="text-center text-foreground/50 py-10">Chưa có lịch hẹn nào</p>}
-        </div>
-      </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-lg text-green-600 mb-2 flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-paw-print"><circle cx="11" cy="4" r="2" /><circle cx="18" cy="8" r="2" /><circle cx="20" cy="16" r="2" /><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.92A3.5 3.5 0 0 1 5.5 10Z" /></svg>
+                      Thông tin thú cưng
+                    </h3>
+                    <div className="bg-secondary/30 p-4 rounded-xl space-y-4">
+                      <div className="flex justify-center">
+                        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-sm">
+                          <Image
+                            src={selectedBooking.pet_id?.image?.url || "/placeholder-pet.png"}
+                            alt={selectedBooking.pet_id?.name || "Pet"}
+                            width={96}
+                            height={96}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+                      <div className="text-center">
+                        <h4 className="text-xl font-bold">{selectedBooking.pet_id?.name}</h4>
+                        <Badge variant="outline" className="mt-1">
+                          {selectedBooking.pet_id?.species === 'DOG' ? 'Chó' : 'Mèo'} • {selectedBooking.pet_id?.breed}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-y-3 text-sm">
+                        <div>
+                          <p className="text-muted-foreground">Tuổi</p>
+                          <p className="font-medium">{selectedBooking.pet_id?.age_months ? `${selectedBooking.pet_id.age_months} tháng` : "--"}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Giới tính</p>
+                          <p className="font-medium">{selectedBooking.pet_id?.gender === 'MALE' ? 'Đực' : 'Cái'}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Cân nặng</p>
+                          <p className="font-medium">{selectedBooking.pet_id?.weight_kg || "--"} kg</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Triệt sản</p>
+                          <p className="font-medium">{selectedBooking.pet_id?.sterilized ? 'Rồi' : 'Chưa'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div >
     )
   }
 
@@ -1552,14 +2421,11 @@ export function MerchantDashboardContent({ activeTab }: MerchantDashboardContent
 
   // Settings Tab
   if (activeTab === "settings") {
-    // Dynamically import to avoid circular dependencies
-    const { MerchantSettings } = require("./merchant-settings")
     return <MerchantSettings />
   }
 
   // Medical Records Tab
   if (activeTab === "medical-records") {
-    const { MerchantMedicalRecords } = require("./merchant-medical-records")
     return <MerchantMedicalRecords />
   }
 

@@ -7,6 +7,7 @@ import { CartProvider } from "@/lib/cart-context"
 import { SakuraPetalsWrapper } from "@/components/sakura-wrapper"
 import { ServiceWorkerRegister } from "@/components/service-worker-register"
 import { ScrollToTop } from "@/components/scroll-to-top"
+import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
 const nunito = Nunito({ subsets: ["latin", "vietnamese"] })
@@ -51,6 +52,7 @@ export default function RootLayout({
         </AuthProvider>
         <ScrollToTop />
         <Analytics />
+        <Toaster />
       </body>
     </html>
   )

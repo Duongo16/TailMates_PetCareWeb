@@ -498,7 +498,17 @@ export function Marketplace() {
                 </div>
               </div>
 
-              <p className="text-2xl font-bold text-primary">{formatPrice(selectedProduct.price)}</p>
+              {selectedProduct.sale_price ? (
+                <div className="flex items-end gap-3">
+                  <span className="text-3xl font-bold text-red-600">{formatPrice(selectedProduct.sale_price)}</span>
+                  <span className="text-lg text-foreground/40 line-through mb-1.5">{formatPrice(selectedProduct.price)}</span>
+                  <Badge className="mb-2 bg-red-100 text-red-600 border-red-200">
+                    -{Math.round(((selectedProduct.price - selectedProduct.sale_price) / selectedProduct.price) * 100)}%
+                  </Badge>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-primary">{formatPrice(selectedProduct.price)}</p>
+              )}
 
               {/* Merchant Info */}
               <div className="p-3 bg-secondary/50 rounded-xl">
@@ -541,6 +551,16 @@ export function Marketplace() {
                     {selectedProduct.specifications.targetSpecies && (
                       <Badge variant="outline" className="text-xs">
                         {selectedProduct.specifications.targetSpecies === "DOG" ? "🐕 Chó" : "🐱 Mèo"}
+                      </Badge>
+                    )}
+                    {selectedProduct.specifications.texture && (
+                      <Badge variant="outline" className="text-xs">
+                        Kết cấu: {selectedProduct.specifications.texture}
+                      </Badge>
+                    )}
+                    {selectedProduct.specifications.primaryProteinSource && (
+                      <Badge variant="outline" className="text-xs">
+                        Nguồn Protein: {selectedProduct.specifications.primaryProteinSource}
                       </Badge>
                     )}
                     {selectedProduct.specifications.lifeStage && (
@@ -600,6 +620,30 @@ export function Marketplace() {
                             <div className="text-xs text-foreground/60">kcal/kg</div>
                           </div>
                         )}
+                        {selectedProduct.specifications.caloricDensity?.amount && (
+                          <div className="bg-white rounded-lg p-2">
+                            <div className="text-lg font-bold text-red-500">{selectedProduct.specifications.caloricDensity.amount}</div>
+                            <div className="text-xs text-foreground/60">{selectedProduct.specifications.caloricDensity.unit || 'kcal/kg'}</div>
+                          </div>
+                        )}
+                        {selectedProduct.specifications.nutritionalInfo.calcium !== undefined && (
+                          <div className="bg-white rounded-lg p-2">
+                            <div className="text-lg font-bold text-gray-700">{selectedProduct.specifications.nutritionalInfo.calcium}%</div>
+                            <div className="text-xs text-foreground/60">Calcium</div>
+                          </div>
+                        )}
+                        {selectedProduct.specifications.nutritionalInfo.phosphorus !== undefined && (
+                          <div className="bg-white rounded-lg p-2">
+                            <div className="text-lg font-bold text-gray-700">{selectedProduct.specifications.nutritionalInfo.phosphorus}%</div>
+                            <div className="text-xs text-foreground/60">Phosphorus</div>
+                          </div>
+                        )}
+                        {selectedProduct.specifications.nutritionalInfo.taurine !== undefined && (
+                          <div className="bg-white rounded-lg p-2">
+                            <div className="text-lg font-bold text-gray-700">{selectedProduct.specifications.nutritionalInfo.taurine}%</div>
+                            <div className="text-xs text-foreground/60">Taurine</div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -636,7 +680,7 @@ export function Marketplace() {
                     +
                   </Button>
                 </div>
-                <span className="text-foreground/60">= {formatPrice(selectedProduct.price * orderQuantity)}</span>
+                <span className="text-foreground/60">= {formatPrice((selectedProduct.sale_price || selectedProduct.price) * orderQuantity)}</span>
               </div>
 
               {/* Action Buttons */}
@@ -719,7 +763,16 @@ function ProductCard({
             <Star className="w-3 h-3 fill-orange text-orange" />
             <span className="text-xs text-navy/60">{product.merchant_id?.merchant_profile?.rating || 5.0}</span>
           </div>
-          <p className="font-bold text-orange">{formatPrice(product.price)}</p>
+          <div className="mt-1">
+            {product.sale_price ? (
+              <div className="flex items-end gap-2">
+                <span className="font-bold text-red-500">{formatPrice(product.sale_price)}</span>
+                <span className="text-xs text-foreground/40 line-through mb-0.5">{formatPrice(product.price)}</span>
+              </div>
+            ) : (
+              <p className="font-bold text-orange">{formatPrice(product.price)}</p>
+            )}
+          </div>
           <Button
             onClick={(e) => {
               e.stopPropagation()

@@ -74,6 +74,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       "name",
       "category",
       "price",
+      "sale_price",
       "description",
       "images",
       "stock_quantity",

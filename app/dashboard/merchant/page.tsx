@@ -18,7 +18,6 @@ const tabs = [
   { id: "bookings" as MerchantTab, label: "Lịch hẹn", icon: Calendar },
   { id: "medical-records" as MerchantTab, label: "Sổ Y Tế", icon: FileText },
   { id: "blog" as MerchantTab, label: "Blog", icon: Newspaper },
-  { id: "scanner" as MerchantTab, label: "Quét QR", icon: QrCode },
   { id: "settings" as MerchantTab, label: "Cài đặt", icon: Settings },
 ]
 

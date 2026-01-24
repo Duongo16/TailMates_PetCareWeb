@@ -130,15 +130,15 @@ export default function BlogList() {
     };
 
     const getStatusBadge = (status: string) => {
-        const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-            DRAFT: { label: "Bản nháp", variant: "secondary" },
-            PENDING: { label: "Chờ duyệt", variant: "default" },
-            PUBLISHED: { label: "Đã đăng", variant: "outline" },
-            REJECTED: { label: "Từ chối", variant: "destructive" },
+        const statusConfig: Record<string, { label: string; className: string }> = {
+            DRAFT: { label: "Bản nháp", className: "bg-gray-100 text-gray-700 border-gray-200" },
+            PENDING: { label: "Chờ duyệt", className: "bg-yellow-50 text-yellow-700 border-yellow-200" },
+            PUBLISHED: { label: "Đã đăng", className: "bg-green-50 text-green-700 border-green-200" },
+            REJECTED: { label: "Từ chối", className: "bg-red-50 text-red-700 border-red-200" },
         };
 
         const config = statusConfig[status] || statusConfig.DRAFT;
-        return <Badge variant={config.variant}>{config.label}</Badge>;
+        return <Badge variant="outline" className={config.className}>{config.label}</Badge>;
     };
 
     const formatDate = (dateString: string) => {
@@ -146,67 +146,69 @@ export default function BlogList() {
     };
 
     return (
-        <Card>
+        <Card className="border-none shadow-md bg-white/50 backdrop-blur-sm overflow-hidden">
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <CardTitle>Bài viết của tôi</CardTitle>
-                    <Button onClick={handleCreate} className="bg-orange-500 hover:bg-orange-600">
+                    <Button onClick={handleCreate} className="bg-orange-500 hover:bg-orange-600 rounded-xl">
                         Tạo bài viết mới
                     </Button>
                 </div>
             </CardHeader>
             <CardContent>
                 {loading ? (
-                    <p className="text-center py-8 text-gray-500">Đang tải...</p>
+                    <div className="flex justify-center p-8"><span className="animate-pulse">Đang tải...</span></div>
                 ) : posts.length === 0 ? (
                     <p className="text-center py-8 text-gray-500">Chưa có bài viết nào</p>
                 ) : (
                     <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Tiêu đề</TableHead>
-                                <TableHead>Danh mục</TableHead>
-                                <TableHead>Trạng thái</TableHead>
-                                <TableHead className="text-center">Lượt xem</TableHead>
-                                <TableHead className="text-center">Like/Dislike</TableHead>
-                                <TableHead>Ngày tạo</TableHead>
-                                <TableHead className="text-right">Thao tác</TableHead>
+                        <TableHeader className="bg-muted/30">
+                            <TableRow className="hover:bg-transparent">
+                                <TableHead className="font-semibold text-muted-foreground">TIÊU ĐỀ</TableHead>
+                                <TableHead className="font-semibold text-muted-foreground">DANH MỤC</TableHead>
+                                <TableHead className="font-semibold text-muted-foreground">TRẠNG THÁI</TableHead>
+                                <TableHead className="text-center font-semibold text-muted-foreground">LƯỢT XEM</TableHead>
+                                <TableHead className="text-center font-semibold text-muted-foreground">TƯƠNG TÁC</TableHead>
+                                <TableHead className="font-semibold text-muted-foreground">NGÀY TẠO</TableHead>
+                                <TableHead className="text-right font-semibold text-muted-foreground">THAO TÁC</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {posts.map((post) => (
-                                <TableRow key={post._id}>
-                                    <TableCell className="font-medium max-w-xs truncate">
-                                        {post.title}
+                                <TableRow key={post._id} className="hover:bg-muted/50 transition-colors">
+                                    <TableCell className="font-medium text-foreground py-4 max-w-xs">
+                                        <p className="truncate" title={post.title}>{post.title}</p>
                                     </TableCell>
-                                    <TableCell>{post.category}</TableCell>
-                                    <TableCell>{getStatusBadge(post.status)}</TableCell>
-                                    <TableCell className="text-center">{post.view_count || 0}</TableCell>
-                                    <TableCell className="text-center">
-                                        {post.like_count || 0} / {post.dislike_count || 0}
+                                    <TableCell className="py-4">
+                                        <Badge variant="outline" className="bg-background/50 font-normal">{post.category || "General"}</Badge>
                                     </TableCell>
-                                    <TableCell>{formatDate(post.created_at)}</TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="py-4">{getStatusBadge(post.status)}</TableCell>
+                                    <TableCell className="text-center py-4 text-muted-foreground">{post.view_count || 0}</TableCell>
+                                    <TableCell className="text-center py-4">
+                                        <span className="text-green-600">{post.like_count || 0}</span> / <span className="text-red-500">{post.dislike_count || 0}</span>
+                                    </TableCell>
+                                    <TableCell className="py-4 text-muted-foreground">{formatDate(post.created_at)}</TableCell>
+                                    <TableCell className="text-right py-4">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="sm">
+                                                <Button variant="ghost" size="sm" className="h-8 w-8 rounded-lg">
                                                     <MoreVertical className="h-4 w-4" />
                                                 </Button>
                                             </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
+                                            <DropdownMenuContent align="end" className="rounded-xl">
                                                 {post.status === "PUBLISHED" && (
-                                                    <DropdownMenuItem onClick={() => router.push(`/blog/${post._id}`)}>
+                                                    <DropdownMenuItem onClick={() => router.push(`/blog/${post._id}`)} className="rounded-lg cursor-pointer">
                                                         <Eye className="mr-2 h-4 w-4" />
                                                         Xem
                                                     </DropdownMenuItem>
                                                 )}
                                                 {post.status === "DRAFT" && (
-                                                    <DropdownMenuItem onClick={() => handleSubmit(post._id)}>
+                                                    <DropdownMenuItem onClick={() => handleSubmit(post._id)} className="rounded-lg cursor-pointer">
                                                         <Send className="mr-2 h-4 w-4" />
                                                         Gửi duyệt
                                                     </DropdownMenuItem>
                                                 )}
-                                                <DropdownMenuItem onClick={() => handleEdit(post)}>
+                                                <DropdownMenuItem onClick={() => handleEdit(post)} className="rounded-lg cursor-pointer">
                                                     <Pencil className="mr-2 h-4 w-4" />
                                                     Chỉnh sửa
                                                 </DropdownMenuItem>
@@ -215,7 +217,7 @@ export default function BlogList() {
                                                         setPostToDelete(post._id);
                                                         setDeleteDialogOpen(true);
                                                     }}
-                                                    className="text-red-600"
+                                                    className="text-red-600 rounded-lg cursor-pointer focus:text-red-600"
                                                 >
                                                     <Trash2 className="mr-2 h-4 w-4" />
                                                     Xóa

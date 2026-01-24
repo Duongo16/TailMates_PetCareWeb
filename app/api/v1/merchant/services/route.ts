@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
       duration_minutes,
       description,
       image,
+      category,
     } = body;
 
     if (!name || price_min === undefined || price_max === undefined || !duration_minutes) {
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
       duration_minutes,
       description,
       image: validatedImage,
+      category,
       is_active: true,
     });
 

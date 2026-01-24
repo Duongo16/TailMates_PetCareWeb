@@ -17,6 +17,7 @@ export interface IService extends Document {
   description?: string;
   image?: ICloudinaryImage;
   is_active: boolean;
+  category: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -64,6 +65,12 @@ const ServiceSchema = new Schema<IService>(
     is_active: {
       type: Boolean,
       default: true,
+    },
+    category: {
+      type: String,
+      required: [true, "Category is required"],
+      enum: ["SPA", "MEDICAL", "VACCINATION", "DEWORMING", "PET_CARE"],
+      default: "SPA",
     },
   },
   {

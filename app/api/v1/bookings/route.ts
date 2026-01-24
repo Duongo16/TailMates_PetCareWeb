@@ -30,10 +30,10 @@ export async function GET(request: NextRequest) {
     }
 
     const bookings = await Booking.find(query)
-      .populate("customer_id", "full_name phone_number email")
+      .populate("customer_id", "full_name phone_number email address")
       .populate("merchant_id", "full_name merchant_profile.shop_name")
       .populate("service_id", "name price_min price_max duration_minutes")
-      .populate("pet_id", "name species breed image")
+      .populate("pet_id", "name species breed image age_months weight_kg gender sterilized")
       .sort({ booking_time: 1 });
 
     return apiResponse.success(bookings);

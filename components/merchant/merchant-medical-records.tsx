@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useMerchantMedicalRecords, useMerchantCompletedBookings } from "@/lib/hooks"
 import { petsAPI, merchantAPI } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,7 +32,16 @@ import {
     PawPrint,
     CalendarDays,
     Image as ImageIcon,
+    Search,
+    Eye,
+    Trash2,
+    ChevronLeft,
+    ChevronRight,
+    MapPin,
+    User,
+    Phone,
 } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import Image from "next/image"
 
 // Record Type options
@@ -61,6 +70,14 @@ export function MerchantMedicalRecords() {
     const [selectedBooking, setSelectedBooking] = useState<any | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [editingRecord, setEditingRecord] = useState<any | null>(null)
+    const [selectedRecordDetail, setSelectedRecordDetail] = useState<any | null>(null)
+
+    // Filter & Pagination States
+    const [recordStatusFilter, setRecordStatusFilter] = useState("ALL")
+    const [recordTypeFilter, setRecordTypeFilter] = useState("ALL")
+    const [searchQuery, setSearchQuery] = useState("")
+    const [currentPage, setCurrentPage] = useState(1)
+    const ITEMS_PER_PAGE = 10
 
     // Form state
     const [recordForm, setRecordForm] = useState({
@@ -204,6 +221,30 @@ export function MerchantMedicalRecords() {
     const stats = recordsData?.stats || { pending: 0, confirmed: 0, rejected: 0, needsRevision: 0 }
     const completedBookings = bookingsData?.bookings || []
 
+    // Filtering Logic
+    const filteredRecords = useMemo(() => {
+        return records.filter((record: any) => {
+            const matchesStatus = recordStatusFilter === "ALL" || record.confirmation_status === recordStatusFilter
+            const matchesType = recordTypeFilter === "ALL" || record.record_type === recordTypeFilter
+            const matchesSearch = !searchQuery ||
+                record.diagnosis?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                record.pet_id?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+
+            return matchesStatus && matchesType && matchesSearch
+        })
+    }, [records, recordStatusFilter, recordTypeFilter, searchQuery])
+
+    // Pagination Logic
+    const totalPages = Math.ceil(filteredRecords.length / ITEMS_PER_PAGE)
+    const paginatedRecords = useMemo(() => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+        return filteredRecords.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+    }, [filteredRecords, currentPage])
+
+    useEffect(() => {
+        setCurrentPage(1)
+    }, [recordStatusFilter, recordTypeFilter, searchQuery])
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -213,154 +254,198 @@ export function MerchantMedicalRecords() {
                 </div>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="border-yellow-200 bg-yellow-50/50">
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center">
-                                <Clock className="w-5 h-5 text-yellow-600" />
+            {/* Gradient Status Filters */}
+            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+                {[
+                    { label: "Tất cả", value: "ALL", count: records.length, color: "bg-blue-50 text-blue-700 border-blue-200", icon: FileText, gradient: "from-blue-50 to-blue-100" },
+                    { label: "Lịch hẹn hoàn thành", value: "COMPLETED_BOOKINGS", count: completedBookings.length, color: "bg-violet-50 text-violet-700 border-violet-200", icon: Calendar, gradient: "from-violet-50 to-violet-100", customAction: () => setActiveSubTab("bookings") },
+                    { label: "Chờ xác nhận", value: "PENDING", count: stats.pending, color: "bg-yellow-50 text-yellow-700 border-yellow-200", icon: Clock, gradient: "from-yellow-50 to-yellow-100" },
+                    { label: "Đã xác nhận", value: "CONFIRMED", count: stats.confirmed, color: "bg-green-50 text-green-700 border-green-200", icon: CheckCircle2, gradient: "from-green-50 to-green-100" },
+                    { label: "Cần sửa", value: "NEEDS_REVISION", count: stats.needsRevision, color: "bg-orange-50 text-orange-700 border-orange-200", icon: AlertCircle, gradient: "from-orange-50 to-orange-100" },
+                    { label: "Từ chối", value: "REJECTED", count: stats.rejected, color: "bg-red-50 text-red-700 border-red-200", icon: XCircle, gradient: "from-red-50 to-red-100" },
+                ].map((status) => (
+                    <div
+                        key={status.value}
+                        onClick={() => {
+                            if ('customAction' in status && status.customAction) {
+                                status.customAction()
+                            } else {
+                                setRecordStatusFilter(status.value)
+                                setActiveSubTab("records")
+                            }
+                        }}
+                        className={`
+                            cursor-pointer rounded-2xl p-4 border transition-all duration-300
+                            bg-gradient-to-r ${status.gradient}
+                            ${(recordStatusFilter === status.value && activeSubTab === "records") || (status.value === "COMPLETED_BOOKINGS" && activeSubTab === "bookings") ? "ring-2 ring-primary ring-offset-2 scale-105 shadow-md" : "hover:scale-105 hover:shadow-sm opacity-80 hover:opacity-100"}
+                        `}
+                    >
+                        <div className="flex items-center justify-between mb-2">
+                            <div className={`p-2 rounded-xl bg-white/60 backdrop-blur-sm shadow-sm ${status.color.split(" ")[1]}`}>
+                                <status.icon className="w-5 h-5" />
                             </div>
-                            <div>
-                                <p className="text-sm text-foreground/60">Chờ xác nhận</p>
-                                <p className="text-xl font-bold text-yellow-700">{stats.pending}</p>
-                            </div>
+                            {((recordStatusFilter === status.value && activeSubTab === "records") || (status.value === "COMPLETED_BOOKINGS" && activeSubTab === "bookings")) && (
+                                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                            )}
                         </div>
-                    </CardContent>
-                </Card>
-                <Card className="border-green-200 bg-green-50/50">
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-foreground/60">Đã xác nhận</p>
-                                <p className="text-xl font-bold text-green-700">{stats.confirmed}</p>
-                            </div>
+                        <div>
+                            <p className="text-sm font-medium text-foreground/70">{status.label}</p>
+                            <p className="text-2xl font-bold text-foreground">{status.count}</p>
                         </div>
-                    </CardContent>
-                </Card>
-                <Card className="border-orange-200 bg-orange-50/50">
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
-                                <AlertCircle className="w-5 h-5 text-orange-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-foreground/60">Cần sửa</p>
-                                <p className="text-xl font-bold text-orange-700">{stats.needsRevision}</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="border-blue-200 bg-blue-50/50">
-                    <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                                <FileText className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-sm text-foreground/60">Tổng hồ sơ</p>
-                                <p className="text-xl font-bold text-blue-700">{records.length}</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                ))}
             </div>
 
             {/* Tabs */}
             <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 rounded-xl">
-                    <TabsTrigger value="records" className="rounded-lg">Hồ sơ đã tạo</TabsTrigger>
-                    <TabsTrigger value="bookings" className="rounded-lg">Lịch hẹn hoàn thành</TabsTrigger>
-                </TabsList>
-
                 {/* Records Tab */}
                 <TabsContent value="records" className="mt-4 space-y-4">
-                    {recordsLoading ? (
-                        <div className="flex justify-center py-10">
-                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    {/* Records Filter Header */}
+                    <div className="flex flex-wrap gap-4 items-center bg-card p-4 rounded-xl border shadow-sm">
+                        <div className="relative flex-1 min-w-[200px]">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Tìm kiếm thú cưng hoặc chẩn đoán..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-9 rounded-xl"
+                            />
                         </div>
-                    ) : records.length === 0 ? (
-                        <Card>
-                            <CardContent className="py-12 text-center">
-                                <FileText className="w-12 h-12 mx-auto text-foreground/20 mb-4" />
-                                <p className="text-foreground/60">Chưa có hồ sơ y tế nào</p>
-                                <p className="text-sm text-foreground/40 mt-1">Hãy chọn từ danh sách lịch hẹn hoàn thành để tạo hồ sơ</p>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        records.map((record: any) => {
-                            const typeInfo = getRecordTypeInfo(record.record_type)
-                            const statusInfo = getStatusInfo(record.confirmation_status)
-                            const TypeIcon = typeInfo.icon
-                            const StatusIcon = statusInfo.icon
+                        <div className="w-[180px]">
+                            <Select value={recordTypeFilter} onValueChange={setRecordTypeFilter}>
+                                <SelectTrigger className="rounded-xl">
+                                    <SelectValue placeholder="Loại hồ sơ" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="ALL">Tất cả loại</SelectItem>
+                                    {RECORD_TYPES.map(type => (
+                                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
 
-                            return (
-                                <Card key={record._id} className="overflow-hidden">
-                                    <CardContent className="p-4">
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex items-start gap-4">
-                                                <div className={`w-12 h-12 rounded-xl ${typeInfo.color.split(" ")[0]} flex items-center justify-center`}>
-                                                    <TypeIcon className={`w-6 h-6 ${typeInfo.color.split(" ")[1]}`} />
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <Badge className={typeInfo.color}>{typeInfo.label}</Badge>
-                                                        <Badge className={statusInfo.color}>
-                                                            <StatusIcon className="w-3 h-3 mr-1" />
-                                                            {statusInfo.label}
-                                                        </Badge>
+                    <Card className="border-none shadow-md bg-white/50 backdrop-blur-sm overflow-hidden">
+                        <Table>
+                            <TableHeader className="bg-muted/30">
+                                <TableRow className="hover:bg-transparent">
+                                    <TableHead className="font-semibold text-muted-foreground">THÚ CƯNG</TableHead>
+                                    <TableHead className="font-semibold text-muted-foreground">LOẠI HỒ SƠ</TableHead>
+                                    <TableHead className="font-semibold text-muted-foreground">NGÀY KHÁM</TableHead>
+                                    <TableHead className="font-semibold text-muted-foreground">CHẨN ĐOÁN</TableHead>
+                                    <TableHead className="text-center font-semibold text-muted-foreground">TRẠNG THÁI</TableHead>
+                                    <TableHead className="text-right font-semibold text-muted-foreground pr-6">THAO TÁC</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {recordsLoading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center py-10">
+                                            <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+                                        </TableCell>
+                                    </TableRow>
+                                ) : paginatedRecords.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                                            Không tìm thấy hồ sơ nào
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    paginatedRecords.map((record: any) => {
+                                        const typeInfo = getRecordTypeInfo(record.record_type)
+                                        const statusInfo = getStatusInfo(record.confirmation_status)
+                                        const TypeIcon = typeInfo.icon
+
+                                        return (
+                                            <TableRow key={record._id} className="hover:bg-muted/50 transition-colors group">
+                                                <TableCell className="py-4 font-medium text-foreground">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center overflow-hidden">
+                                                            {record.pet_id?.image?.url ? (
+                                                                <Image src={record.pet_id.image.url} alt="" width={32} height={32} className="object-cover" />
+                                                            ) : (
+                                                                <PawPrint className="w-4 h-4 text-muted-foreground" />
+                                                            )}
+                                                        </div>
+                                                        {record.pet_id?.name}
                                                     </div>
-                                                    <p className="font-bold text-foreground">{record.diagnosis}</p>
-                                                    <div className="flex items-center gap-4 mt-1 text-sm text-foreground/60">
-                                                        <span className="flex items-center gap-1">
-                                                            <PawPrint className="w-4 h-4" />
-                                                            {record.pet_id?.name || "Thú cưng"}
-                                                        </span>
-                                                        <span className="flex items-center gap-1">
-                                                            <CalendarDays className="w-4 h-4" />
-                                                            {new Date(record.visit_date).toLocaleDateString("vi-VN")}
-                                                        </span>
+                                                </TableCell>
+                                                <TableCell className="py-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className={`p-1.5 rounded-lg ${typeInfo.color.split(" ")[0]}`}>
+                                                            <TypeIcon className={`w-3.5 h-3.5 ${typeInfo.color.split(" ")[1]}`} />
+                                                        </div>
+                                                        <span className="text-sm font-medium">{typeInfo.label}</span>
                                                     </div>
-                                                    {record.treatment && (
-                                                        <p className="text-sm text-foreground/70 mt-2">
-                                                            <strong>Điều trị:</strong> {record.treatment}
-                                                        </p>
-                                                    )}
-                                                    {record.customer_feedback && (
-                                                        <p className="text-sm text-orange-600 mt-2 p-2 bg-orange-50 rounded-lg">
-                                                            <strong>Phản hồi:</strong> {record.customer_feedback}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col items-end gap-2">
-                                                {record.confirmation_status !== "CONFIRMED" && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="rounded-lg"
-                                                        onClick={() => openEditRecord(record)}
-                                                    >
-                                                        <Edit className="w-4 h-4 mr-1" />
-                                                        Sửa
-                                                    </Button>
-                                                )}
-                                                {record.attachments?.length > 0 && (
-                                                    <Badge variant="secondary" className="rounded-lg">
-                                                        <ImageIcon className="w-3 h-3 mr-1" />
-                                                        {record.attachments.length} ảnh
+                                                </TableCell>
+                                                <TableCell className="py-4 text-muted-foreground">
+                                                    {new Date(record.visit_date).toLocaleDateString("vi-VN")}
+                                                </TableCell>
+                                                <TableCell className="py-4 max-w-[200px] truncate" title={record.diagnosis}>
+                                                    {record.diagnosis}
+                                                </TableCell>
+                                                <TableCell className="text-center py-4">
+                                                    <Badge className={`${statusInfo.color} font-normal border-none`}>
+                                                        {statusInfo.label}
                                                     </Badge>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )
-                        })
-                    )}
+                                                </TableCell>
+                                                <TableCell className="text-right pr-6 py-4">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button
+                                                            size="icon"
+                                                            variant="outline"
+                                                            className="rounded-lg h-8 w-8 hover:bg-primary/5 hover:text-primary transition-colors"
+                                                            onClick={() => setSelectedRecordDetail(record)}
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </Button>
+                                                        {record.confirmation_status !== "CONFIRMED" && (
+                                                            <Button
+                                                                size="icon"
+                                                                variant="outline"
+                                                                className="rounded-lg h-8 w-8 hover:bg-primary/5 hover:text-primary transition-colors"
+                                                                onClick={() => openEditRecord(record)}
+                                                            >
+                                                                <Edit className="w-4 h-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })
+                                )}
+                            </TableBody>
+                        </Table>
+
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-end p-4 gap-2 border-t text-sm">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="rounded-lg h-8"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </Button>
+                                <span className="text-foreground/60">
+                                    Trang {currentPage} / {totalPages}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="rounded-lg h-8"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        )}
+                    </Card>
                 </TabsContent>
 
                 {/* Completed Bookings Tab */}
@@ -636,11 +721,11 @@ export function MerchantMedicalRecords() {
                                     <ImageUpload
                                         label=""
                                         value=""
-                                        onChange={(url, publicId) => {
-                                            if (url) {
+                                        onChange={(image) => {
+                                            if (image?.url) {
                                                 setRecordForm({
                                                     ...recordForm,
-                                                    attachments: [...recordForm.attachments, { url, public_id: publicId || `att_${Date.now()}` }]
+                                                    attachments: [...recordForm.attachments, { url: image.url, public_id: image.public_id || `att_${Date.now()}` }]
                                                 })
                                             }
                                         }}
@@ -671,6 +756,168 @@ export function MerchantMedicalRecords() {
                             </p>
                         )}
                     </div>
+                </DialogContent>
+            </Dialog>
+            {/* Record Detail View Modal */}
+            <Dialog open={!!selectedRecordDetail} onOpenChange={() => setSelectedRecordDetail(null)}>
+                <DialogContent className="rounded-3xl max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <FileText className="w-5 h-5 text-primary" />
+                            Chi tiết hồ sơ y tế
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {selectedRecordDetail && (
+                        <div className="space-y-6">
+                            {/* Status and Date Header */}
+                            <div className="flex items-center justify-between bg-secondary/30 p-4 rounded-2xl">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-xl ${getRecordTypeInfo(selectedRecordDetail.record_type).color.split(" ")[0]}`}>
+                                        {(() => {
+                                            const TypeIcon = getRecordTypeInfo(selectedRecordDetail.record_type).icon
+                                            return <TypeIcon className={`w-5 h-5 ${getRecordTypeInfo(selectedRecordDetail.record_type).color.split(" ")[1]}`} />
+                                        })()}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-foreground/60">Loại hồ sơ</p>
+                                        <p className="font-bold">{getRecordTypeInfo(selectedRecordDetail.record_type).label}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm font-medium text-foreground/60">Ngày khám</p>
+                                    <p className="font-bold">{new Date(selectedRecordDetail.visit_date).toLocaleDateString("vi-VN")}</p>
+                                </div>
+                            </div>
+
+                            {/* Pet and Customer Info */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <Card className="border-none bg-blue-50/50 rounded-2xl">
+                                    <CardContent className="p-4 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center overflow-hidden">
+                                            {selectedRecordDetail.pet_id?.image?.url ? (
+                                                <Image src={selectedRecordDetail.pet_id.image.url} alt="" width={40} height={40} className="object-cover" />
+                                            ) : (
+                                                <PawPrint className="w-5 h-5 text-blue-600" />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-blue-600 font-medium uppercase tracking-wider">Thú cưng</p>
+                                            <p className="font-bold text-blue-900">{selectedRecordDetail.pet_id?.name}</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="border-none bg-purple-50/50 rounded-2xl">
+                                    <CardContent className="p-4 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                                            <User className="w-5 h-5 text-purple-600" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-purple-600 font-medium uppercase tracking-wider">Chủ nuôi</p>
+                                            <p className="font-bold text-purple-900 truncate max-w-[150px]">
+                                                {selectedRecordDetail.pet_id?.owner_id?.full_name || "Khách hàng"}
+                                            </p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Clinical Info */}
+                            <div className="space-y-4">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-foreground/40 uppercase tracking-widest mb-2">Thông tin lâm sàng</h3>
+                                    <div className="bg-card border rounded-2xl p-4 space-y-3">
+                                        <div>
+                                            <Label className="text-xs text-muted-foreground">Chẩn đoán / Kết quả</Label>
+                                            <p className="text-foreground font-medium">{selectedRecordDetail.diagnosis}</p>
+                                        </div>
+                                        {selectedRecordDetail.treatment && (
+                                            <div>
+                                                <Label className="text-xs text-muted-foreground">Phương pháp điều trị</Label>
+                                                <p className="text-foreground">{selectedRecordDetail.treatment}</p>
+                                            </div>
+                                        )}
+                                        {selectedRecordDetail.condition && (
+                                            <div>
+                                                <Label className="text-xs text-muted-foreground">Tình trạng sức khỏe</Label>
+                                                <Badge variant="outline" className="mt-1">{selectedRecordDetail.condition}</Badge>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Medications */}
+                                {selectedRecordDetail.medications?.length > 0 && (
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-foreground/40 uppercase tracking-widest mb-2">Đơn thuốc</h3>
+                                        <div className="space-y-2">
+                                            {selectedRecordDetail.medications.map((med: any, i: number) => (
+                                                <div key={i} className="flex items-center gap-3 p-3 bg-secondary/40 rounded-xl border-l-4 border-primary">
+                                                    <Pill className="w-4 h-4 text-primary" />
+                                                    <div className="flex-1">
+                                                        <p className="font-bold text-sm">{med.name}</p>
+                                                        <p className="text-xs text-muted-foreground">{med.dosage} • {med.frequency} • {med.duration_days} ngày</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Attachments */}
+                                {selectedRecordDetail.attachments?.length > 0 && (
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-foreground/40 uppercase tracking-widest mb-2">Hình ảnh đính kèm</h3>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {selectedRecordDetail.attachments.map((att: any, i: number) => (
+                                                <div key={i} className="relative aspect-square rounded-xl overflow-hidden bg-secondary border group cursor-pointer">
+                                                    <Image src={att.url} alt="" fill className="object-cover transition-transform group-hover:scale-110" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Follow up */}
+                                {selectedRecordDetail.follow_up_date && (
+                                    <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex items-start gap-3">
+                                        <CalendarDays className="w-5 h-5 text-orange-600 mt-0.5" />
+                                        <div>
+                                            <p className="text-sm font-bold text-orange-800">Hẹn tái khám</p>
+                                            <p className="text-sm text-orange-700">
+                                                Ngày: {new Date(selectedRecordDetail.follow_up_date).toLocaleDateString("vi-VN")}
+                                            </p>
+                                            {selectedRecordDetail.follow_up_notes && (
+                                                <p className="text-xs text-orange-600 mt-1 italic">"{selectedRecordDetail.follow_up_notes}"</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Merchant Actions */}
+                            <div className="flex gap-3 pt-2">
+                                <Button
+                                    className="flex-1 rounded-xl"
+                                    onClick={() => setSelectedRecordDetail(null)}
+                                >
+                                    Đóng
+                                </Button>
+                                {selectedRecordDetail.confirmation_status !== "CONFIRMED" && (
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1 rounded-xl"
+                                        onClick={() => {
+                                            openEditRecord(selectedRecordDetail)
+                                            setSelectedRecordDetail(null)
+                                        }}
+                                    >
+                                        Chỉnh sửa
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    )}
                 </DialogContent>
             </Dialog>
         </div>
