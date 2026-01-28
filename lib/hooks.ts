@@ -191,6 +191,13 @@ export function useMerchantCompletedBookings() {
   return useFetch<any>(() => merchantAPI.getCompletedBookings())
 }
 
+export function useMerchantAnalytics(range: string = "7d", from?: string, to?: string) {
+  return useFetch<any>(
+    () => merchantAPI.getAnalytics(range, from, to),
+    [range, from, to]
+  )
+}
+
 export function usePendingMedicalRecords(petId: string) {
   return useFetch<any[]>(() => petsAPI.getMedicalRecordsPending(petId), [petId])
 }

@@ -74,6 +74,12 @@ export function SiteHeader({ showBlogLink = true }: SiteHeaderProps) {
                         >
                             Đánh giá
                         </a>
+                        <Link
+                            href="/merchants"
+                            className="text-foreground/70 hover:text-primary transition-colors font-medium text-sm"
+                        >
+                            Đối tác
+                        </Link>
                         {showBlogLink && (
                             <Link
                                 href="/blog"
@@ -178,6 +184,9 @@ export function SiteHeader({ showBlogLink = true }: SiteHeaderProps) {
                         <a href="/#testimonials" className="block text-foreground/70 hover:text-foreground font-medium">
                             Đánh giá
                         </a>
+                        <Link href="/merchants" className="block text-foreground/70 hover:text-foreground font-medium">
+                            Đối tác
+                        </Link>
                         {showBlogLink && (
                             <Link href="/blog" className="block text-foreground/70 hover:text-foreground font-medium">
                                 Blog

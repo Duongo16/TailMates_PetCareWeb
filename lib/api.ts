@@ -77,6 +77,7 @@ export const authAPI = {
     role: string;
     shop_name?: string;
     address?: string;
+    terms_accepted?: boolean;
   }) => {
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: "POST",
@@ -406,6 +407,15 @@ export const merchantAPI = {
 
   getCompletedBookings: () =>
     fetchWithAuth<any>("/merchant/medical-records?type=bookings"),
+
+  // Analytics
+  getAnalytics: (range: string = "7d", from?: string, to?: string) => {
+    const params = new URLSearchParams()
+    params.append("range", range)
+    if (from) params.append("from", from)
+    if (to) params.append("to", to)
+    return fetchWithAuth<any>(`/merchant/analytics?${params.toString()}`)
+  },
 };
 
 // ==================== Manager API ====================
@@ -591,6 +601,38 @@ export const managerBlogAPI = {
     fetchWithAuth(`/manager/blog/${id}/approve`, {
       method: "POST",
       body: JSON.stringify({ action: "REJECT", manager_note: managerNote }),
+    }),
+};
+
+// ==================== PawMatch API ====================
+export const pawmatchAPI = {
+  getDiscovery: (petId: string) =>
+    fetchWithAuth<any[]>(`/pawmatch/discovery?petId=${petId}`),
+
+  swipe: (data: {
+    swiperPetId: string;
+    targetPetId: string;
+    direction: "like" | "nope";
+  }) =>
+    fetchWithAuth("/pawmatch/swipe", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  getMatches: (petId: string) =>
+    fetchWithAuth<any[]>(`/pawmatch/matches?petId=${petId}`),
+
+  getMessages: (matchId: string) =>
+    fetchWithAuth<any[]>(`/pawmatch/messages?matchId=${matchId}`),
+
+  sendMessage: (data: {
+    matchId: string;
+    senderPetId: string;
+    content: string;
+  }) =>
+    fetchWithAuth("/pawmatch/messages", {
+      method: "POST",
+      body: JSON.stringify(data),
     }),
 };
 

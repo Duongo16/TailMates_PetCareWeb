@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ImageUpload } from "@/components/ui/image-upload"
+import { MediaGalleryUpload } from "@/components/ui/media-gallery-upload"
 import {
   Cake,
   Weight,
@@ -155,6 +156,9 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
     notes: "",
     image_url: "",
     image_public_id: "",
+    mediaGallery: [] as { url: string; public_id: string }[],
+    datingBio: "",
+    lookingFor: "Any" as "Playdate" | "Breeding" | "Any",
   })
 
   const selectedPet = pets?.find((p) => p._id === selectedPetId) || pets?.[0]
@@ -194,6 +198,9 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
       notes: "",
       image_url: "",
       image_public_id: "",
+      mediaGallery: [],
+      datingBio: "",
+      lookingFor: "Any",
     })
   }
 
@@ -231,6 +238,9 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
         notes: selectedPet.notes || "",
         image_url: selectedPet.image?.url || "",
         image_public_id: selectedPet.image?.public_id || "",
+        mediaGallery: selectedPet.mediaGallery || [],
+        datingBio: selectedPet.datingProfile?.bio || "",
+        lookingFor: selectedPet.datingProfile?.lookingFor || "Any",
       })
       setShowEditDialog(true)
     }
@@ -268,6 +278,11 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
         fur_type: furTypeLabel,
         microchip: formData.microchip || undefined,
         notes: formData.notes || undefined,
+        mediaGallery: formData.mediaGallery,
+        datingProfile: {
+          bio: formData.datingBio,
+          lookingFor: formData.lookingFor
+        }
       }
 
       if (formData.image_url && formData.image_url.trim()) {
@@ -325,6 +340,11 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
         fur_type: furTypeLabel,
         microchip: formData.microchip || undefined,
         notes: formData.notes || undefined,
+        mediaGallery: formData.mediaGallery,
+        datingProfile: {
+          bio: formData.datingBio,
+          lookingFor: formData.lookingFor
+        }
       }
 
       if (formData.image_url && formData.image_url.trim()) {
@@ -619,6 +639,52 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
           </div>
         </div>
 
+        {/* PawMatch / Dating Profile Section */}
+        <div className="border-t pt-4 mt-4">
+          <h3 className="text-sm font-bold flex items-center gap-2 mb-4">
+            <Sparkles className="w-4 h-4 text-primary" />
+            Hồ sơ PawMatch (Hẹn hò cho thú cưng)
+          </h3>
+
+          <div className="space-y-4">
+            <MediaGalleryUpload
+              value={formData.mediaGallery}
+              onChange={(items) => setFormData(prev => ({ ...prev, mediaGallery: items }))}
+            />
+
+            <div>
+              <Label className="text-sm">Giới thiệu ngắn (Bio)</Label>
+              <Textarea
+                value={formData.datingBio}
+                onChange={(e) => setFormData(prev => ({ ...prev, datingBio: e.target.value }))}
+                placeholder="VD: Bé rất hiền và thích kết bạn với các bạn cùng lứa..."
+                className="rounded-xl mt-1 min-h-[80px] resize-none w-full"
+                maxLength={500}
+              />
+              <p className="text-[10px] text-foreground/50 text-right">
+                {formData.datingBio.length}/500
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-sm">Đang tìm kiếm</Label>
+              <Select
+                value={formData.lookingFor}
+                onValueChange={(val: any) => setFormData(prev => ({ ...prev, lookingFor: val }))}
+              >
+                <SelectTrigger className="rounded-xl mt-1 h-9 w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Playdate">Tìm bạn chơi</SelectItem>
+                  <SelectItem value="Breeding">Tìm bạn phối giống</SelectItem>
+                  <SelectItem value="Any">Cả hai</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
         <Button
           className="w-full rounded-xl"
           onClick={isEdit ? handleUpdatePet : handleAddPet}
@@ -680,7 +746,7 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent className="rounded-3xl w-[95vw] max-w-sm">
+        <DialogContent className="rounded-3xl w-[95vw] max-sm">
           <DialogHeader>
             <DialogTitle>Xác nhận xóa</DialogTitle>
           </DialogHeader>

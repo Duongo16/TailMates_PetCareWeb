@@ -19,7 +19,8 @@ export enum PetGender {
 // ==================== Sub-Schemas ====================
 interface ICloudinaryImage {
   url: string;
-  public_id: string;
+  public_id?: string;
+  type?: "image" | "video";
 }
 
 interface IAIAnalysis {
@@ -45,6 +46,11 @@ export interface IPet extends Document {
   allergies?: string[];
   notes?: string;
   image?: ICloudinaryImage;
+  mediaGallery?: ICloudinaryImage[];
+  datingProfile?: {
+    bio?: string;
+    lookingFor?: "Playdate" | "Breeding" | "Any";
+  };
   ai_analysis?: IAIAnalysis;
   created_at: Date;
 }
@@ -53,7 +59,8 @@ export interface IPet extends Document {
 const CloudinaryImageSchema = new Schema<ICloudinaryImage>(
   {
     url: { type: String, required: true },
-    public_id: { type: String, required: true },
+    public_id: { type: String },
+    type: { type: String, enum: ["image", "video"], default: "image" },
   },
   { _id: false }
 );
@@ -126,6 +133,23 @@ const PetSchema = new Schema<IPet>(
       trim: true,
     },
     image: CloudinaryImageSchema,
+    mediaGallery: {
+      type: [CloudinaryImageSchema],
+      validate: [
+        {
+          validator: (val: any[]) => val.length <= 10,
+          message: "Media gallery cannot exceed 10 items",
+        },
+      ],
+    },
+    datingProfile: {
+      bio: { type: String, trim: true, maxlength: 500 },
+      lookingFor: {
+        type: String,
+        enum: ["Playdate", "Breeding", "Any"],
+        default: "Any",
+      },
+    },
     ai_analysis: AIAnalysisSchema,
   },
   {
@@ -142,3 +166,4 @@ const Pet: Model<IPet> =
   mongoose.models.Pet || mongoose.model<IPet>("Pet", PetSchema);
 
 export default Pet;
+

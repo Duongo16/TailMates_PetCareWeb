@@ -9,11 +9,15 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { email, password, full_name, phone_number, role } = body;
+    const { email, password, full_name, phone_number, role, terms_accepted } = body;
 
     // Validation
     if (!email || !password || !full_name) {
       return apiResponse.error("Email, password and full name are required");
+    }
+
+    if (!terms_accepted) {
+      return apiResponse.error("You must accept the terms and policies to register");
     }
 
     if (password.length < 6) {

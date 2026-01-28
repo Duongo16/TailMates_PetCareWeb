@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth, type UserRole } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -12,9 +12,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff, ArrowLeft, PawPrint, User, Store, CheckCircle2, Sparkles, Shield, Gift } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion-wrappers"
+import { TermsViewerModal } from "@/components/ui/terms-viewer-modal"
 
 export default function RegisterPage() {
   const { register } = useAuth()
@@ -29,6 +31,28 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false)
+  const [termsData, setTermsData] = useState<any>(null)
+  const [privacyData, setPrivacyData] = useState<any>(null)
+
+  // Fetch active terms and privacy policy on mount
+  useEffect(() => {
+    const fetchTerms = async () => {
+      try {
+        const response = await fetch("/api/v1/terms-policies/active")
+        const data = await response.json()
+        if (data.success) {
+          setTermsData(data.data.terms)
+          setPrivacyData(data.data.privacy)
+        }
+      } catch (error) {
+        console.error("Error fetching terms:", error)
+      }
+    }
+    fetchTerms()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,6 +73,11 @@ export default function RegisterPage() {
       return
     }
 
+    if (!termsAccepted) {
+      setError("Vui lòng đồng ý với Điều khoản sử dụng và Chính sách bảo mật")
+      return
+    }
+
     setIsLoading(true)
 
     const result = await register(
@@ -56,7 +85,8 @@ export default function RegisterPage() {
       email,
       password,
       role,
-      role === "merchant" ? { shop_name: shopName.trim(), address: address.trim() } : undefined
+      role === "merchant" ? { shop_name: shopName.trim(), address: address.trim() } : undefined,
+      termsAccepted
     )
 
     if (result.success) {
@@ -327,6 +357,41 @@ export default function RegisterPage() {
                   />
                 </div>
 
+                {/* Terms and Privacy Policy Acceptance */}
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      id="terms"
+                      checked={termsAccepted}
+                      onCheckedChange={(checked) => setTermsAccepted(checked as boolean)}
+                      className="mt-1"
+                    />
+                    <label
+                      htmlFor="terms"
+                      className="text-sm text-foreground/80 leading-relaxed cursor-pointer select-none"
+                    >
+                      Tôi đồng ý với{" "}
+                      <button
+                        type="button"
+                        onClick={() => termsData && setShowTermsModal(true)}
+                        className="text-primary hover:underline font-medium"
+                        disabled={!termsData}
+                      >
+                        Điều khoản sử dụng
+                      </button>{" "}
+                      và{" "}
+                      <button
+                        type="button"
+                        onClick={() => privacyData && setShowPrivacyModal(true)}
+                        className="text-primary hover:underline font-medium"
+                        disabled={!privacyData}
+                      >
+                        Chính sách bảo mật
+                      </button>
+                    </label>
+                  </div>
+                </div>
+
                 {error && (
                   <div className="p-3 rounded-xl bg-destructive/10 text-destructive text-sm border border-destructive/20">
                     {error}
@@ -347,17 +412,6 @@ export default function RegisterPage() {
                     "Đăng ký miễn phí"
                   )}
                 </Button>
-
-                <p className="text-xs text-center text-foreground/50">
-                  Bằng việc đăng ký, bạn đồng ý với{" "}
-                  <a href="#" className="text-primary hover:underline">
-                    Điều khoản sử dụng
-                  </a>{" "}
-                  và{" "}
-                  <a href="#" className="text-primary hover:underline">
-                    Chính sách bảo mật
-                  </a>
-                </p>
               </form>
 
               <p className="mt-6 text-center text-foreground/60">
@@ -370,6 +424,27 @@ export default function RegisterPage() {
           </Card>
         </div>
       </div>
+
+      {/* Terms and Privacy Modals */}
+      {termsData && (
+        <TermsViewerModal
+          isOpen={showTermsModal}
+          onClose={() => setShowTermsModal(false)}
+          title={termsData.title}
+          content={termsData.content}
+          version={termsData.version}
+        />
+      )}
+
+      {privacyData && (
+        <TermsViewerModal
+          isOpen={showPrivacyModal}
+          onClose={() => setShowPrivacyModal(false)}
+          title={privacyData.title}
+          content={privacyData.content}
+          version={privacyData.version}
+        />
+      )}
     </div>
   )
 }

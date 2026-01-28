@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Star, ShoppingCart, Loader2, Store, Package, Check, Search, ChevronLeft, ChevronRight, ArrowUpDown, Filter, ChevronDown, Dog, Cat, Leaf, Sparkles, Bone, Gamepad2, Shirt, HeartPulse } from "lucide-react"
+import { Star, ShoppingCart, Loader2, Store, Package, Check, Search, ChevronLeft, ChevronRight, ArrowUpDown, Filter, ChevronDown, Dog, Cat, Leaf, Sparkles, Bone, Gamepad2, Shirt, HeartPulse, MessageSquare } from "lucide-react"
 import Image from "next/image"
 import { AlertDialog, useAlertDialog } from "@/components/ui/alert-dialog-custom"
 import { BannerCarousel } from "@/components/ui/banner-carousel"
@@ -511,14 +511,28 @@ export function Marketplace() {
               )}
 
               {/* Merchant Info */}
-              <div className="p-3 bg-secondary/50 rounded-xl">
-                <div className="flex items-center gap-2">
-                  <Store className="w-4 h-4 text-foreground/60" />
-                  <span className="font-medium">{selectedProduct.merchant_id?.merchant_profile?.shop_name || "Cửa hàng"}</span>
+              <div className="p-3 bg-secondary/50 rounded-xl flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Store className="w-4 h-4 text-foreground/60" />
+                    <span className="font-medium">{selectedProduct.merchant_id?.merchant_profile?.shop_name || "Cửa hàng"}</span>
+                  </div>
+                  <p className="text-sm text-foreground/60 mt-1">
+                    ★ {selectedProduct.merchant_id?.merchant_profile?.rating || 5.0}
+                  </p>
                 </div>
-                <p className="text-sm text-foreground/60 mt-1">
-                  ★ {selectedProduct.merchant_id?.merchant_profile?.rating || 5.0}
-                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-xl bg-white border-primary/20 text-primary hover:bg-primary hover:text-white font-bold"
+                  onClick={() => {
+                    const merchantId = selectedProduct.merchant_id?._id || selectedProduct.merchant_id;
+                    window.location.href = `/dashboard/customer?tab=messages&type=COMMERCE&participantId=${merchantId}&contextId=${selectedProduct._id}`;
+                  }}
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Nhắn tin
+                </Button>
               </div>
 
               {/* Description */}

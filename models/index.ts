@@ -38,3 +38,18 @@ export type { IBlogPost } from "./BlogPost";
 export { default as BlogVote, VoteType } from "./BlogVote";
 export type { IBlogVote } from "./BlogVote";
 
+export { default as SwipeInteraction, SwipeAction } from "./SwipeInteraction";
+export type { ISwipeInteraction } from "./SwipeInteraction";
+
+export { default as Match } from "./Match";
+export type { IMatch } from "./Match";
+
+export { default as Conversation, ConversationType } from "./Conversation";
+export type { IConversation } from "./Conversation";
+
+export { default as Message } from "./Message";
+export type { IMessage } from "./Message";
+
+export { default as TermsAndPolicies, TermsType } from "./TermsAndPolicies";
+export type { ITermsAndPolicies } from "./TermsAndPolicies";
+

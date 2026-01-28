@@ -20,6 +20,7 @@ export interface IPackage extends Document {
   duration_months: number;
   description?: string;
   features_config: IFeaturesConfig;
+  commission_rate: number;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
@@ -66,6 +67,12 @@ const PackageSchema = new Schema<IPackage>(
     features_config: {
       type: FeaturesConfigSchema,
       required: true,
+    },
+    commission_rate: {
+      type: Number,
+      default: 0.1, // 10%
+      min: 0,
+      max: 1,
     },
     is_active: {
       type: Boolean,

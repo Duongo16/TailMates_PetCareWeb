@@ -7,7 +7,7 @@ import { apiResponse, verifyToken } from "@/lib/auth";
 // POST /api/v1/manager/blog/[id]/approve - Approve or reject blog post
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         await connectDB();

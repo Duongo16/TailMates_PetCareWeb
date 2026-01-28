@@ -266,6 +266,12 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
                   <Crown className="w-4 h-4 mr-2" />
                   Nâng cấp
                 </DropdownMenuItem>
+                {user?.role === "manager" && (
+                  <DropdownMenuItem onClick={() => router.push("/dashboard/manager/terms-policies")}>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Điều khoản & Chính sách
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => onTabChange("settings")}>
                   <Settings className="w-4 h-4 mr-2" />
                   Cài đặt

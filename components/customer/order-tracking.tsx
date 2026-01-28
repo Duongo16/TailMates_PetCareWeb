@@ -5,7 +5,7 @@ import { useOrders } from "@/lib/hooks"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Package, Loader2, Clock, CheckCircle2, XCircle, PawPrint, ShoppingBag, Store, MapPin, Truck } from "lucide-react"
+import { Package, Loader2, Clock, CheckCircle2, XCircle, PawPrint, ShoppingBag, Store, MapPin, Truck, MessageSquare } from "lucide-react"
 import Image from "next/image"
 
 // Order status configuration
@@ -317,9 +317,23 @@ function OrderCardWithProgress({
         {/* Order Footer */}
         <div className="p-4 bg-secondary/20 border-t border-border">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-foreground/60">
-              <Store className="w-4 h-4" />
-              <span>{order.merchant_id?.merchant_profile?.shop_name || "Cửa hàng"}</span>
+            <div className="flex items-center gap-4 text-sm text-foreground/60">
+              <div className="flex items-center gap-2">
+                <Store className="w-4 h-4" />
+                <span>{order.merchant_id?.merchant_profile?.shop_name || "Cửa hàng"}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-primary hover:bg-primary/5 rounded-lg font-bold"
+                onClick={() => {
+                  const merchantId = order.merchant_id?._id || order.merchant_id;
+                  window.location.href = `/dashboard/customer?tab=messages&type=COMMERCE&contextId=${order._id}&participantId=${merchantId}`;
+                }}
+              >
+                <MessageSquare className="w-3.5 h-3.5 mr-1" />
+                Liên hệ Shop
+              </Button>
             </div>
             <div className="text-right">
               <span className="text-sm text-foreground/60">Tổng cộng:</span>

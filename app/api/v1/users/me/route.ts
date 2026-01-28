@@ -77,6 +77,11 @@ export async function PUT(request: NextRequest) {
         description: mp.description || user!.merchant_profile?.description,
         rating: user!.merchant_profile?.rating || 0,
         revenue_stats: user!.merchant_profile?.revenue_stats || 0,
+        website: mp.website || user!.merchant_profile?.website,
+        banners: mp.banners || user!.merchant_profile?.banners,
+        categories: mp.categories || user!.merchant_profile?.categories,
+        working_hours: mp.working_hours || user!.merchant_profile?.working_hours,
+        social_links: mp.social_links || user!.merchant_profile?.social_links,
       };
     }
 

@@ -86,6 +86,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       "allergies",
       "notes",
       "ai_analysis",
+      "mediaGallery",
+      "datingProfile",
     ];
 
     const updateData: Record<string, unknown> = {};

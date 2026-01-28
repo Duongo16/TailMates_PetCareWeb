@@ -28,6 +28,15 @@ export interface User {
     description?: string
     rating: number
     revenue_stats: number
+    website?: string
+    banners?: { url: string; public_id?: string }[]
+    categories?: string[]
+    working_hours?: string
+    social_links?: {
+      facebook?: string
+      instagram?: string
+      zalo?: string
+    }
   }
 }
 
@@ -43,7 +52,8 @@ interface AuthContextType {
     email: string,
     password: string,
     role: UserRole,
-    merchantData?: { shop_name?: string; address?: string }
+    merchantData?: { shop_name?: string; address?: string },
+    termsAccepted?: boolean
   ) => Promise<{ success: boolean; error?: string }>
   logout: () => void
   refreshUser: () => Promise<void>
@@ -227,7 +237,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
     role: UserRole,
-    merchantData?: { shop_name?: string; address?: string }
+    merchantData?: { shop_name?: string; address?: string },
+    termsAccepted?: boolean
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const roleMap: Record<UserRole, string> = {
@@ -244,6 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: roleMap[role],
         shop_name: merchantData?.shop_name,
         address: merchantData?.address,
+        terms_accepted: termsAccepted,
       })
 
       if (response.success && response.data) {

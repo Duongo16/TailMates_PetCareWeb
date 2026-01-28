@@ -27,6 +27,15 @@ interface IMerchantProfile {
   description?: string;
   rating: number;
   revenue_stats: number;
+  website?: string;
+  banners?: ICloudinaryImage[];
+  categories?: string[];
+  working_hours?: string;
+  social_links?: {
+    facebook?: string;
+    instagram?: string;
+    zalo?: string;
+  };
 }
 
 // ==================== Main Interface ====================
@@ -71,6 +80,15 @@ const MerchantProfileSchema = new Schema<IMerchantProfile>(
     description: { type: String },
     rating: { type: Number, default: 0, min: 0, max: 5 },
     revenue_stats: { type: Number, default: 0 },
+    website: { type: String },
+    banners: [CloudinaryImageSchema],
+    categories: [{ type: String }],
+    working_hours: { type: String },
+    social_links: {
+      facebook: { type: String },
+      instagram: { type: String },
+      zalo: { type: String },
+    },
   },
   { _id: false }
 );

@@ -5,21 +5,9 @@ import { MerchantDashboardContent } from "@/components/merchant/dashboard-conten
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
-import { Home, Package, Truck, Calendar, QrCode, Sparkles, Settings, Loader2, FileText, Newspaper } from "lucide-react"
+import { MERCHANT_TABS, type MerchantTab } from "@/lib/merchant-constants"
+import { Loader2 } from "lucide-react"
 import BlogList from "@/components/merchant/blog-list"
-
-type MerchantTab = "dashboard" | "products" | "services" | "orders" | "bookings" | "medical-records" | "blog" | "scanner" | "settings"
-
-const tabs = [
-  { id: "dashboard" as MerchantTab, label: "Tổng quan", icon: Home },
-  { id: "products" as MerchantTab, label: "Sản phẩm", icon: Package },
-  { id: "services" as MerchantTab, label: "Dịch vụ", icon: Sparkles },
-  { id: "orders" as MerchantTab, label: "Đơn hàng", icon: Truck },
-  { id: "bookings" as MerchantTab, label: "Lịch hẹn", icon: Calendar },
-  { id: "medical-records" as MerchantTab, label: "Sổ Y Tế", icon: FileText },
-  { id: "blog" as MerchantTab, label: "Blog", icon: Newspaper },
-  { id: "settings" as MerchantTab, label: "Cài đặt", icon: Settings },
-]
 
 export default function MerchantDashboardPage() {
   const { user, isLoading } = useAuth()
@@ -48,8 +36,8 @@ export default function MerchantDashboardPage() {
   }
 
   return (
-    <DashboardShell tabs={tabs} activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as MerchantTab)}>
-      {activeTab === "blog" ? <BlogList /> : <MerchantDashboardContent activeTab={activeTab} />}
+    <DashboardShell tabs={MERCHANT_TABS} activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as MerchantTab)}>
+      {activeTab === "blog" ? <BlogList /> : <MerchantDashboardContent activeTab={activeTab} setActiveTab={setActiveTab} />}
     </DashboardShell>
   )
 }

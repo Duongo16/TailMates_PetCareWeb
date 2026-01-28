@@ -12,15 +12,18 @@ import { OrderTracking } from "@/components/customer/order-tracking"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
-import { Home, PawPrint, FileText, ShoppingBag, Calendar, Newspaper } from "lucide-react"
-import { Loader2 } from "lucide-react"
+import { Home, PawPrint, FileText, ShoppingBag, Calendar, Newspaper, Loader2, Sparkles, MessageCircle } from "lucide-react"
 import BlogList from "@/components/customer/blog-list"
+import { PawMatchUI } from "@/components/pawmatch/pawmatch-ui"
+import { GlobalChat } from "@/components/chat/global-chat"
 
-type CustomerTab = "dashboard" | "pets" | "medical" | "marketplace" | "booking" | "orders" | "blog" | "subscription" | "settings"
+type CustomerTab = "dashboard" | "pets" | "pawmatch" | "messages" | "medical" | "marketplace" | "booking" | "orders" | "blog" | "subscription" | "settings"
 
 const tabs = [
   { id: "dashboard" as CustomerTab, label: "Trang chủ", icon: Home },
   { id: "pets" as CustomerTab, label: "Thú cưng", icon: PawPrint },
+  { id: "pawmatch" as CustomerTab, label: "PawMatch", icon: Sparkles },
+  { id: "messages" as CustomerTab, label: "Tin nhắn", icon: MessageCircle },
   { id: "marketplace" as CustomerTab, label: "Mua sắm", icon: ShoppingBag },
   { id: "booking" as CustomerTab, label: "Đặt lịch", icon: Calendar },
   { id: "medical" as CustomerTab, label: "Sổ y tế", icon: FileText },
@@ -91,6 +94,10 @@ export default function CustomerDashboardPage() {
             onAddDialogClose={() => setShouldOpenAddPet(false)}
           />
         )
+      case "pawmatch":
+        return <PawMatchUI />
+      case "messages":
+        return <GlobalChat />
       case "medical":
         return (
           <MedicalRecords selectedPetId={selectedPetId} onSelectPet={setSelectedPetId} onBack={handleBackFromMedical} />

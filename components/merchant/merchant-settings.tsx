@@ -11,7 +11,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { User, Mail, Phone, Lock, Save, Loader2, MapPin, AlertCircle, Bell, Store, Star } from "lucide-react"
+import { User, Mail, Phone, Lock, Save, Loader2, MapPin, AlertCircle, Bell, Store, Star, Globe, Clock, Facebook, Instagram, Plus, X } from "lucide-react"
+import Image from "next/image"
+import { MERCHANT_CATEGORIES } from "@/lib/merchant-constants"
 
 interface MerchantSettingsProps {
     onUpdate?: () => void
@@ -31,6 +33,15 @@ export function MerchantSettings({ onUpdate }: MerchantSettingsProps) {
         shop_name: "",
         address: "",
         description: "",
+        website: "",
+        working_hours: "",
+        categories: [] as string[],
+        banners: [] as { url: string; public_id?: string }[],
+        social_links: {
+            facebook: "",
+            instagram: "",
+            zalo: "",
+        }
     })
 
     const [passwordData, setPasswordData] = useState({
@@ -51,8 +62,8 @@ export function MerchantSettings({ onUpdate }: MerchantSettingsProps) {
     useEffect(() => {
         if (user) {
             setProfileData({
-                full_name: (user as any).full_name || user.name || "",
-                phone_number: (user as any).phone_number || "",
+                full_name: user.name || "",
+                phone_number: user.phone_number || "",
                 avatar_url: user.avatar || "",
                 avatar_public_id: "",
             })
@@ -60,6 +71,15 @@ export function MerchantSettings({ onUpdate }: MerchantSettingsProps) {
                 shop_name: user.merchant_profile?.shop_name || "",
                 address: user.merchant_profile?.address || "",
                 description: user.merchant_profile?.description || "",
+                website: user.merchant_profile?.website || "",
+                working_hours: user.merchant_profile?.working_hours || "",
+                categories: user.merchant_profile?.categories || [],
+                banners: user.merchant_profile?.banners || [],
+                social_links: {
+                    facebook: user.merchant_profile?.social_links?.facebook || "",
+                    instagram: user.merchant_profile?.social_links?.instagram || "",
+                    zalo: user.merchant_profile?.social_links?.zalo || "",
+                }
             })
         }
     }, [user])
@@ -76,6 +96,13 @@ export function MerchantSettings({ onUpdate }: MerchantSettingsProps) {
                     shop_name: shopData.shop_name,
                     address: shopData.address,
                     description: shopData.description,
+                    website: shopData.website,
+                    working_hours: shopData.working_hours,
+                    categories: shopData.categories,
+                    banners: shopData.banners,
+                    social_links: shopData.social_links,
+                    rating: user?.merchant_profile?.rating || 0,
+                    revenue_stats: user?.merchant_profile?.revenue_stats || 0,
                 },
             }
 
@@ -258,6 +285,131 @@ export function MerchantSettings({ onUpdate }: MerchantSettingsProps) {
                             />
                         </div>
 
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <Label className="text-xs flex items-center gap-1">
+                                    <Globe className="w-3 h-3" /> Website
+                                </Label>
+                                <Input
+                                    value={shopData.website}
+                                    onChange={(e) => setShopData({ ...shopData, website: e.target.value })}
+                                    placeholder="https://..."
+                                    className="rounded-lg h-9 mt-1"
+                                />
+                            </div>
+                            <div>
+                                <Label className="text-xs flex items-center gap-1">
+                                    <Clock className="w-3 h-3" /> Giờ làm việc
+                                </Label>
+                                <Input
+                                    value={shopData.working_hours}
+                                    onChange={(e) => setShopData({ ...shopData, working_hours: e.target.value })}
+                                    placeholder="VD: 08:00 - 20:00"
+                                    className="rounded-lg h-9 mt-1"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-foreground/40">Lĩnh vực hoạt động</Label>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {MERCHANT_CATEGORIES.map((cat) => (
+                                    <button
+                                        key={cat.id}
+                                        type="button"
+                                        onClick={() => {
+                                            const isSelected = shopData.categories.includes(cat.id);
+                                            if (isSelected) {
+                                                setShopData({ ...shopData, categories: shopData.categories.filter(c => c !== cat.id) });
+                                            } else {
+                                                setShopData({ ...shopData, categories: [...shopData.categories, cat.id] });
+                                            }
+                                        }}
+                                        className={`flex items-center justify-center py-2 px-1 rounded-lg border text-[10px] font-bold transition-all ${shopData.categories.includes(cat.id)
+                                            ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                                            : "bg-background border-border text-foreground/50 hover:border-primary/50"
+                                            }`}
+                                    >
+                                        {cat.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Social Links */}
+                        <div className="pt-2 border-t space-y-2">
+                            <h4 className="font-medium text-xs text-foreground/70">Mạng xã hội</h4>
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="relative">
+                                    <Facebook className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground/40" />
+                                    <Input
+                                        value={shopData.social_links.facebook}
+                                        onChange={(e) => setShopData({ ...shopData, social_links: { ...shopData.social_links, facebook: e.target.value } })}
+                                        className="pl-7 h-8 text-xs rounded-lg"
+                                        placeholder="Facebook"
+                                    />
+                                </div>
+                                <div className="relative">
+                                    <Instagram className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground/40" />
+                                    <Input
+                                        value={shopData.social_links.instagram}
+                                        onChange={(e) => setShopData({ ...shopData, social_links: { ...shopData.social_links, instagram: e.target.value } })}
+                                        className="pl-7 h-8 text-xs rounded-lg"
+                                        placeholder="Instagram"
+                                    />
+                                </div>
+                                <div className="relative flex items-center">
+                                    <span className="absolute left-2.5 text-[10px] font-bold text-foreground/40">Z</span>
+                                    <Input
+                                        value={shopData.social_links.zalo}
+                                        onChange={(e) => setShopData({ ...shopData, social_links: { ...shopData.social_links, zalo: e.target.value } })}
+                                        className="pl-7 h-8 text-xs rounded-lg"
+                                        placeholder="Zalo"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Banners */}
+                        <div className="pt-4 border-t space-y-2">
+                            <Label className="text-xs">Ảnh bìa (Banner, tối đa 5 ảnh)</Label>
+                            <div className="grid grid-cols-4 gap-2">
+                                {shopData.banners.map((banner, index) => (
+                                    <div key={index} className="relative aspect-video rounded-lg overflow-hidden border bg-muted">
+                                        <Image src={banner.url} alt={`Banner ${index}`} fill className="object-cover" />
+                                        <button
+                                            onClick={() => setShopData({ ...shopData, banners: shopData.banners.filter((_, i) => i !== index) })}
+                                            className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full hover:bg-black/70"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                                {shopData.banners.length < 5 && (
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <button className="aspect-video rounded-lg border-2 border-dashed flex items-center justify-center text-foreground/40 hover:text-primary hover:border-primary transition-colors">
+                                                <Plus className="w-5 h-5" />
+                                            </button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-md">
+                                            <DialogHeader>
+                                                <DialogTitle>Thêm ảnh bìa</DialogTitle>
+                                            </DialogHeader>
+                                            <ImageUpload
+                                                onChange={(img) => {
+                                                    if (img) {
+                                                        const newBanner = { url: img.url, public_id: img.public_id };
+                                                        setShopData(prev => ({ ...prev, banners: [...prev.banners, newBanner] }));
+                                                    }
+                                                }}
+                                            />
+                                        </DialogContent>
+                                    </Dialog>
+                                )}
+                            </div>
+                        </div>
+
                         {/* Notifications inline */}
                         <div className="pt-2 border-t space-y-2">
                             <h4 className="font-medium text-xs flex items-center gap-1 text-foreground/70">
@@ -315,12 +467,20 @@ export function MerchantSettings({ onUpdate }: MerchantSettingsProps) {
                         <ImageUpload
                             label="Ảnh đại diện"
                             value={profileData.avatar_url}
-                            onChange={(url, publicId) => {
-                                setProfileData({
-                                    ...profileData,
-                                    avatar_url: url,
-                                    avatar_public_id: publicId || profileData.avatar_public_id
-                                })
+                            onChange={(img) => {
+                                if (img) {
+                                    setProfileData({
+                                        ...profileData,
+                                        avatar_url: img.url,
+                                        avatar_public_id: img.public_id || profileData.avatar_public_id
+                                    })
+                                } else {
+                                    setProfileData({
+                                        ...profileData,
+                                        avatar_url: "",
+                                        avatar_public_id: ""
+                                    })
+                                }
                             }}
                         />
 

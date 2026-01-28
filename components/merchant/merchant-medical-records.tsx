@@ -61,9 +61,12 @@ const CONFIRMATION_STATUS = {
     NEEDS_REVISION: { label: "Cần sửa", color: "bg-orange-100 text-orange-700", icon: AlertCircle },
 }
 
+import { useToast } from "@/components/ui/use-toast"
+
 export function MerchantMedicalRecords() {
     const { data: recordsData, isLoading: recordsLoading, refetch: refetchRecords } = useMerchantMedicalRecords()
     const { data: bookingsData, isLoading: bookingsLoading, refetch: refetchBookings } = useMerchantCompletedBookings()
+    const { toast } = useToast()
 
     const [activeSubTab, setActiveSubTab] = useState("records")
     const [showAddRecord, setShowAddRecord] = useState(false)
@@ -137,7 +140,11 @@ export function MerchantMedicalRecords() {
     const handleSubmitRecord = async () => {
         if (!selectedBooking && !editingRecord) return
         if (!recordForm.diagnosis || !recordForm.record_type) {
-            alert("Vui lòng nhập chẩn đoán và loại hồ sơ")
+            toast({
+                variant: "destructive",
+                title: "Thiếu thông tin",
+                description: "Vui lòng nhập chẩn đoán và loại hồ sơ",
+            })
             return
         }
 
@@ -172,11 +179,23 @@ export function MerchantMedicalRecords() {
                 resetForm()
                 refetchRecords()
                 refetchBookings()
+                toast({
+                    title: "Lưu thành công",
+                    description: "Hồ sơ y tế đã được lưu chuyển cho khách hàng xác nhận.",
+                })
             } else {
-                alert(res.message || "Lỗi khi lưu hồ sơ")
+                toast({
+                    variant: "destructive",
+                    title: "Lỗi",
+                    description: res.message || "Lỗi khi lưu hồ sơ",
+                })
             }
         } catch (error) {
-            alert("Lỗi khi lưu hồ sơ y tế")
+            toast({
+                variant: "destructive",
+                title: "Lỗi hệ thống",
+                description: "Lỗi khi lưu hồ sơ y tế",
+            })
         } finally {
             setIsSubmitting(false)
         }
