@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+export const dynamic = "force-dynamic";
 import { authenticate, apiResponse } from "@/lib/auth";
 import connectDB from "@/lib/db";
 import { Message, Conversation } from "@/models";
@@ -97,15 +98,17 @@ export async function POST(request: NextRequest) {
         const populatedMessage = await Message.findById(newMessage._id).populate("senderId", "name image");
 
         // Trigger Pusher event
-        await pusherServer.trigger(`conversation-${conversationId}`, "new-message", populatedMessage);
+        if (pusherServer) {
+            await pusherServer.trigger(`conversation-${conversationId}`, "new-message", populatedMessage);
 
-        // Also trigger global event for sidebar notification update
-        conversation.participants.forEach((pId: mongoose.Types.ObjectId) => {
-            pusherServer.trigger(`user-${pId}-chats`, "conversation-update", {
-                conversationId,
-                lastMessage: populatedMessage,
+            // Also trigger global event for sidebar notification update
+            conversation.participants.forEach((pId: mongoose.Types.ObjectId) => {
+                pusherServer.trigger(`user-${pId}-chats`, "conversation-update", {
+                    conversationId,
+                    lastMessage: populatedMessage,
+                });
             });
-        });
+        }
 
         return apiResponse.success(populatedMessage, "Message sent successfully", 201);
     } catch (error) {

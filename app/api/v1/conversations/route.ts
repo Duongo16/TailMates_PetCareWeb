@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+export const dynamic = "force-dynamic";
 import connectDB from "@/lib/db";
 import { Conversation, ConversationType } from "@/models";
 import { authenticate, apiResponse } from "@/lib/auth";
