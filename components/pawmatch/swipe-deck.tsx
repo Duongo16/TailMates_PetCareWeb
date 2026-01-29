@@ -114,7 +114,7 @@ export function SwipeDeck({
     }, [queue, isMatching, activeTab, handleSwipe])
 
     const renderDiscovery = () => (
-        <div className="relative w-full max-w-[380px] lg:max-w-[440px] h-[600px] lg:h-[720px] perspective-1000 flex items-center justify-center">
+        <div className="relative w-full max-w-[340px] xs:max-w-[380px] lg:max-w-[440px] h-[550px] sm:h-[600px] lg:h-[720px] perspective-1000 flex items-center justify-center">
             {isLoading && queue.length === 0 ? (
                 <div className="flex flex-col items-center justify-center space-y-6">
                     <div className="relative">
@@ -185,17 +185,17 @@ export function SwipeDeck({
     )
 
     return (
-        <div className="flex items-start justify-center w-full h-full gap-6 lg:gap-12 xl:gap-20 select-none pb-6 lg:pb-10 pt-4">
-            {/* Left Column: Navigation & Tools */}
-            <div className="flex flex-col gap-5 py-4 animate-in slide-in-from-left fade-in duration-700 sticky top-8">
-                {/* Logo Floating Button */}
-                <div className="group relative flex items-center">
+        <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center w-full h-full gap-4 lg:gap-12 xl:gap-20 select-none pb-6 lg:pb-10 pt-2 lg:pt-4 overflow-y-auto lg:overflow-hidden px-4 lg:px-0">
+            {/* Left Column: Navigation & Tools (Desktop) / Top Bar (Mobile) */}
+            <div className="flex flex-row lg:flex-col gap-3 lg:gap-5 py-2 lg:py-4 animate-in slide-in-from-left fade-in duration-700 sticky top-0 lg:top-8 z-40 bg-[#f8fafc]/80 backdrop-blur-md lg:bg-transparent w-full lg:w-auto justify-center lg:justify-start rounded-2xl">
+                {/* Logo Floating Button - Hidden on extreme small mobile if needed, but keeping for now */}
+                <div className="group hidden lg:flex items-center">
                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-orange-500 to-red-600 shadow-2xl flex items-center justify-center transform -rotate-6 group-hover:rotate-0 transition-transform duration-500 cursor-pointer shadow-orange-500/20">
                         <Sparkles className="w-7 h-7 text-white" />
                     </div>
                 </div>
 
-                <div className="w-px h-8 bg-slate-200/50 mx-auto" />
+                <div className="hidden lg:block w-px h-8 bg-slate-200/50 mx-auto" />
 
                 <ActionButton 
                     icon={Sparkles} 
@@ -203,6 +203,7 @@ export function SwipeDeck({
                     onClick={() => setActiveTab("discovery")}
                     label="Khám phá"
                     color={activeTab === "discovery" ? "text-white bg-gradient-to-tr from-orange-500 to-red-600" : "text-slate-400"}
+                    size="w-12 h-12 lg:w-14 h-14"
                 />
                 <ActionButton 
                     icon={Heart} 
@@ -210,14 +211,15 @@ export function SwipeDeck({
                     onClick={() => setActiveTab("matches")}
                     label="Tương hợp"
                     color={activeTab === "matches" ? "text-white bg-gradient-to-tr from-orange-500 to-red-600" : "text-slate-400"}
+                    size="w-12 h-12 lg:w-14 h-14"
                 />
                 
-                <div className="w-px h-8 bg-slate-200/50 mx-auto" />
+                <div className="hidden lg:block w-px h-8 bg-slate-200/50 mx-auto" />
 
-                {/* Pet Selector as a button */}
+                {/* Pet Selector */}
                 <div className="group relative flex items-center">
                     <Select value={selectedPetId || ""} onValueChange={setSelectedPetId}>
-                        <SelectTrigger className="w-14 h-14 p-0 bg-white border-2 border-slate-100 rounded-3xl flex items-center justify-center transition-all ring-0 focus:ring-0 shadow-xl group-hover:shadow-2xl hover:border-orange-500/20 overflow-hidden">
+                        <SelectTrigger className="w-12 h-12 lg:w-14 lg:h-14 p-0 bg-white border-2 border-slate-100 rounded-2xl lg:rounded-3xl flex items-center justify-center transition-all ring-0 focus:ring-0 shadow-lg lg:shadow-xl group-hover:shadow-2xl hover:border-orange-500/20 overflow-hidden">
                             <img 
                                 src={currentPet?.image?.url || "/placeholder.svg"} 
                                 alt={currentPet?.name} 
@@ -237,9 +239,6 @@ export function SwipeDeck({
                             ))}
                         </SelectContent>
                     </Select>
-                    <div className="absolute left-full ml-4 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-black rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap uppercase tracking-widest z-50">
-                        Đổi thú cưng
-                    </div>
                 </div>
 
                 <ActionButton 
@@ -247,55 +246,57 @@ export function SwipeDeck({
                     onClick={() => {}} 
                     label="Bộ lọc"
                     color="text-slate-400"
+                    size="w-12 h-12 lg:w-14 h-14"
                 />
             </div>
 
             {/* Middle Column: Discovery or Matches */}
-            <div className="flex-1 w-full max-w-5xl h-full flex flex-col items-center">
+            <div className="flex-1 w-full max-w-5xl flex flex-col items-center">
                 {activeTab === "discovery" ? renderDiscovery() : <MatchesTab currentPetId={petId} />}
             </div>
 
-            {/* Right Column: Actions (Only for Discovery) */}
-            <div className="flex flex-col gap-6 py-4 animate-in slide-in-from-right fade-in duration-700 sticky top-8">
-                {activeTab === "discovery" && queue.length > 0 ? (
+            {/* Right Column: Actions (Desktop: Side, Mobile: Bottom) */}
+            <div className={cn(
+                "flex lg:flex-col gap-4 lg:gap-6 py-4 animate-in slide-in-from-right fade-in duration-700 sticky bottom-4 lg:top-8 z-40 lg:z-auto",
+                activeTab !== "discovery" && "hidden lg:flex lg:opacity-0 pointer-events-none"
+            )}>
+                {activeTab === "discovery" && queue.length > 0 && (
                     <>
                         <ActionButton 
                             icon={RotateCcw} 
                             color="text-yellow-500" 
-                            size="w-14 h-14"
+                            size="w-12 h-12 lg:w-14 lg:h-14"
                             onClick={handleUndo}
                             disabled={history.length === 0}
-                            label="Hoàn tác (←)"
+                            label="Hoàn tác"
                         />
                         <ActionButton 
                             icon={X} 
                             color="text-red-500" 
-                            size="w-20 h-20" 
-                            iconSize="w-10 h-10"
+                            size="w-16 h-16 lg:w-20 lg:h-20" 
+                            iconSize="w-8 h-8 lg:w-10 lg:h-10"
                             onClick={() => handleSwipe("left")}
-                            label="Bỏ qua (←)"
+                            label="Bỏ qua"
                             priority
                         />
                         <ActionButton 
                             icon={Heart} 
                             color="text-emerald-500" 
-                            size="w-20 h-20" 
-                            iconSize="w-10 h-10"
+                            size="w-16 h-16 lg:w-20 lg:h-20" 
+                            iconSize="w-8 h-8 lg:w-10 lg:h-10"
                             fill
                             onClick={() => handleSwipe("right")}
-                            label="Yêu thích (→)"
+                            label="Yêu thích"
                             priority
                         />
                         <ActionButton 
                             icon={Sparkles} 
                             color="text-sky-500" 
-                            size="w-14 h-14"
+                            size="w-12 h-12 lg:w-14 lg:h-14"
                             onClick={() => handleSwipe("right")}
                             label="Super Like"
                         />
                     </>
-                ) : (
-                    <div className="w-20" /> // Spacer for Matches tab or empty state
                 )}
             </div>
 

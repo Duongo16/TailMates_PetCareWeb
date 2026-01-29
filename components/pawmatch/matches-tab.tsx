@@ -80,7 +80,7 @@ export function MatchesTab({ currentPetId }: MatchesTabProps) {
   }
 
   const PetGrid = ({ items, type }: { items: any[], type: TabType }) => (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 lg:gap-8">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 lg:gap-8">
       {items.map((item, idx) => {
         const pet = type === 'matches' ? (item.pets?.find((p: any) => p._id !== currentPetId) || item.pet) : item;
         if (!pet) return null;
@@ -98,10 +98,10 @@ export function MatchesTab({ currentPetId }: MatchesTabProps) {
             }}
             whileHover={{ y: -8, scale: 1.02 }}
             onClick={() => setSelectedPet(pet)}
-            className="group relative bg-white rounded-[2.5rem] p-4 shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col items-center text-center cursor-pointer transition-all hover:shadow-[0_30px_60px_rgba(0,0,0,0.08)] hover:border-orange-200"
+            className="group relative bg-white rounded-[2rem] lg:rounded-[2.5rem] p-3 lg:p-4 shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col items-center text-center cursor-pointer transition-all hover:shadow-[0_30px_60px_rgba(0,0,0,0.08)] hover:border-orange-200"
           >
             {/* Image Container with Decorative Elements */}
-            <div className="relative w-full aspect-square rounded-[2rem] overflow-hidden mb-5 group-hover:shadow-2xl transition-all duration-500">
+            <div className="relative w-full aspect-square rounded-[1.5rem] lg:rounded-[2rem] overflow-hidden mb-4 lg:mb-5 group-hover:shadow-2xl transition-all duration-500">
               <img 
                 src={pet.image?.url || "/placeholder.svg"} 
                 alt={pet.name}
@@ -112,40 +112,40 @@ export function MatchesTab({ currentPetId }: MatchesTabProps) {
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               
               {/* Badges/Indicators */}
-              <div className="absolute top-3 left-3 flex flex-col gap-2">
+              <div className="absolute top-2 lg:top-3 left-2 lg:left-3 flex flex-col gap-1.5 lg:gap-2">
                 {type === 'matches' && item.is_new && (
-                  <Badge className="bg-orange-500 text-white border-none px-3 py-1 font-black text-[9px] uppercase tracking-tighter shadow-lg shadow-orange-500/30">
+                  <Badge className="bg-orange-500 text-white border-none px-2 lg:px-3 py-0.5 lg:py-1 font-black text-[8px] lg:text-[9px] uppercase tracking-tighter shadow-lg shadow-orange-500/30">
                     Mới ✨
                   </Badge>
                 )}
                 {pet.gender && (
                    <div className={cn(
-                       "w-8 h-8 rounded-xl backdrop-blur-md flex items-center justify-center shadow-lg",
+                       "w-6 h-6 lg:w-8 lg:h-8 rounded-lg lg:rounded-xl backdrop-blur-md flex items-center justify-center shadow-lg",
                        pet.gender === 'MALE' ? "bg-blue-500/80 text-white" : "bg-pink-500/80 text-white"
                    )}>
-                       <span className="text-sm font-black">{pet.gender === 'MALE' ? '♂' : '♀'}</span>
+                       <span className="text-xs lg:text-sm font-black">{pet.gender === 'MALE' ? '♂' : '♀'}</span>
                    </div>
                 )}
               </div>
 
               {type === 'received' && (
-                <div className="absolute top-3 right-3">
-                   <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-red-500/40">
-                       <Heart className="w-4 h-4 text-white fill-white" />
+                <div className="absolute top-2 lg:top-3 right-2 lg:right-3">
+                   <div className="w-6 h-6 lg:w-8 lg:h-8 bg-red-500 rounded-full flex items-center justify-center animate-pulse shadow-lg shadow-red-500/40">
+                       <Heart className="w-3 h-3 lg:w-4 lg:h-4 text-white fill-white" />
                    </div>
                 </div>
               )}
             </div>
 
             {/* Content Section */}
-            <div className="w-full space-y-1 px-1 mb-5">
+            <div className="w-full space-y-0.5 lg:space-y-1 px-1 mb-4 lg:mb-5">
               <div className="flex items-center justify-center gap-1.5">
-                <h3 className="font-black text-slate-900 text-lg tracking-tight truncate">
+                <h3 className="font-black text-slate-900 text-base lg:text-lg tracking-tight truncate">
                   {pet.name}
                 </h3>
               </div>
               <div className="flex items-center justify-center gap-1.5 opacity-60">
-                 <span className="text-[#F26419] font-black text-[10px] uppercase tracking-[0.1em]">
+                 <span className="text-[#F26419] font-black text-[9px] lg:text-[10px] uppercase tracking-[0.1em] truncate">
                    {pet.breed || pet.species}
                  </span>
               </div>
@@ -159,10 +159,10 @@ export function MatchesTab({ currentPetId }: MatchesTabProps) {
                     e.stopPropagation();
                     handleChat(pet);
                   }}
-                  className="w-full bg-slate-900 hover:bg-black text-white font-black py-4 px-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 group/btn active:scale-95 shadow-lg shadow-slate-200"
+                  className="w-full bg-slate-900 hover:bg-black text-white font-black py-3 lg:py-4 px-3 lg:px-4 rounded-xl lg:rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 group/btn active:scale-95 shadow-lg shadow-slate-200"
                 >
-                  <MessageSquare className="w-4 h-4 text-orange-400 fill-orange-400" />
-                  <span className="text-sm tracking-tight">NHẮN TIN</span>
+                  <MessageSquare className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-orange-400 fill-orange-400" />
+                  <span className="text-[10px] lg:text-sm tracking-tight">NHẮN TIN</span>
                 </button>
               ) : type === 'received' ? (
                 <button
@@ -170,15 +170,15 @@ export function MatchesTab({ currentPetId }: MatchesTabProps) {
                         e.stopPropagation();
                         handleLikeBack(pet._id);
                     }}
-                    className="w-full bg-gradient-to-br from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600 text-white font-black py-4 px-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 group/btn active:scale-95 shadow-xl shadow-orange-200"
+                    className="w-full bg-gradient-to-br from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600 text-white font-black py-3 lg:py-4 px-3 lg:px-4 rounded-xl lg:rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 group/btn active:scale-95 shadow-xl shadow-orange-200"
                 >
-                    <Heart className="w-4 h-4 fill-white" />
-                    <span className="text-sm tracking-tight">THÍCH LẠI</span>
+                    <Heart className="w-3.5 h-3.5 lg:w-4 lg:h-4 fill-white" />
+                    <span className="text-[10px] lg:text-sm tracking-tight">THÍCH LẠI</span>
                 </button>
               ) : (
-                <div className="w-full py-4 px-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center gap-2 group-hover:bg-slate-100 transition-colors">
-                    <Send className="w-3.5 h-3.5 text-slate-400" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">ĐÃ GỬI LIKE</span>
+                <div className="w-full py-3 lg:py-4 px-3 lg:px-4 rounded-xl lg:rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center gap-2 group-hover:bg-slate-100 transition-colors">
+                    <Send className="w-3 h-3 lg:w-3.5 lg:h-3.5 text-slate-400" />
+                    <span className="text-[9px] lg:text-[10px] font-black text-slate-400 uppercase tracking-widest">ĐÃ GỬI</span>
                 </div>
               )}
             </div>
@@ -198,38 +198,38 @@ export function MatchesTab({ currentPetId }: MatchesTabProps) {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 py-8">
-      <Tabs defaultValue="matches" className="w-full space-y-12" onValueChange={(v) => setActiveTab(v as TabType)}>
-        <TabsList className="bg-slate-100/40 backdrop-blur-xl p-1.5 rounded-[2.5rem] h-auto flex flex-wrap gap-1.5 w-fit mx-auto border border-white/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]">
+    <div className="w-full max-w-7xl mx-auto px-4 py-4 lg:py-8">
+      <Tabs defaultValue="matches" className="w-full space-y-8 lg:space-y-12" onValueChange={(v) => setActiveTab(v as TabType)}>
+        <TabsList className="bg-slate-100/40 backdrop-blur-xl p-1 rounded-2xl lg:p-1.5 lg:rounded-[2.5rem] h-auto flex flex-wrap gap-1 lg:gap-1.5 w-fit mx-auto border border-white/50 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)]">
           <TabsTrigger 
             value="matches" 
-            className="rounded-[2rem] px-8 py-4 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xl data-[state=active]:shadow-slate-200/50 font-black text-[11px] uppercase tracking-[0.15em] transition-all duration-300"
+            className="rounded-xl lg:rounded-[2rem] px-4 lg:px-8 py-2.5 lg:py-4 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xl data-[state=active]:shadow-slate-200/50 font-black text-[10px] lg:text-[11px] uppercase tracking-[0.1em] lg:tracking-[0.15em] transition-all duration-300"
           >
-            <div className="flex items-center gap-2.5">
-                <div className="p-1 rounded-lg bg-orange-100 text-orange-600">
-                  <Sparkles className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 lg:gap-2.5">
+                <div className="p-1 rounded-lg bg-orange-100 text-orange-600 hidden xs:block">
+                  <Sparkles className="w-3 lg:w-3.5 h-3 lg:h-3.5" />
                 </div>
                 <span>Tương thích ({matches.length})</span>
             </div>
           </TabsTrigger>
           <TabsTrigger 
             value="received" 
-            className="rounded-[2rem] px-8 py-4 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xl data-[state=active]:shadow-slate-200/50 font-black text-[11px] uppercase tracking-[0.15em] transition-all duration-300"
+            className="rounded-xl lg:rounded-[2rem] px-4 lg:px-8 py-2.5 lg:py-4 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xl data-[state=active]:shadow-slate-200/50 font-black text-[10px] lg:text-[11px] uppercase tracking-[0.1em] lg:tracking-[0.15em] transition-all duration-300"
           >
-            <div className="flex items-center gap-2.5">
-                <div className="p-1 rounded-lg bg-red-100 text-red-600">
-                  <Inbox className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 lg:gap-2.5">
+                <div className="p-1 rounded-lg bg-red-100 text-red-600 hidden xs:block">
+                  <Inbox className="w-3 lg:w-3.5 h-3 lg:h-3.5" />
                 </div>
                 <span>Thích mình ({receivedLikes.length})</span>
             </div>
           </TabsTrigger>
           <TabsTrigger 
             value="sent" 
-            className="rounded-[2rem] px-8 py-4 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xl data-[state=active]:shadow-slate-200/50 font-black text-[11px] uppercase tracking-[0.15em] transition-all duration-300"
+            className="rounded-xl lg:rounded-[2rem] px-4 lg:px-8 py-2.5 lg:py-4 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-xl data-[state=active]:shadow-slate-200/50 font-black text-[10px] lg:text-[11px] uppercase tracking-[0.1em] lg:tracking-[0.15em] transition-all duration-300"
           >
-            <div className="flex items-center gap-2.5">
-                <div className="p-1 rounded-lg bg-blue-100 text-blue-600">
-                  <Send className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 lg:gap-2.5">
+                <div className="p-1 rounded-lg bg-blue-100 text-blue-600 hidden xs:block">
+                  <Send className="w-3 lg:w-3.5 h-3 lg:h-3.5" />
                 </div>
                 <span>Đã thích ({sentLikes.length})</span>
             </div>
@@ -237,7 +237,7 @@ export function MatchesTab({ currentPetId }: MatchesTabProps) {
         </TabsList>
 
         <AnimatePresence mode="wait">
-            <TabsContent value="matches">
+            <TabsContent key="matches" value="matches">
                 {matches.length > 0 ? (
                     <PetGrid items={matches} type="matches" />
                 ) : (
@@ -248,7 +248,7 @@ export function MatchesTab({ currentPetId }: MatchesTabProps) {
                 )}
             </TabsContent>
 
-            <TabsContent value="received">
+            <TabsContent key="received" value="received">
                 {receivedLikes.length > 0 ? (
                     <PetGrid items={receivedLikes} type="received" />
                 ) : (
@@ -259,7 +259,7 @@ export function MatchesTab({ currentPetId }: MatchesTabProps) {
                 )}
             </TabsContent>
 
-            <TabsContent value="sent">
+            <TabsContent key="sent" value="sent">
                 {sentLikes.length > 0 ? (
                     <PetGrid items={sentLikes} type="sent" />
                 ) : (

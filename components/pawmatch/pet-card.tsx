@@ -94,20 +94,20 @@ export function PetCard({ pet, onSwipe, isTop = false }: PetCardProps) {
                 !isTop && "pointer-events-none"
             )}
         >
-            <div className="relative w-full h-full rounded-[2.5rem] overflow-hidden bg-black shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-white/10">
+            <div className="relative w-full h-full rounded-[2rem] lg:rounded-[2.5rem] overflow-hidden bg-black shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-white/10">
                 {/* Swipe Stamps */}
                 <motion.div
                     style={{ opacity: likeOpacity, scale: likeScale, rotate: likeRotate }}
-                    className="absolute top-12 left-8 z-40 border-[6px] border-green-500 rounded-2xl px-6 py-2 pointer-events-none"
+                    className="absolute top-8 lg:top-12 left-6 lg:left-8 z-40 border-[4px] lg:border-[6px] border-green-500 rounded-xl lg:rounded-2xl px-4 lg:px-6 py-1 lg:py-2 pointer-events-none"
                 >
-                    <span className="text-6xl font-black text-green-500 uppercase tracking-tighter">LIKE</span>
+                    <span className="text-4xl lg:text-6xl font-black text-green-500 uppercase tracking-tighter">LIKE</span>
                 </motion.div>
 
                 <motion.div
                     style={{ opacity: nopeOpacity, scale: nopeScale, rotate: nopeRotate }}
-                    className="absolute top-12 right-8 z-40 border-[6px] border-red-500 rounded-2xl px-6 py-2 pointer-events-none"
+                    className="absolute top-8 lg:top-12 right-6 lg:right-8 z-40 border-[4px] lg:border-[6px] border-red-500 rounded-xl lg:rounded-2xl px-4 lg:px-6 py-1 lg:py-2 pointer-events-none"
                 >
-                    <span className="text-6xl font-black text-red-500 uppercase tracking-tighter">NOPE</span>
+                    <span className="text-4xl lg:text-6xl font-black text-red-500 uppercase tracking-tighter">NOPE</span>
                 </motion.div>
 
                 {/* Media Content */}
@@ -141,12 +141,12 @@ export function PetCard({ pet, onSwipe, isTop = false }: PetCardProps) {
 
                 {/* Progress bar for multi-media */}
                 {mediaItems.length > 1 && (
-                    <div className="absolute top-6 left-8 right-8 flex gap-2 z-30">
+                    <div className="absolute top-4 lg:top-6 left-6 lg:left-8 right-6 lg:right-8 flex gap-1.5 lg:gap-2 z-30">
                         {mediaItems.map((_: any, i: number) => (
                             <div
                                 key={i}
                                 className={cn(
-                                    "h-1.5 flex-1 rounded-full transition-all duration-300 shadow-sm",
+                                    "h-1 lg:h-1.5 flex-1 rounded-full transition-all duration-300 shadow-sm",
                                     i === mediaIndex ? "bg-white" : "bg-white/20 blur-[0.5px]"
                                 )}
                             />
@@ -155,35 +155,35 @@ export function PetCard({ pet, onSwipe, isTop = false }: PetCardProps) {
                 )}
 
                 {/* Bottom Info Gradient */}
-                <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/30 to-transparent pointer-events-none z-20" />
+                <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none z-20" />
 
                 {/* Pet Information & Quick Info Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-10 text-white z-30 transition-transform duration-500 group-hover:-translate-y-2">
-                    <div className="flex items-center gap-3">
-                        <h2 className="text-5xl font-black tracking-tighter drop-shadow-lg">
+                <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-10 text-white z-30 transition-transform duration-500 group-hover:-translate-y-2">
+                    <div className="flex items-center gap-2 lg:gap-3">
+                        <h2 className="text-3xl lg:text-5xl font-black tracking-tighter drop-shadow-lg">
                             {pet.name}, {ageDisplay}
                         </h2>
                         {pet.isVerified && (
-                            <CheckCircle2 className="w-8 h-8 text-blue-400 fill-white/10 stroke-[3]" />
+                            <CheckCircle2 className="w-6 h-6 lg:w-8 lg:h-8 text-blue-400 fill-white/10 stroke-[3]" />
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2 text-lg font-bold text-white/80 mt-2 uppercase tracking-widest bg-white/10 backdrop-blur-md w-fit px-3 py-1 rounded-lg">
-                        <MapPin className="w-4 h-4 text-orange-500 fill-orange-500/20" />
-                        <span className="text-[12px]">{pet.distance || "Cách 500m"}</span>
+                    <div className="flex items-center gap-2 text-lg font-bold text-white/80 mt-1.5 lg:mt-2 uppercase tracking-widest bg-white/10 backdrop-blur-md w-fit px-2.5 py-1 rounded-lg">
+                        <MapPin className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-orange-500 fill-orange-500/20" />
+                        <span className="text-[10px] lg:text-[12px]">{pet.distance || "Cách 500m"}</span>
                     </div>
 
                     {/* Expandable Bio/Quick Info */}
                     <motion.div 
                         initial={false}
                         animate={{ 
-                            height: isHovered ? "auto" : "50px",
+                            height: isHovered ? "auto" : "44px",
                             opacity: 1
                         }}
-                        className="overflow-hidden mt-6"
+                        className="overflow-hidden mt-4 lg:mt-6"
                     >
                         <p className={cn(
-                            "text-white/70 text-base leading-relaxed font-medium transition-colors duration-300",
+                            "text-white/70 text-sm lg:text-base leading-relaxed font-medium transition-colors duration-300",
                             isHovered ? "text-white/90" : "line-clamp-2"
                         )}>
                             {pet.datingProfile?.bio || "Một bé thú cưng đáng yêu đang tìm bạn đồng hành tại TailMate..."}
@@ -193,7 +193,7 @@ export function PetCard({ pet, onSwipe, isTop = false }: PetCardProps) {
                             <motion.div 
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="flex gap-3 mt-4"
+                                className="flex flex-wrap gap-2 lg:gap-3 mt-4"
                             >
                                 <QuickTag label={pet.breed || "Chó"} />
                                 <QuickTag label={pet.gender === "male" ? "Đực" : "Cái"} />

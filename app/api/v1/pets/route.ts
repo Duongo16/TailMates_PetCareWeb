@@ -50,6 +50,8 @@ export async function POST(request: NextRequest) {
       microchip,
       allergies,
       notes,
+      mediaGallery,
+      datingProfile,
     } = body;
 
     // Validation
@@ -88,6 +90,8 @@ export async function POST(request: NextRequest) {
       allergies,
       notes,
       image: validatedImage,
+      mediaGallery,
+      datingProfile,
     });
 
     return apiResponse.created(pet, "Pet added successfully");

@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ImageUpload } from "@/components/ui/image-upload"
-import { MediaGalleryUpload } from "@/components/ui/media-gallery-upload"
+import { MediaGalleryUpload, MediaItem } from "@/components/ui/media-gallery-upload"
 import {
   Cake,
   Weight,
@@ -166,7 +166,7 @@ export function PetProfile({
     notes: "",
     image_url: "",
     image_public_id: "",
-    mediaGallery: [] as { url: string; public_id: string }[],
+    mediaGallery: [] as MediaItem[],
     datingBio: "",
     lookingFor: "Any" as "Playdate" | "Breeding" | "Any",
   })
@@ -444,9 +444,9 @@ export function PetProfile({
 
   // Render pet form fields inline (not as nested component to prevent focus loss)
   const renderPetFormFields = (isEdit: boolean) => (
-    <div className="flex flex-col md:flex-row gap-6">
-      {/* Left Column - Image Upload */}
-      <div className="md:w-1/3 flex-shrink-0">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Column 1: Core Info & Image */}
+      <div className="space-y-4">
         <ImageUpload
           label="Hình ảnh thú cưng"
           value={formData.image_url ? { url: formData.image_url, public_id: formData.image_public_id } : null}
@@ -458,12 +458,9 @@ export function PetProfile({
             }))
           }}
         />
-      </div>
 
-      {/* Right Column - Form Fields */}
-      <div className="flex-1 space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="col-span-2">
+        <div className="space-y-3">
+          <div>
             <Label className="text-sm">Tên thú cưng *</Label>
             <Input
               value={formData.name}
@@ -472,38 +469,41 @@ export function PetProfile({
               className="rounded-xl mt-1 h-9 w-full"
             />
           </div>
-          <div>
-            <Label className="text-sm">Loài *</Label>
-            <Select
-              value={formData.species}
-              onValueChange={(val) => setFormData(prev => ({ ...prev, species: val, breed: "", customBreed: "" }))}
-            >
-              <SelectTrigger className="rounded-xl mt-1 h-9 w-full"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {SPECIES_OPTIONS.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label className="text-sm">Giống</Label>
-            <Select
-              value={formData.breed}
-              onValueChange={(val) => setFormData(prev => ({ ...prev, breed: val, customBreed: val === "Other" ? prev.customBreed : "" }))}
-            >
-              <SelectTrigger className="rounded-xl mt-1 h-9 w-full"><SelectValue placeholder="Chọn giống" /></SelectTrigger>
-              <SelectContent>
-                {currentBreedOptions.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-sm">Loài *</Label>
+              <Select
+                value={formData.species}
+                onValueChange={(val) => setFormData(prev => ({ ...prev, species: val, breed: "", customBreed: "" }))}
+              >
+                <SelectTrigger className="rounded-xl mt-1 h-9 w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {SPECIES_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-sm">Giống</Label>
+              <Select
+                value={formData.breed}
+                onValueChange={(val) => setFormData(prev => ({ ...prev, breed: val, customBreed: val === "Other" ? prev.customBreed : "" }))}
+              >
+                <SelectTrigger className="rounded-xl mt-1 h-9 w-full"><SelectValue placeholder="Chọn giống" /></SelectTrigger>
+                <SelectContent>
+                  {currentBreedOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Custom breed input when 'Other' is selected */}
           {formData.breed === "Other" && (
-            <div className="col-span-2">
+            <div>
               <Label className="text-sm">Nhập tên giống</Label>
               <Input
                 value={formData.customBreed}
@@ -514,16 +514,30 @@ export function PetProfile({
             </div>
           )}
 
-          <div>
-            <Label className="text-sm">Tuổi (tháng) *</Label>
-            <Input
-              type="number"
-              value={formData.age_months}
-              onChange={(e) => setFormData(prev => ({ ...prev, age_months: e.target.value }))}
-              placeholder="12"
-              className="rounded-xl mt-1 h-9"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-sm">Giới tính *</Label>
+              <Select value={formData.gender} onValueChange={(val) => setFormData(prev => ({ ...prev, gender: val }))}>
+                <SelectTrigger className="rounded-xl mt-1 h-9 w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {GENDER_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-sm">Tuổi (tháng) *</Label>
+              <Input
+                type="number"
+                value={formData.age_months}
+                onChange={(e) => setFormData(prev => ({ ...prev, age_months: e.target.value }))}
+                placeholder="12"
+                className="rounded-xl mt-1 h-9"
+              />
+            </div>
           </div>
+
           <div>
             <Label className="text-sm">Cân nặng (kg)</Label>
             <Input
@@ -535,97 +549,91 @@ export function PetProfile({
               className="rounded-xl mt-1 h-9"
             />
           </div>
-          <div>
-            <Label className="text-sm">Giới tính *</Label>
-            <Select value={formData.gender} onValueChange={(val) => setFormData(prev => ({ ...prev, gender: val }))}>
-              <SelectTrigger className="rounded-xl mt-1 h-9 w-full"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {GENDER_OPTIONS.map(opt => (
-                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        </div>
+      </div>
 
-          {/* Color Selection - Multi-select */}
-          <div className="col-span-2">
-            <Label className="text-sm">Màu lông</Label>
-            <div className="grid grid-cols-5 gap-2 mt-2">
-              {COLOR_OPTIONS.map((color) => {
-                const isSelected = formData.colors.includes(color.id)
-                return (
-                  <div
-                    key={color.id}
-                    className="cursor-pointer"
-                    onClick={() => {
-                      const currentColors = formData.colors || []
-                      if (currentColors.includes(color.id)) {
-                        setFormData(prev => ({ ...prev, colors: currentColors.filter((c: string) => c !== color.id) }))
-                      } else {
-                        setFormData(prev => ({ ...prev, colors: [...currentColors, color.id] }))
-                      }
-                    }}
-                  >
-                    <Card
-                      className={`border-2 transition-all ${isSelected ? 'border-primary shadow-md' : 'border-border hover:border-primary/50'
-                        }`}
-                    >
-                      <CardContent className="p-2 space-y-1">
-                        <div
-                          className="w-full h-8 rounded"
-                          style={{
-                            backgroundColor: color.hex,
-                            border: color.border ? `1px solid ${color.border}` : 'none'
-                          }}
-                        />
-                        <p className="text-xs font-medium text-center truncate">
-                          {color.label}
-                        </p>
-                        {isSelected && (
-                          <div className="flex justify-center">
-                            <Check className="w-3 h-3 text-primary" />
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                )
-              })}
-            </div>
-            {formData.colors.length > 0 && (
-              <p className="text-xs text-foreground/70 mt-2">
-                Đã chọn: {formData.colors.map((c: string) => COLOR_OPTIONS.find(co => co.id === c)?.label).join(", ")}
-              </p>
-            )}
-          </div>
-
-          {/* Fur Type Selection */}
-          {formData.species !== "Fish" && formData.species !== "Bird" && (
-            <div className="col-span-2">
-              <Label className="text-sm">Loại lông</Label>
-              <div className="grid grid-cols-3 gap-2 mt-2">
-                {FUR_TYPE_OPTIONS.map((furType) => (
+      {/* Column 2: Appearance & Features */}
+      <div className="space-y-6">
+        {/* Color Selection - Multi-select */}
+        <div>
+          <Label className="text-sm font-semibold mb-2 block">Màu lông</Label>
+          <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 mt-2">
+            {COLOR_OPTIONS.map((color) => {
+              const isSelected = formData.colors.includes(color.id)
+              return (
+                <div
+                  key={color.id}
+                  className="cursor-pointer"
+                  onClick={() => {
+                    const currentColors = formData.colors || []
+                    if (currentColors.includes(color.id)) {
+                      setFormData(prev => ({ ...prev, colors: currentColors.filter((c: string) => c !== color.id) }))
+                    } else {
+                      setFormData(prev => ({ ...prev, colors: [...currentColors, color.id] }))
+                    }
+                  }}
+                >
                   <Card
-                    key={furType.id}
-                    className={`cursor-pointer border-2 transition-all ${formData.furType === furType.id
-                      ? 'border-primary bg-primary/5 shadow-lg'
-                      : 'border-border hover:border-primary/50'
+                    className={`border-2 transition-all ${isSelected ? 'border-primary shadow-md bg-primary/5' : 'border-border hover:border-primary/30'
                       }`}
-                    onClick={() => setFormData(prev => ({ ...prev, furType: furType.id }))}
                   >
-                    <CardContent className="p-3 text-center">
-                      <div className="text-2xl mb-1">{furType.emoji}</div>
-                      <p className="font-medium text-xs">{furType.label}</p>
-                      {formData.furType === furType.id && (
-                        <Check className="w-3 h-3 text-primary mx-auto mt-1" />
+                    <CardContent className="p-1.5 space-y-1">
+                      <div
+                        className="w-full h-6 rounded-sm shadow-inner"
+                        style={{
+                          backgroundColor: color.hex,
+                          border: color.border ? `1px solid ${color.border}` : 'none'
+                        }}
+                      />
+                      <p className="text-[10px] font-medium text-center truncate">
+                        {color.label}
+                      </p>
+                      {isSelected && (
+                        <div className="absolute top-0 right-0 p-0.5 bg-primary rounded-bl-lg">
+                          <Check className="w-2 h-2 text-white" />
+                        </div>
                       )}
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            </div>
+                </div>
+              )
+            })}
+          </div>
+          {formData.colors.length > 0 && (
+            <p className="text-xs text-foreground/70 mt-2 italic px-1">
+              Đã chọn: {formData.colors.map((c: string) => COLOR_OPTIONS.find(co => co.id === c)?.label).join(", ")}
+            </p>
           )}
+        </div>
 
+        {/* Fur Type Selection */}
+        {formData.species !== "Fish" && formData.species !== "Bird" && (
+          <div>
+            <Label className="text-sm font-semibold mb-2 block">Loại lông</Label>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {FUR_TYPE_OPTIONS.map((furType) => (
+                <Card
+                  key={furType.id}
+                  className={`cursor-pointer border-2 transition-all ${formData.furType === furType.id
+                    ? 'border-primary bg-primary/5 shadow-md'
+                    : 'border-border hover:border-primary/30'
+                    }`}
+                  onClick={() => setFormData(prev => ({ ...prev, furType: furType.id }))}
+                >
+                  <CardContent className="p-2 text-center">
+                    <div className="text-xl mb-1">{furType.emoji}</div>
+                    <p className="font-medium text-[10px] leading-tight">{furType.label}</p>
+                    {formData.furType === furType.id && (
+                      <Check className="w-2 h-2 text-primary mx-auto mt-1" />
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="space-y-4 pt-2">
           <div>
             <Label className="text-sm">Số Microchip</Label>
             <Input
@@ -636,79 +644,81 @@ export function PetProfile({
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 bg-secondary/30 p-3 rounded-xl">
             <input
               type="checkbox"
               id={isEdit ? "sterilized-edit" : "sterilized-add"}
               checked={formData.sterilized}
               onChange={(e) => setFormData(prev => ({ ...prev, sterilized: e.target.checked }))}
-              className="w-4 h-4 rounded"
+              className="w-4 h-4 rounded text-primary focus:ring-primary accent-primary"
             />
-            <Label htmlFor={isEdit ? "sterilized-edit" : "sterilized-add"} className="cursor-pointer text-sm">Đã triệt sản</Label>
+            <Label htmlFor={isEdit ? "sterilized-edit" : "sterilized-add"} className="cursor-pointer text-sm font-medium">Đã triệt sản</Label>
           </div>
-          <div className="col-span-2">
-            <Label className="text-sm">Ghi chú</Label>
+        </div>
+      </div>
+
+      {/* Column 3: PawMatch Profile & Submit */}
+      <div className="space-y-6">
+        <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 space-y-4">
+          <h3 className="text-sm font-bold flex items-center gap-2 text-primary">
+            <Sparkles className="w-4 h-4" />
+            Vũ trụ PawMatch
+          </h3>
+
+          <MediaGalleryUpload
+            value={formData.mediaGallery}
+            onChange={(items) => setFormData(prev => ({ ...prev, mediaGallery: items }))}
+          />
+
+          <div>
+            <Label className="text-sm">Giới thiệu ngắn (Bio)</Label>
             <Textarea
-              value={formData.notes}
-              onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="VD: Sợ tiếng ồn, thích chơi với bóng..."
-              className="rounded-xl mt-1 min-h-[60px] resize-none w-full"
+              value={formData.datingBio}
+              onChange={(e) => setFormData(prev => ({ ...prev, datingBio: e.target.value }))}
+              placeholder="VD: Bé rất hiền và thích kết bạn với các bạn cùng lứa..."
+              className="rounded-xl mt-1 min-h-[80px] lg:min-h-[100px] resize-none w-full bg-background"
+              maxLength={500}
             />
+            <p className="text-[10px] text-foreground/50 text-right mt-1">
+              {formData.datingBio.length}/500
+            </p>
+          </div>
+
+          <div>
+            <Label className="text-sm">Đang tìm kiếm</Label>
+            <Select
+              value={formData.lookingFor}
+              onValueChange={(val: any) => setFormData(prev => ({ ...prev, lookingFor: val }))}
+            >
+              <SelectTrigger className="rounded-xl mt-1 h-9 w-full bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Playdate">Tìm bạn chơi</SelectItem>
+                <SelectItem value="Breeding">Tìm bạn phối giống</SelectItem>
+                <SelectItem value="Any">Cả hai</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        {/* PawMatch / Dating Profile Section */}
-        <div className="border-t pt-4 mt-4">
-          <h3 className="text-sm font-bold flex items-center gap-2 mb-4">
-            <Sparkles className="w-4 h-4 text-primary" />
-            Hồ sơ PawMatch (Hẹn hò cho thú cưng)
-          </h3>
-
-          <div className="space-y-4">
-            <MediaGalleryUpload
-              value={formData.mediaGallery}
-              onChange={(items) => setFormData(prev => ({ ...prev, mediaGallery: items }))}
-            />
-
-            <div>
-              <Label className="text-sm">Giới thiệu ngắn (Bio)</Label>
-              <Textarea
-                value={formData.datingBio}
-                onChange={(e) => setFormData(prev => ({ ...prev, datingBio: e.target.value }))}
-                placeholder="VD: Bé rất hiền và thích kết bạn với các bạn cùng lứa..."
-                className="rounded-xl mt-1 min-h-[80px] resize-none w-full"
-                maxLength={500}
-              />
-              <p className="text-[10px] text-foreground/50 text-right">
-                {formData.datingBio.length}/500
-              </p>
-            </div>
-
-            <div>
-              <Label className="text-sm">Đang tìm kiếm</Label>
-              <Select
-                value={formData.lookingFor}
-                onValueChange={(val: any) => setFormData(prev => ({ ...prev, lookingFor: val }))}
-              >
-                <SelectTrigger className="rounded-xl mt-1 h-9 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Playdate">Tìm bạn chơi</SelectItem>
-                  <SelectItem value="Breeding">Tìm bạn phối giống</SelectItem>
-                  <SelectItem value="Any">Cả hai</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+        <div>
+          <Label className="text-sm">Ghi chú cá nhân</Label>
+          <Textarea
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            placeholder="VD: Sợ tiếng ồn, thích chơi với bóng..."
+            className="rounded-xl mt-1 min-h-[60px] resize-none w-full bg-background"
+          />
         </div>
 
         <Button
-          className="w-full rounded-xl"
+          className="w-full rounded-xl py-6 text-lg font-bold shadow-lg shadow-primary/20 hover:shadow-xl transition-all"
           onClick={isEdit ? handleUpdatePet : handleAddPet}
           disabled={isSubmitting}
         >
-          {isSubmitting ? <Loader2 className="animate-spin" /> : isEdit ? "Cập nhật" : "Thêm thú cưng"}
+          {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : null}
+          {isEdit ? "Cập nhật thông tin" : "Thêm thú cưng ngay"}
         </Button>
       </div>
     </div>
@@ -733,7 +743,7 @@ export function PetProfile({
               Thêm thú cưng ngay
             </Button>
           </DialogTrigger>
-          <DialogContent className="rounded-3xl w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="rounded-3xl w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto lg:overflow-y-hidden">
             <DialogHeader>
               <DialogTitle>Thêm thú cưng mới</DialogTitle>
             </DialogHeader>
@@ -752,9 +762,8 @@ export function PetProfile({
         <p className="text-foreground/60 text-sm">Thông tin chi tiết về bé cưng của bạn</p>
       </div>
 
-      {/* Edit Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="rounded-3xl w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="rounded-3xl w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto lg:overflow-y-hidden">
           <DialogHeader>
             <DialogTitle>Chỉnh sửa {selectedPet?.name}</DialogTitle>
           </DialogHeader>
@@ -879,7 +888,7 @@ export function PetProfile({
                           <Plus className="w-4 h-4" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="rounded-3xl w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto">
+                      <DialogContent className="rounded-3xl w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto lg:overflow-y-hidden">
                         <DialogHeader>
                           <DialogTitle>Thêm thú cưng mới</DialogTitle>
                         </DialogHeader>

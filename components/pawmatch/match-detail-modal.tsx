@@ -122,11 +122,11 @@ export function MatchDetailModal({ isOpen, onClose, match, pet, currentPetId }: 
                         )}
 
                         {/* Media Label overlay */}
-                        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-8 text-white z-20">
-                            <Badge className="w-fit bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 mb-3 uppercase tracking-widest text-[10px] font-black border-none px-4 py-1.5 shadow-lg">
+                        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-6 md:p-8 text-white z-20">
+                            <Badge className="w-fit bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 mb-2 md:mb-3 uppercase tracking-widest text-[9px] md:text-[10px] font-black border-none px-3 md:px-4 py-1.5 shadow-lg">
                                 {partnerPet.species || "Thú cưng"} Tương hợp
                             </Badge>
-                            <h2 className="text-5xl font-black tracking-tight drop-shadow-2xl">
+                            <h2 className="text-3xl md:text-5xl font-black tracking-tight drop-shadow-2xl">
                                 {partnerPet.name}
                             </h2>
                         </div>
@@ -134,7 +134,7 @@ export function MatchDetailModal({ isOpen, onClose, match, pet, currentPetId }: 
 
                     {/* Info Section */}
                     <div className="md:w-1/2 flex flex-col overflow-y-auto custom-scrollbar bg-white">
-                        <div className="p-8 md:p-10 space-y-10">
+                        <div className="p-6 md:p-10 space-y-8 md:space-y-10">
                             {/* Pet Stats Grid */}
                             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                 <StatItem 

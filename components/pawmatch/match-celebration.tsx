@@ -74,37 +74,37 @@ export function MatchCelebration({ isOpen, onClose, matchedPet, userPet }: Match
                         whileHover={{ scale: 1.1, rotate: 90 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={onClose}
-                        className="absolute top-10 right-10 z-50 text-white/50 hover:text-white transition-colors"
+                        className="absolute top-6 right-6 md:top-10 md:right-10 z-50 text-white/50 hover:text-white transition-colors"
                     >
-                        <X className="w-10 h-10" />
+                        <X className="w-8 h-8 md:w-10 md:h-10" />
                     </motion.button>
 
-                    <div className="text-center space-y-12 max-w-sm w-full relative">
+                    <div className="text-center space-y-8 md:space-y-12 max-w-sm w-full relative">
                         <motion.div
                             initial={{ y: -50, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ type: "spring", damping: 12, delay: 0.2 }}
                             className="relative inline-block"
                         >
-                            <h2 className="text-6xl font-black text-white italic tracking-tighter drop-shadow-[0_0_15px_rgba(255,107,107,0.5)]">
+                            <h2 className="text-4xl md:text-6xl font-black text-white italic tracking-tighter drop-shadow-[0_0_15px_rgba(255,107,107,0.5)]">
                                 It's a Match!
                             </h2>
                             <motion.div
                                 animate={{ scale: [1, 1.2, 1] }}
                                 transition={{ duration: 0.8, repeat: Infinity }}
-                                className="absolute -top-12 -right-8"
+                                className="absolute -top-8 -right-6 md:-top-12 md:-right-8"
                             >
-                                <Heart className="w-16 h-16 text-red-500 fill-red-500" />
+                                <Heart className="w-12 h-12 md:w-16 md:h-16 text-red-500 fill-red-500" />
                             </motion.div>
                         </motion.div>
 
                         {/* Interlocking Circles */}
-                        <div className="relative h-48 flex items-center justify-center">
+                        <div className="relative h-32 md:h-48 flex items-center justify-center">
                             <motion.div
                                 initial={{ x: -100, opacity: 0, rotate: -20, scale: 0.5 }}
-                                animate={{ x: 20, opacity: 1, rotate: -10, scale: 1 }}
+                                animate={{ x: 15, opacity: 1, rotate: -10, scale: 1 }}
                                 transition={{ type: "spring", damping: 20, stiffness: 100, delay: 0.4 }}
-                                className="w-44 h-44 rounded-full border-[6px] border-white overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] z-10"
+                                className="w-32 h-32 md:w-44 md:h-44 rounded-full border-[4px] md:border-[6px] border-white overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] z-10"
                             >
                                 <img
                                     src={userPet.image?.url || "/placeholder.svg"}
@@ -114,9 +114,9 @@ export function MatchCelebration({ isOpen, onClose, matchedPet, userPet }: Match
                             </motion.div>
                             <motion.div
                                 initial={{ x: 100, opacity: 0, rotate: 20, scale: 0.5 }}
-                                animate={{ x: -20, opacity: 1, rotate: 10, scale: 1 }}
+                                animate={{ x: -15, opacity: 1, rotate: 10, scale: 1 }}
                                 transition={{ type: "spring", damping: 20, stiffness: 100, delay: 0.5 }}
-                                className="w-44 h-44 rounded-full border-[6px] border-white overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]"
+                                className="w-32 h-32 md:w-44 md:h-44 rounded-full border-[4px] md:border-[6px] border-white overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]"
                             >
                                 <img
                                     src={matchedPet.mediaGallery?.[0]?.url || matchedPet.image?.url || "/placeholder.svg"}
@@ -129,9 +129,9 @@ export function MatchCelebration({ isOpen, onClose, matchedPet, userPet }: Match
                                 initial={{ scale: 0, opacity: 0 }}
                                 animate={{ scale: 1, opacity: 1 }}
                                 transition={{ delay: 0.8, type: "spring" }}
-                                className="absolute z-20 bg-white rounded-full p-3 shadow-xl"
+                                className="absolute z-20 bg-white rounded-full p-2 md:p-3 shadow-xl"
                             >
-                                <Heart className="w-10 h-10 text-red-500 fill-red-500" />
+                                <Heart className="w-6 h-6 md:w-10 md:h-10 text-red-500 fill-red-500" />
                             </motion.div>
                         </div>
 
@@ -141,14 +141,14 @@ export function MatchCelebration({ isOpen, onClose, matchedPet, userPet }: Match
                             transition={{ delay: 0.7 }}
                             className="space-y-6"
                         >
-                            <p className="text-white/90 text-xl font-medium px-4">
+                            <p className="text-white/90 text-lg md:text-xl font-medium px-4">
                                 Bé và <strong>{matchedPet.name}</strong> đã để ý nhau rồi đấy!
                             </p>
 
-                            <div className="grid gap-4 pt-6">
+                            <div className="grid gap-3 md:gap-4 pt-4 md:pt-6">
                                 <Button
                                     size="lg"
-                                    className="rounded-full h-16 text-xl font-black w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-[0_10px_20px_rgba(239,68,68,0.3)] transition-all active:scale-95"
+                                    className="rounded-full h-14 md:h-16 text-lg md:text-xl font-black w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 shadow-[0_10px_20px_rgba(239,68,68,0.3)] transition-all active:scale-95 px-6"
                                     onClick={() => {
                                         onClose();
                                         const recipientId = matchedPet.owner?._id || matchedPet.owner_id || matchedPet.user_id || matchedPet.owner;
@@ -164,14 +164,14 @@ export function MatchCelebration({ isOpen, onClose, matchedPet, userPet }: Match
                                         }
                                     }}
                                 >
-                                    <MessageSquare className="w-7 h-7 mr-3" />
+                                    <MessageSquare className="w-6 h-6 md:w-7 md:h-7 mr-2 md:mr-3" />
                                     Gửi tin nhắn ngay
                                 </Button>
                                 <Button
                                     variant="ghost"
                                     size="lg"
                                     onClick={onClose}
-                                    className="rounded-full h-16 text-white/70 hover:text-white hover:bg-white/10 text-lg font-bold"
+                                    className="rounded-full h-14 md:h-16 text-white/70 hover:text-white hover:bg-white/10 text-base md:text-lg font-bold"
                                 >
                                     Tiếp tục quẹt thẻ
                                 </Button>

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 
-interface MediaItem {
+export interface MediaItem {
     url: string
     public_id?: string
     type?: "image" | "video"
@@ -160,21 +160,23 @@ export function MediaGalleryUpload({ value = [], onChange, maxItems = 10 }: Medi
                 </div>
             </div>
 
-            <Reorder.Group
-                axis="y"
-                values={value}
-                onReorder={onChange}
-                className="space-y-2"
-            >
-                {value.map((item, index) => (
-                    <ReorderItem
-                        key={item.public_id || item.url}
-                        item={item}
-                        onRemove={() => removeItem(index)}
-                        isFirst={index === 0}
-                    />
-                ))}
-            </Reorder.Group>
+            <div className={`overflow-y-auto pr-1 -mr-1 transition-all ${value.length >= 3 ? 'max-h-[150px]' : ''}`}>
+                <Reorder.Group
+                    axis="y"
+                    values={value}
+                    onReorder={onChange}
+                    className="space-y-2"
+                >
+                    {value.map((item, index) => (
+                        <ReorderItem
+                            key={item.public_id || item.url}
+                            item={item}
+                            onRemove={() => removeItem(index)}
+                            isFirst={index === 0}
+                        />
+                    ))}
+                </Reorder.Group>
+            </div>
 
             {value.length === 0 && !isUploading && (
                 <div

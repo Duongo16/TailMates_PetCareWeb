@@ -113,6 +113,11 @@ export const petsAPI = {
     color?: string;
     fur_type?: string;
     image?: { url: string; public_id: string };
+    mediaGallery?: any[];
+    datingProfile?: {
+      bio?: string;
+      lookingFor?: "Playdate" | "Breeding" | "Any";
+    };
   }) =>
     fetchWithAuth("/pets", {
       method: "POST",
