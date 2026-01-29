@@ -20,6 +20,62 @@ export function GlobalChatOverlay() {
     const [isMinimized, setIsMinimized] = useState(false)
     const [showChatWindow, setShowChatWindow] = useState(false) // For mobile: toggle between list and chat
     const [isStartingConversation, setIsStartingConversation] = useState(false)
+    const [viewportStyle, setViewportStyle] = useState<React.CSSProperties>({})
+
+    // Handle Visual Viewport for mobile keyboard
+    useEffect(() => {
+        if (typeof window === "undefined" || !window.visualViewport) return
+
+        const handleResize = () => {
+            const vw = window.visualViewport
+            if (!vw) return
+
+            if (window.innerWidth < 768) {
+                // Precise tracking for iOS/Android keyboard
+                setViewportStyle({
+                    height: `${vw.height}px`,
+                    width: `${vw.width}px`,
+                    top: `${vw.offsetTop}px`,
+                    left: `${vw.offsetLeft}px`,
+                    position: 'fixed'
+                })
+            } else {
+                setViewportStyle({})
+            }
+        }
+
+        window.visualViewport.addEventListener("resize", handleResize)
+        window.visualViewport.addEventListener("scroll", handleResize)
+        
+        // Initial call
+        handleResize()
+
+        return () => {
+            window.visualViewport?.removeEventListener("resize", handleResize)
+            window.visualViewport?.removeEventListener("scroll", handleResize)
+        }
+    }, [])
+
+    // Body scroll lock for mobile
+    useEffect(() => {
+        if (isOpen && !isMinimized && window.innerWidth < 768) {
+            document.body.style.overflow = 'hidden'
+            document.body.style.position = 'fixed'
+            document.body.style.width = '100%'
+            document.body.style.height = '100%'
+        } else {
+            document.body.style.overflow = ''
+            document.body.style.position = ''
+            document.body.style.width = ''
+            document.body.style.height = ''
+        }
+        return () => {
+            document.body.style.overflow = ''
+            document.body.style.position = ''
+            document.body.style.width = ''
+            document.body.style.height = ''
+        }
+    }, [isOpen, isMinimized])
 
     // Chat State
     const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
@@ -392,10 +448,13 @@ export function GlobalChatOverlay() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: "100%" }}
                             transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                            className="md:hidden fixed inset-0 z-[100] bg-[#FFF9F5] flex flex-col"
+                            className="md:hidden fixed z-[100] bg-[#FFF9F5] flex flex-col overscroll-behavior-none touch-none"
+                            style={viewportStyle}
                         >
-                            {/* Mobile Header */}
-                            <div className="flex items-center justify-between px-4 py-4 bg-white border-b border-orange-100 text-foreground safe-area-inset-top shadow-sm">
+                            {/* Inner Scrollable Wrapper - needed to allow internal scrolling while parent is touch-none */}
+                            <div className="flex flex-col h-full w-full touch-auto">
+                            {/* Mobile Header - Fixed at top of flex container */}
+                            <div className="flex-none flex items-center justify-between px-4 py-4 bg-white border-b border-orange-100 text-foreground safe-area-inset-top shadow-sm z-30">
                                 <div className="flex items-center gap-2">
                                     {showChatWindow ? (
                                         <Button
@@ -438,8 +497,8 @@ export function GlobalChatOverlay() {
                                 </Button>
                             </div>
 
-                            {/* Mobile Content */}
-                            <div className="flex-1 overflow-hidden relative">
+                            {/* Mobile Content Area - Takes remaining space */}
+                            <div className="flex-1 min-h-0 relative">
                                 {isLoading ? (
                                     <div className="flex-1 flex items-center justify-center h-full">
                                         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -489,6 +548,7 @@ export function GlobalChatOverlay() {
                                         )}
                                     </AnimatePresence>
                                 )}
+                            </div>
                             </div>
                         </motion.div>
                     </>

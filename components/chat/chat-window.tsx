@@ -100,8 +100,13 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
 
             if (isNearBottom || senderId === currentUserId) {
                 setTimeout(() => {
-                    scrollArea.scrollTop = scrollArea.scrollHeight;
-                }, 50);
+                    if (scrollRef.current) {
+                        scrollRef.current.scrollTo({
+                            top: scrollRef.current.scrollHeight,
+                            behavior: 'smooth'
+                        });
+                    }
+                }, 150); // Increased delay to account for keyboard animation
             }
         }
     }, [messages, currentUser])
@@ -214,11 +219,12 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
     }
 
     return (
-        <div className="flex flex-col h-full min-h-0 bg-[#FFF9F5] relative overflow-hidden">
+        <div className="flex flex-col h-full min-h-0 bg-[#FFF9F5] relative">
             {/* Decorative Paw Prints Background */}
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M30,50 Q30,40 40,40 T50,50 T40,60 T30,50 M70,50 Q70,40 80,40 T90,50 T80,60 T70,50 M50,30 Q50,20 60,20 T70,30 T60,40 T50,30 M50,70 Q50,60 60,60 T70,70 T60,80 T50,70' fill='%23F97316' /%3E%3C/svg%3E")`, backgroundSize: '150px' }} />
-            {/* Header */}
-            <div className="p-4 border-b flex items-center justify-between bg-white/80 backdrop-blur-md z-10 shadow-sm rounded-t-[40px]">
+            
+            {/* Header - Hidden on Mobile because GlobalChatOverlay provides one */}
+            <div className="hidden md:flex flex-none p-4 border-b items-center justify-between bg-white/80 backdrop-blur-md z-10 shadow-sm rounded-t-[40px]">
                 <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10 border shadow-sm">
                         <AvatarImage src={otherParticipant?.avatar?.url || otherParticipant?.image || conversation.metadata?.image} />
@@ -241,9 +247,9 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
                 </div>
             </div>
 
-            {/* Messages Area */}
+            {/* Messages Area - Fill remaining space */}
             <div
-                className="flex-1 min-h-0 p-6 overflow-y-auto custom-scrollbar"
+                className="flex-1 min-h-0 p-4 md:p-6 overflow-y-auto custom-scrollbar relative z-10"
                 ref={scrollRef}
                 style={{ scrollBehavior: 'smooth' }}
             >
@@ -341,8 +347,8 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
                 )}
             </div>
 
-            {/* Input Area */}
-            <div className="p-4 border-t bg-white/80 backdrop-blur-md rounded-b-[40px]">
+            {/* Input Area - Fixed at bottom of flex container */}
+            <div className="flex-none p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t bg-white/95 backdrop-blur-md md:rounded-b-[40px] z-20">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2 bg-muted/50 p-2 rounded-[30px] focus-within:ring-2 ring-primary/30 transition-all border border-orange-50">
                     <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 text-muted-foreground hover:text-primary hover:bg-white">
                         <ImageIcon className="w-5 h-5" />
@@ -354,7 +360,7 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
                         placeholder="Aa"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        className="bg-transparent border-none focus-visible:ring-0 h-10 text-sm shadow-none"
+                        className="bg-transparent border-none focus-visible:ring-0 h-10 text-base md:text-sm shadow-none"
                     />
                     <Button
                         type="submit"
