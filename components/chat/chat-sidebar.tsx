@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { format } from "date-fns"
 import { vi } from "date-fns/locale"
 import { Badge } from "@/components/ui/badge"
+import { motion } from "framer-motion"
 
 interface ChatSidebarProps {
     conversations: any[]
@@ -36,14 +37,13 @@ export function ChatSidebar({ conversations, selectedId, onSelect, currentUser }
     })
 
     return (
-        <div className="w-80 border-r flex flex-col bg-muted/10">
-            <div className="p-6 space-y-4">
-                <h2 className="text-2xl font-black text-foreground">Tin nhắn</h2>
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <div className="w-full md:w-80 border-r flex flex-col bg-[#FFFBF9]">
+            <div className="p-4 space-y-3">
+                <div className="relative group">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <Input
-                        placeholder="Tìm kiếm..."
-                        className="pl-9 rounded-xl bg-white border-muted h-10 text-sm"
+                        placeholder="Tìm kiếm hội thoại..."
+                        className="pl-9 rounded-full bg-white/80 border-orange-50 h-9 text-xs focus-visible:ring-primary/20 transition-all shadow-sm"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
@@ -51,7 +51,7 @@ export function ChatSidebar({ conversations, selectedId, onSelect, currentUser }
             </div>
 
             {/* Filter Tabs */}
-            <div className="px-6 flex gap-2 pb-4 overflow-x-auto no-scrollbar">
+            <div className="px-4 flex gap-2 pb-3 overflow-x-auto no-scrollbar">
                 {[
                     { id: "ALL", label: "Tất cả", icon: MessageCircle },
                     { id: "PAWMATCH", label: "PawMatch", icon: Sparkles },
@@ -86,11 +86,17 @@ export function ChatSidebar({ conversations, selectedId, onSelect, currentUser }
                         <button
                             key={conv._id}
                             onClick={() => onSelect(conv._id)}
-                            className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all ${isActive
-                                ? "bg-white shadow-sm ring-1 ring-primary/10"
-                                : "hover:bg-white/50"
+                            className={`w-full flex items-center gap-3 p-4 rounded-[24px] transition-all relative group ${isActive
+                                ? "bg-white shadow-lg ring-1 ring-primary/5 scale-[1.02]"
+                                : "hover:bg-white/60 active:scale-95"
                                 }`}
                         >
+                            {isActive && (
+                                <motion.div 
+                                    layoutId="active-nav"
+                                    className="absolute left-0 w-1.5 h-10 bg-primary rounded-r-full"
+                                />
+                            )}
                             <div className="relative">
                                 <Avatar className="w-12 h-12 border-2 border-white shadow-sm">
                                     <AvatarImage src={otherParticipant?.avatar?.url || otherParticipant?.image || conv.metadata?.image} />

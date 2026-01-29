@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
                 pusherServer.trigger(`user-${pIdStr}-chats`, "conversation-update", {
                     conversationId,
                     lastMessage: populatedMessage,
-                    unreadCount: updatedConversation?.unreadCount?.get(pIdStr) || 0
+                    unreadCount: (updatedConversation?.unreadCount as any)?.[pIdStr] || 0
                 });
             });
         }

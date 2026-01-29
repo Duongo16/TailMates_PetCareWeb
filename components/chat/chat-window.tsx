@@ -134,6 +134,45 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
         }
     }
 
+    // Subscribe to real-time messages
+    useEffect(() => {
+        if (!conversation?._id || !pusherClient) return
+
+        const channel = pusherClient.subscribe(`conversation-${conversation._id}`)
+        
+        channel.bind("new-message", (data: any) => {
+            const newMessage = data.message
+            // Avoid adding if it's from the same user (handled by optimistic UI)
+            // or if it's already in the list
+            const currentUserId = currentUser?.id?.toString() || currentUser?._id?.toString()
+            const senderId = newMessage.senderId?._id?.toString() || newMessage.senderId?.id?.toString() || newMessage.senderId?.toString()
+            
+            if (senderId !== currentUserId) {
+                setMessages(prev => {
+                    if (prev.find(m => m._id === newMessage._id)) return prev
+                    return [...prev, newMessage]
+                })
+            } else {
+                // If it's our own message, find a matching optimistic message to replace
+                setMessages(prev => {
+                    const optimisticIndex = prev.findIndex(m => m.isOptimistic && m.content === newMessage.content)
+                    if (optimisticIndex !== -1) {
+                        const newMessages = [...prev]
+                        newMessages[optimisticIndex] = newMessage
+                        return newMessages
+                    }
+                    // If no optimistic message found (e.g. sent from another tab), just add it if not exists
+                    if (prev.find(m => m._id === newMessage._id)) return prev
+                    return [...prev, newMessage]
+                })
+            }
+        })
+
+        return () => {
+            pusherClient.unsubscribe(`private-conversation-${conversation._id}`)
+        }
+    }, [conversation?._id, currentUser])
+
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!newMessage.trim() || isSending) return
@@ -175,9 +214,11 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
     }
 
     return (
-        <div className="flex flex-col h-full min-h-0 bg-white relative overflow-hidden">
+        <div className="flex flex-col h-full min-h-0 bg-[#FFF9F5] relative overflow-hidden">
+            {/* Decorative Paw Prints Background */}
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M30,50 Q30,40 40,40 T50,50 T40,60 T30,50 M70,50 Q70,40 80,40 T90,50 T80,60 T70,50 M50,30 Q50,20 60,20 T70,30 T60,40 T50,30 M50,70 Q50,60 60,60 T70,70 T60,80 T50,70' fill='%23F97316' /%3E%3C/svg%3E")`, backgroundSize: '150px' }} />
             {/* Header */}
-            <div className="p-4 border-b flex items-center justify-between bg-white z-10 shadow-sm">
+            <div className="p-4 border-b flex items-center justify-between bg-white/80 backdrop-blur-md z-10 shadow-sm rounded-t-[40px]">
                 <div className="flex items-center gap-3">
                     <Avatar className="w-10 h-10 border shadow-sm">
                         <AvatarImage src={otherParticipant?.avatar?.url || otherParticipant?.image || conversation.metadata?.image} />
@@ -251,16 +292,21 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
                                             ) : <div className="w-8 h-8" />}
                                         </div>
                                     )}
-                                    <div className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                                    <motion.div 
+                                        initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                                        className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
+                                    >
                                         {!isMe && showAvatar && (
                                             <span className="text-[10px] font-bold text-muted-foreground mb-1 px-1">
                                                 {msg.senderId?.full_name || msg.senderId?.name || (senderId === otherParticipant?._id?.toString() ? conversation.metadata?.title : "Người dùng")}
                                             </span>
                                         )}
                                         <div
-                                            className={`max-w-[400px] rounded-2xl px-4 py-2 text-sm shadow-sm transition-opacity ${isMe
-                                                ? "bg-primary text-primary-foreground rounded-br-none"
-                                                : "bg-muted text-foreground rounded-bl-none"
+                                            className={`max-w-[85%] sm:max-w-[400px] rounded-[24px] px-5 py-3 text-sm shadow-md transition-all ${isMe
+                                                ? "bg-gradient-to-br from-primary to-orange-400 text-white rounded-br-[4px] font-medium"
+                                                : "bg-white text-foreground rounded-bl-[4px] border border-orange-100"
                                                 } ${msg.isOptimistic ? "opacity-70" : "opacity-100"}`}
                                         >
                                             {msg.content && <p className="leading-relaxed">{msg.content}</p>}
@@ -287,7 +333,7 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
                                         <p className="text-[10px] mt-1 text-muted-foreground px-1">
                                             {format(new Date(msg.created_at), "HH:mm", { locale: vi })}
                                         </p>
-                                    </div>
+                                    </motion.div>
                                 </div>
                             )
                         })}
@@ -296,8 +342,8 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 border-t bg-white">
-                <form onSubmit={handleSendMessage} className="flex items-center gap-3 bg-muted/30 p-1.5 rounded-[24px] focus-within:ring-2 ring-primary/20 transition-all">
+            <div className="p-4 border-t bg-white/80 backdrop-blur-md rounded-b-[40px]">
+                <form onSubmit={handleSendMessage} className="flex items-center gap-2 bg-muted/50 p-2 rounded-[30px] focus-within:ring-2 ring-primary/30 transition-all border border-orange-50">
                     <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 text-muted-foreground hover:text-primary hover:bg-white">
                         <ImageIcon className="w-5 h-5" />
                     </Button>
@@ -321,6 +367,6 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
                     </Button>
                 </form>
             </div>
-        </div >
+        </div>
     )
 }

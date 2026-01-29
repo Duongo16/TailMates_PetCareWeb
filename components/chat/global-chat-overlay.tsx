@@ -26,6 +26,21 @@ export function GlobalChatOverlay() {
     const [conversations, setConversations] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [unreadTotal, setUnreadTotal] = useState(0)
+    const [isScrollTopVisible, setIsScrollTopVisible] = useState(false)
+
+    // Handle scroll to sync with ScrollToTop button
+    useEffect(() => {
+        const toggleVisibility = () => {
+            if (window.scrollY > 300) {
+                setIsScrollTopVisible(true)
+            } else {
+                setIsScrollTopVisible(false)
+            }
+        }
+
+        window.addEventListener("scroll", toggleVisibility, { passive: true })
+        return () => window.removeEventListener("scroll", toggleVisibility)
+    }, [])
 
     // Handle starting a new conversation from events
     const handleStartConversation = useCallback(async (params: StartConversationParams) => {
@@ -224,27 +239,39 @@ export function GlobalChatOverlay() {
             {/* Floating Chat Button */}
             <AnimatePresence>
                 {(!isOpen || isMinimized) && (
-                    <motion.div
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                        className="fixed bottom-6 right-20 z-50"
-                    >
+                        <motion.div
+                            initial={{ scale: 0, opacity: 0 }}
+                            animate={{ 
+                                scale: 1, 
+                                opacity: 1,
+                                bottom: isScrollTopVisible ? "112px" : "32px" // 28*4=112, 8*4=32
+                            }}
+                            exit={{ scale: 0, opacity: 0 }}
+                            transition={{ 
+                                type: "spring", 
+                                stiffness: 400, 
+                                damping: 25,
+                                bottom: { type: "spring", stiffness: 300, damping: 30 }
+                            }}
+                            className="fixed right-8 z-50 px-0"
+                        >
                         <Button
                             onClick={handleToggle}
                             className={cn(
-                                "relative w-14 h-14 rounded-full shadow-lg shadow-primary/30",
-                                "bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
-                                "transition-all duration-300 hover:scale-110"
+                                "relative w-14 h-14 rounded-full shadow-[0_8px_30px_rgb(249,115,22,0.3)]",
+                                "bg-gradient-to-br from-primary to-orange-500 hover:from-primary/90 hover:to-orange-400",
+                                "transition-all duration-300 hover:scale-110 active:scale-95 border-2 border-white/20"
                             )}
                         >
-                            <MessageCircle className="w-6 h-6 text-white" />
+                            <div className="relative">
+                                <MessageCircle className="w-6 h-6 text-white" />
+                                <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full opacity-50 animate-ping" />
+                            </div>
                             {unreadTotal > 0 && (
                                 <motion.span
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
-                                    className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-white shadow-md"
+                                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-lg"
                                 >
                                     {unreadTotal > 9 ? "9+" : unreadTotal}
                                 </motion.span>
@@ -260,19 +287,37 @@ export function GlobalChatOverlay() {
                     <>
                         {/* Desktop Panel */}
                         <motion.div
-                            initial={{ opacity: 0, x: 100, scale: 0.95 }}
-                            animate={{ opacity: 1, x: 0, scale: 1 }}
-                            exit={{ opacity: 0, x: 100, scale: 0.95 }}
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="hidden md:flex fixed bottom-6 right-6 z-50 w-[420px] h-[600px] bg-card rounded-2xl shadow-2xl shadow-black/20 border border-border overflow-hidden flex-col"
+                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                            animate={{ 
+                                opacity: 1, 
+                                y: 0, 
+                                scale: 1,
+                                bottom: isScrollTopVisible ? "112px" : "32px"
+                            }}
+                            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                            transition={{ 
+                                type: "spring", 
+                                stiffness: 300, 
+                                damping: 30,
+                                bottom: { type: "spring", stiffness: 300, damping: 30 }
+                            }}
+                            className="hidden md:flex fixed right-8 z-50 w-[420px] h-[600px] bg-card rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-orange-100 overflow-hidden flex-col"
                         >
                             {/* Header */}
-                            <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+                            <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-primary to-orange-500 text-primary-foreground">
                                 <div className="flex items-center gap-2">
-                                    <MessageCircle className="w-5 h-5" />
-                                    <h2 className="font-bold text-lg">Tin nhắn</h2>
+                                    <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
+                                        <MessageCircle className="w-5 h-5" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <h2 className="font-bold text-base leading-none">Tin nhắn</h2>
+                                        <div className="flex items-center gap-1 mt-0.5">
+                                            <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
+                                            <span className="text-[10px] font-medium opacity-80 uppercase tracking-widest">Trung tâm hỗ trợ</span>
+                                        </div>
+                                    </div>
                                     {unreadTotal > 0 && (
-                                        <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                        <span className="ml-1 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-sm">
                                             {unreadTotal}
                                         </span>
                                     )}
@@ -346,76 +391,103 @@ export function GlobalChatOverlay() {
                             initial={{ opacity: 0, y: "100%" }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: "100%" }}
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className="md:hidden fixed inset-0 z-50 bg-background flex flex-col"
+                            transition={{ type: "spring", stiffness: 200, damping: 25 }}
+                            className="md:hidden fixed inset-0 z-[100] bg-[#FFF9F5] flex flex-col"
                         >
                             {/* Mobile Header */}
-                            <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground safe-area-inset-top">
+                            <div className="flex items-center justify-between px-4 py-4 bg-white border-b border-orange-100 text-foreground safe-area-inset-top shadow-sm">
                                 <div className="flex items-center gap-2">
                                     {showChatWindow ? (
                                         <Button
                                             variant="ghost"
                                             size="icon"
                                             onClick={handleBackToList}
-                                            className="w-8 h-8 text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+                                            className="w-10 h-10 rounded-full hover:bg-orange-50 text-primary"
                                         >
-                                            <ChevronLeft className="w-5 h-5" />
+                                            <ChevronLeft className="w-6 h-6" />
                                         </Button>
                                     ) : (
-                                        <MessageCircle className="w-5 h-5" />
+                                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                            <MessageCircle className="w-5 h-5 text-primary" />
+                                        </div>
                                     )}
-                                    <h2 className="font-bold text-lg">
-                                        {showChatWindow ? (
-                                            (() => {
-                                                if (selectedConversation?.metadata?.title) return selectedConversation.metadata.title
-                                                const currentUserId = user?.id
-                                                const other = selectedConversation?.participants?.find((p: any) => {
-                                                    const pId = p._id?.toString() || p.id?.toString() || p.toString()
-                                                    return pId !== currentUserId
-                                                })
-                                                return other?.full_name || other?.name || selectedConversation?.metadata?.title || "Tin nhắn"
-                                            })()
-                                        ) : "Tin nhắn"}
-                                    </h2>
+                                    <div className="flex flex-col">
+                                        <h2 className="font-bold text-base leading-tight">
+                                            {showChatWindow ? (
+                                                (() => {
+                                                    if (selectedConversation?.metadata?.title) return selectedConversation.metadata.title
+                                                    const currentUserId = user?.id
+                                                    const other = selectedConversation?.participants?.find((p: any) => {
+                                                        const pId = p._id?.toString() || p.id?.toString() || p.toString()
+                                                        return pId !== currentUserId
+                                                    })
+                                                    return other?.full_name || other?.name || selectedConversation?.metadata?.title || "Trò chuyện"
+                                                })()
+                                            ) : "Hộp thư đến"}
+                                        </h2>
+                                        {!showChatWindow && <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Mọi người đang chờ bạn</p>}
+                                    </div>
                                 </div>
                                 <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={handleClose}
-                                    className="w-8 h-8 text-primary-foreground/80 hover:text-primary-foreground hover:bg-white/10"
+                                    className="w-10 h-10 rounded-full hover:bg-orange-50 text-muted-foreground"
                                 >
-                                    <X className="w-5 h-5" />
+                                    <X className="w-6 h-6" />
                                 </Button>
                             </div>
 
                             {/* Mobile Content */}
-                            <div className="flex-1 overflow-hidden">
+                            <div className="flex-1 overflow-hidden relative">
                                 {isLoading ? (
                                     <div className="flex-1 flex items-center justify-center h-full">
                                         <Loader2 className="w-8 h-8 animate-spin text-primary" />
                                     </div>
-                                ) : showChatWindow && selectedConversationId ? (
-                                    <ChatWindow
-                                        conversation={selectedConversation}
-                                        currentUser={user}
-                                    />
-                                ) : conversations.length > 0 ? (
-                                    <ChatSidebar
-                                        conversations={conversations}
-                                        selectedId={selectedConversationId}
-                                        onSelect={handleSelectConversation}
-                                        currentUser={user}
-                                    />
                                 ) : (
-                                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 h-full">
-                                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                                            <MessageSquare className="w-8 h-8 text-primary/40" />
-                                        </div>
-                                        <h3 className="text-lg font-bold text-foreground/60">Chưa có tin nhắn</h3>
-                                        <p className="text-sm text-muted-foreground mt-2">
-                                            Bắt đầu cuộc trò chuyện mới từ trang sản phẩm hoặc dịch vụ
-                                        </p>
-                                    </div>
+                                    <AnimatePresence mode="wait">
+                                        {showChatWindow && selectedConversationId ? (
+                                            <motion.div
+                                                key="window"
+                                                initial={{ opacity: 0, x: 20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: -20 }}
+                                                className="absolute inset-0"
+                                            >
+                                                <ChatWindow
+                                                    conversation={selectedConversation}
+                                                    currentUser={user}
+                                                />
+                                            </motion.div>
+                                        ) : (
+                                            <motion.div
+                                                key="list"
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: 20 }}
+                                                className="absolute inset-0"
+                                            >
+                                                {conversations.length > 0 ? (
+                                                    <ChatSidebar
+                                                        conversations={conversations}
+                                                        selectedId={selectedConversationId}
+                                                        onSelect={handleSelectConversation}
+                                                        currentUser={user}
+                                                    />
+                                                ) : (
+                                                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 h-full">
+                                                        <div className="w-20 h-20 bg-primary/5 rounded-full flex items-center justify-center mb-6">
+                                                            <MessageSquare className="w-10 h-10 text-primary/20" />
+                                                        </div>
+                                                        <h3 className="text-xl font-bold text-foreground/70">Trống trơn...</h3>
+                                                        <p className="text-sm text-muted-foreground mt-2 max-w-[200px]">
+                                                            Hãy bắt đầu kết nối với cộng đồng yêu thú cưng ngay nhé!
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 )}
                             </div>
                         </motion.div>
