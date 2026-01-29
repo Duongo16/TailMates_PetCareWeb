@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
         const discoveryPets = await Pet.find(query)
             .limit(20)
-            .select("name species breed age_months gender image mediaGallery datingProfile");
+            .select("name species breed age_months gender image mediaGallery datingProfile owner_id");
 
         return apiResponse.success(discoveryPets);
     } catch (error) {

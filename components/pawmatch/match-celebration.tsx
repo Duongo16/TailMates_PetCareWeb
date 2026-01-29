@@ -6,7 +6,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import confetti from "canvas-confetti"
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { startConversation } from "@/lib/chat-events"
 
 interface MatchCelebrationProps {
     isOpen: boolean
@@ -16,8 +16,6 @@ interface MatchCelebrationProps {
 }
 
 export function MatchCelebration({ isOpen, onClose, matchedPet, userPet }: MatchCelebrationProps) {
-    const router = useRouter()
-
     useEffect(() => {
         if (isOpen) {
             const duration = 3 * 1000
@@ -154,7 +152,16 @@ export function MatchCelebration({ isOpen, onClose, matchedPet, userPet }: Match
                                     onClick={() => {
                                         onClose();
                                         const recipientId = matchedPet.owner?._id || matchedPet.owner_id || matchedPet.user_id || matchedPet.owner;
-                                        router.push(`/chat?recipientId=${recipientId}`);
+                                        if (recipientId) {
+                                            startConversation({
+                                                type: 'PAWMATCH',
+                                                participantId: recipientId,
+                                                metadata: {
+                                                    title: `Match: ${matchedPet.name}`,
+                                                    image: matchedPet.mediaGallery?.[0]?.url || matchedPet.image?.url
+                                                }
+                                            });
+                                        }
                                     }}
                                 >
                                     <MessageSquare className="w-7 h-7 mr-3" />

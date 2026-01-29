@@ -22,14 +22,20 @@ export async function GET(request: NextRequest) {
         await connectDB();
 
         // Verify user owns the pet
-        const pet = await Pet.findOne({ _id: petId, owner: user!._id });
+        const pet = await Pet.findOne({ _id: petId, owner_id: user!._id });
         if (!pet) return apiResponse.forbidden("You don't own this pet");
 
         // Find all matches involving this pet
         // In our model, petA and petB are stored. We need to check both.
         const matches = await Match.find({
             $or: [{ petA: petId }, { petB: petId }]
-        }).populate("petA petB");
+        }).populate("petA petB").populate({
+            path: "petA petB",
+            populate: {
+                path: "owner_id",
+                select: "full_name name avatar phone_number email created_at address"
+            }
+        });
 
         // Map matches to a cleaner format for frontend
         const formattedMatches = matches.map((match: any) => {

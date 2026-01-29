@@ -647,6 +647,9 @@ export const pawmatchAPI = {
   getDiscovery: (petId: string) =>
     fetchWithAuth<any[]>(`/pawmatch/discovery?petId=${petId}`),
 
+  getLiked: (petId: string) => fetchWithAuth<any[]>(`/pawmatch/liked?petId=${petId}`),
+  getLikedMe: (petId: string) => fetchWithAuth<any[]>(`/pawmatch/liked-me?petId=${petId}`),
+
   swipe: (data: {
     swiperPetId: string;
     targetPetId: string;
@@ -657,7 +660,7 @@ export const pawmatchAPI = {
       body: JSON.stringify({
         actorPetId: data.swiperPetId,
         targetPetId: data.targetPetId,
-        action: data.direction.toUpperCase()
+        action: data.direction === "nope" ? "PASS" : "LIKE"
       }),
     }),
 
