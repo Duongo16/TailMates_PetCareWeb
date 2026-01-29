@@ -113,8 +113,62 @@ export function SwipeDeck({
         return () => window.removeEventListener("keydown", handleKeyDown)
     }, [queue, isMatching, activeTab, handleSwipe])
 
+    const renderActions = (isMini = false) => {
+        if (activeTab !== "discovery" || queue.length === 0) return null
+        
+        return (
+            <>
+                <ActionButton 
+                    icon={RotateCcw} 
+                    color="text-yellow-500" 
+                    size={isMini ? "w-10 h-10" : "w-12 h-12 lg:w-14 lg:h-14"}
+                    onClick={handleUndo}
+                    disabled={history.length === 0}
+                    label="Hoàn tác"
+                    mini={isMini}
+                />
+                <ActionButton 
+                    icon={X} 
+                    color="text-red-500" 
+                    size={isMini ? "w-11 h-11" : "w-16 h-16 lg:w-20 lg:h-20"} 
+                    iconSize={isMini ? "w-6 h-6" : "w-8 h-8 lg:w-10 lg:h-10"}
+                    onClick={() => handleSwipe("left")}
+                    label="Bỏ qua"
+                    priority
+                    mini={isMini}
+                />
+                <ActionButton 
+                    icon={Heart} 
+                    color="text-emerald-500" 
+                    size={isMini ? "w-11 h-11" : "w-16 h-16 lg:w-20 lg:h-20"} 
+                    iconSize={isMini ? "w-6 h-6" : "w-8 h-8 lg:w-10 lg:h-10"}
+                    fill
+                    onClick={() => handleSwipe("right")}
+                    label="Yêu thích"
+                    priority
+                    mini={isMini}
+                />
+                <ActionButton 
+                    icon={Sparkles} 
+                    color="text-sky-500" 
+                    size={isMini ? "w-10 h-10" : "w-12 h-12 lg:w-14 lg:h-14"}
+                    onClick={() => handleSwipe("right")}
+                    label="Super Like"
+                    mini={isMini}
+                />
+            </>
+        )
+    }
+
     const renderDiscovery = () => (
-        <div className="relative w-full max-w-[340px] xs:max-w-[380px] lg:max-w-[440px] h-[550px] sm:h-[600px] lg:h-[720px] perspective-1000 flex items-center justify-center">
+        <div className="relative w-full max-w-[340px] xs:max-w-[380px] lg:max-w-[440px] h-[480px] sm:h-[600px] lg:h-[720px] perspective-1000 flex items-center justify-center">
+            {/* Mobile Mini Actions */}
+            {activeTab === "discovery" && queue.length > 0 && (
+                <div className="lg:hidden absolute -top-2 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 bg-white/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/50 shadow-xl">
+                    {renderActions(true)}
+                </div>
+            )}
+
             {isLoading && queue.length === 0 ? (
                 <div className="flex flex-col items-center justify-center space-y-6">
                     <div className="relative">
@@ -185,7 +239,7 @@ export function SwipeDeck({
     )
 
     return (
-        <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center w-full h-full gap-4 lg:gap-12 xl:gap-20 select-none pb-6 lg:pb-10 pt-2 lg:pt-4 overflow-y-auto lg:overflow-hidden px-4 lg:px-0">
+        <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center w-full h-full gap-2 lg:gap-12 xl:gap-20 select-none pb-2 lg:pb-10 pt-2 lg:pt-4 overflow-hidden px-4 lg:px-0 flex-1 min-h-0">
             {/* Left Column: Navigation & Tools (Desktop) / Top Bar (Mobile) */}
             <div className="flex flex-row lg:flex-col gap-3 lg:gap-5 py-2 lg:py-4 animate-in slide-in-from-left fade-in duration-700 sticky top-0 lg:top-8 z-40 bg-[#f8fafc]/80 backdrop-blur-md lg:bg-transparent w-full lg:w-auto justify-center lg:justify-start rounded-2xl">
                 {/* Logo Floating Button - Hidden on extreme small mobile if needed, but keeping for now */}
@@ -251,53 +305,16 @@ export function SwipeDeck({
             </div>
 
             {/* Middle Column: Discovery or Matches */}
-            <div className="flex-1 w-full max-w-5xl flex flex-col items-center">
-                {activeTab === "discovery" ? renderDiscovery() : <MatchesTab currentPetId={petId} />}
+            <div className="flex-1 w-full max-w-5xl flex flex-col items-center min-h-0 overflow-hidden">
+                {activeTab === "discovery" ? renderDiscovery() : <div className="w-full h-full overflow-y-auto custom-scrollbar"><MatchesTab currentPetId={petId} /></div>}
             </div>
 
-            {/* Right Column: Actions (Desktop: Side, Mobile: Bottom) */}
+            {/* Right Column: Actions (Desktop: Side Column) */}
             <div className={cn(
-                "flex lg:flex-col gap-4 lg:gap-6 py-4 animate-in slide-in-from-right fade-in duration-700 sticky bottom-4 lg:top-8 z-40 lg:z-auto",
-                activeTab !== "discovery" && "hidden lg:flex lg:opacity-0 pointer-events-none"
+                "hidden lg:flex lg:flex-col gap-4 lg:gap-6 py-2 md:py-4 animate-in slide-in-from-right fade-in duration-700 sticky lg:top-8 z-40 lg:z-auto",
+                activeTab !== "discovery" && "lg:opacity-0 pointer-events-none"
             )}>
-                {activeTab === "discovery" && queue.length > 0 && (
-                    <>
-                        <ActionButton 
-                            icon={RotateCcw} 
-                            color="text-yellow-500" 
-                            size="w-12 h-12 lg:w-14 lg:h-14"
-                            onClick={handleUndo}
-                            disabled={history.length === 0}
-                            label="Hoàn tác"
-                        />
-                        <ActionButton 
-                            icon={X} 
-                            color="text-red-500" 
-                            size="w-16 h-16 lg:w-20 lg:h-20" 
-                            iconSize="w-8 h-8 lg:w-10 lg:h-10"
-                            onClick={() => handleSwipe("left")}
-                            label="Bỏ qua"
-                            priority
-                        />
-                        <ActionButton 
-                            icon={Heart} 
-                            color="text-emerald-500" 
-                            size="w-16 h-16 lg:w-20 lg:h-20" 
-                            iconSize="w-8 h-8 lg:w-10 lg:h-10"
-                            fill
-                            onClick={() => handleSwipe("right")}
-                            label="Yêu thích"
-                            priority
-                        />
-                        <ActionButton 
-                            icon={Sparkles} 
-                            color="text-sky-500" 
-                            size="w-12 h-12 lg:w-14 lg:h-14"
-                            onClick={() => handleSwipe("right")}
-                            label="Super Like"
-                        />
-                    </>
-                )}
+                {renderActions()}
             </div>
 
             <MatchCelebration
@@ -320,7 +337,8 @@ function ActionButton({
     disabled = false,
     label,
     priority = false,
-    active = false
+    active = false,
+    mini = false
 }: any) {
     return (
         <div className="group relative flex items-center">
@@ -340,9 +358,11 @@ function ActionButton({
                 <Icon className={cn(iconSize, fill && "fill-current")} strokeWidth={3} />
             </motion.button>
             
-            <div className="absolute left-full ml-4 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-black rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap uppercase tracking-widest z-50 shadow-xl">
-                {label}
-            </div>
+            {!mini && (
+                <div className="absolute left-full ml-4 px-3 py-1.5 bg-slate-900 text-white text-[10px] font-black rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap uppercase tracking-widest z-50 shadow-xl">
+                    {label}
+                </div>
+            )}
         </div>
     )
 }

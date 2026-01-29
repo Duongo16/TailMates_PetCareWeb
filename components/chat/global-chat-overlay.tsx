@@ -244,7 +244,7 @@ export function GlobalChatOverlay() {
                             animate={{ 
                                 scale: 1, 
                                 opacity: 1,
-                                bottom: isScrollTopVisible ? "112px" : "32px" // 28*4=112, 8*4=32
+                                bottom: window.innerWidth < 768 ? "80px" : "32px"
                             }}
                             exit={{ scale: 0, opacity: 0 }}
                             transition={{ 
@@ -253,7 +253,7 @@ export function GlobalChatOverlay() {
                                 damping: 25,
                                 bottom: { type: "spring", stiffness: 300, damping: 30 }
                             }}
-                            className="fixed right-8 z-50 px-0"
+                            className="fixed left-4 md:right-8 md:left-auto z-50 px-0"
                         >
                         <Button
                             onClick={handleToggle}

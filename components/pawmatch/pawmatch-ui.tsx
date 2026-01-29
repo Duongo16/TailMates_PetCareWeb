@@ -38,17 +38,17 @@ export function PawMatchUI({ onEditPet, onAddPet }: PawMatchUIProps) {
     const isReady = currentPet ? isPetReady(currentPet) : false
 
     return (
-        <div className="h-screen w-full bg-[#f8fafc] overflow-hidden flex flex-col">
+        <div className="h-screen md:h-screen w-full bg-[#f8fafc] overflow-hidden flex flex-col safe-area-inset-bottom">
             {/* Header / Title Area */}
-            <header className="py-4 lg:pb-8 flex flex-col items-center justify-center animate-in fade-in slide-in-from-top duration-700 h-fit shrink-0">
+            <header className="py-2 md:py-4 lg:pb-8 flex flex-col items-center justify-center animate-in fade-in slide-in-from-top duration-700 h-fit shrink-0">
                 <h1 className="text-xl lg:text-3xl font-black text-slate-900 tracking-tighter flex items-center gap-2 lg:gap-3">
                     <span className="bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">PAW MATCH</span>
                     <span className="text-slate-200">/</span>
-                    <span className="text-lg lg:text-2xl text-slate-400 font-bold uppercase tracking-widest">
+                    <span className="text-lg lg:text-2xl text-slate-400 font-bold uppercase tracking-widest whitespace-nowrap">
                         {activeTab === "discovery" ? "Khám phá" : "Tương hợp"}
                     </span>
                 </h1>
-                <p className="hidden lg:block text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mt-2">
+                <p className="hidden lg:block text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mt-2 leading-none">
                     Tìm kiếm người bạn bốn chân hoàn hảo
                 </p>
             </header>

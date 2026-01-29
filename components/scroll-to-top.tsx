@@ -39,7 +39,7 @@ export function ScrollToTop() {
                     whileTap={{ scale: 0.9 }}
                     onClick={scrollToTop}
                     // Gradient and Glow styles matching "Magic Button"
-                    className="fixed bottom-8 right-8 z-[100] p-3 rounded-full bg-gradient-to-r from-primary to-orange-500 text-white shadow-[0_0_20px_rgba(249,115,22,0.5)] hover:shadow-[0_0_30px_rgba(249,115,22,0.8)] backdrop-blur-sm border border-white/20 transition-all duration-300"
+                    className="fixed bottom-20 md:bottom-8 right-4 md:right-8 z-[100] p-3 rounded-full bg-gradient-to-r from-primary to-orange-500 text-white shadow-[0_0_20px_rgba(249,115,22,0.5)] hover:shadow-[0_0_30px_rgba(249,115,22,0.8)] backdrop-blur-sm border border-white/20 transition-all duration-300"
                     aria-label="Scroll to top"
                 >
                     <ArrowUp className="w-6 h-6" strokeWidth={3} />
