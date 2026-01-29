@@ -28,6 +28,49 @@ export function GlobalChat() {
             // Listen for global user chat updates
             const channel = pusherClient.subscribe(`user-${user.id}-chats`)
             channel.bind("conversation-update", (data: any) => {
+                const currentUserId = user.id.toString();
+                const isCurrentlySelected = selectedConversationId === data.conversationId;
+
+                if (data?.lastMessage) {
+                    const msgSenderId = data.lastMessage.senderId?._id?.toString() || data.lastMessage.senderId?.id?.toString() || data.lastMessage.senderId?.toString()
+                    if (msgSenderId === currentUserId) {
+                        setConversations(prev => {
+                            const updated = prev.map(c =>
+                                c._id === data.conversationId
+                                    ? { ...c, lastMessage: data.lastMessage, updated_at: new Date() }
+                                    : c
+                            );
+                            return [...updated].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+                        });
+                        return
+                    }
+                }
+
+                if (data.conversationId && data.unreadCount !== undefined) {
+                    setConversations(prev => {
+                        const exists = prev.find(c => c._id === data.conversationId);
+                        if (exists) {
+                            const updated = prev.map(c => c._id === data.conversationId
+                                ? {
+                                    ...c,
+                                    lastMessage: data.lastMessage || c.lastMessage,
+                                    unreadCount: {
+                                        ...(c.unreadCount || {}),
+                                        [currentUserId]: isCurrentlySelected ? 0 : data.unreadCount
+                                    },
+                                    updated_at: new Date()
+                                }
+                                : c
+                            );
+                            return [...updated].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+                        } else {
+                            fetchConversations();
+                            return prev;
+                        }
+                    });
+                    return;
+                }
+
                 fetchConversations()
             })
 
@@ -114,7 +157,7 @@ export function GlobalChat() {
                 onSelect={setSelectedConversationId}
                 currentUser={user}
             />
-            <div className="flex-1 flex flex-col bg-white">
+            <div className="flex-1 min-h-0 flex flex-col bg-white">
                 {selectedConversationId ? (
                     <ChatWindow
                         conversation={selectedConversation}

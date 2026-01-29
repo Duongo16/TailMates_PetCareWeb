@@ -18,5 +18,17 @@ export const pusherServer = pusherConfig.appId
 export const pusherClient = pusherConfig.key
     ? new PusherClient(pusherConfig.key, {
         cluster: pusherConfig.cluster,
+        userAuthentication: {
+            endpoint: "/api/v1/pusher/auth",
+            transport: "ajax",
+        },
+        channelAuthorization: {
+            endpoint: "/api/v1/pusher/auth",
+            transport: "ajax",
+            headersProvider: () => {
+                const token = typeof window !== "undefined" ? localStorage.getItem("tailmates_token") : null;
+                return token ? { Authorization: `Bearer ${token}` } : {};
+            }
+        }
     })
     : null as unknown as PusherClient;

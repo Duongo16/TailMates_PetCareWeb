@@ -211,6 +211,20 @@ html {
   background: #9ca3af;
 }
 
+/* Radix ScrollArea prominence */
+[data-slot="scroll-area-thumb"] {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+  border-radius: 9999px !important;
+}
+
+[data-slot="scroll-area-scrollbar"] {
+  padding: 2px !important;
+}
+
+[data-slot="scroll-area-scrollbar"][data-orientation="vertical"] {
+  width: 10px !important;
+}
+
 /* Better focus styles */
 :focus-visible {
   outline: 2px solid #f15a29;

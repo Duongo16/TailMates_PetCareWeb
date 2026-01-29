@@ -22,9 +22,10 @@ export async function GET(request: NextRequest) {
         }
 
         const conversations = await Conversation.find(query)
-            .populate("participants", "name email image")
+            .populate("participants", "full_name email avatar")
             .populate("lastMessage")
-            .sort({ updated_at: -1 });
+            .sort({ updated_at: -1 })
+            .lean();
 
         return apiResponse.success(conversations);
     } catch (error) {

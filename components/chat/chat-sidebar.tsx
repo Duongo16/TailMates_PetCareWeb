@@ -21,9 +21,17 @@ export function ChatSidebar({ conversations, selectedId, onSelect, currentUser }
 
     const filteredConversations = conversations.filter(c => {
         const matchesFilter = filter === "ALL" || c.type === filter
-        // Simple search logic
-        const otherParticipant = c.participants.find((p: any) => (p._id || p.id) !== currentUser?.id)
-        const matchesSearch = !search || otherParticipant?.name.toLowerCase().includes(search.toLowerCase())
+        const otherParticipant = c.participants.find((p: any) => {
+            const pId = p._id?.toString() || p.id?.toString() || p.toString()
+            const currentUserId = currentUser?.id?.toString() || currentUser?._id?.toString()
+            return pId !== currentUserId
+        })
+        const searchLower = search.toLowerCase()
+        const matchesSearch = !search ||
+            otherParticipant?.full_name?.toLowerCase().includes(searchLower) ||
+            otherParticipant?.name?.toLowerCase().includes(searchLower) ||
+            c.metadata?.title?.toLowerCase().includes(searchLower)
+
         return matchesFilter && matchesSearch
     })
 
@@ -65,9 +73,14 @@ export function ChatSidebar({ conversations, selectedId, onSelect, currentUser }
 
             <div className="flex-1 overflow-y-auto px-3 space-y-1 pb-6">
                 {filteredConversations.map((conv) => {
-                    const otherParticipant = conv.participants.find((p: any) => (p._id || p.id) !== currentUser?.id)
+                    const otherParticipant = conv.participants.find((p: any) => {
+                        const pId = p._id?.toString() || p.id?.toString() || p.toString()
+                        const currentUserId = currentUser?.id?.toString() || currentUser?._id?.toString()
+                        return pId !== currentUserId
+                    })
                     const isActive = selectedId === conv._id
-                    const unread = conv.unreadCount?.[currentUser?.id] || 0
+                    const currentUserId = currentUser?.id?.toString() || currentUser?._id?.toString()
+                    const unread = Number((conv.unreadCount || {})[currentUserId!]) || 0
 
                     return (
                         <button
@@ -80,19 +93,17 @@ export function ChatSidebar({ conversations, selectedId, onSelect, currentUser }
                         >
                             <div className="relative">
                                 <Avatar className="w-12 h-12 border-2 border-white shadow-sm">
-                                    <AvatarImage src={conv.metadata?.image || otherParticipant?.image} />
-                                    <AvatarFallback>{otherParticipant?.name?.[0]}</AvatarFallback>
+                                    <AvatarImage src={otherParticipant?.avatar?.url || otherParticipant?.image || conv.metadata?.image} />
+                                    <AvatarFallback>{(otherParticipant?.full_name || otherParticipant?.name)?.[0]}</AvatarFallback>
                                 </Avatar>
                                 {unread > 0 && (
-                                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                                        {unread}
-                                    </span>
+                                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-sm" />
                                 )}
                             </div>
                             <div className="flex-1 text-left min-w-0">
                                 <div className="flex items-center justify-between gap-1">
                                     <p className={`text-sm font-bold truncate ${unread > 0 ? "text-foreground" : "text-foreground/80"}`}>
-                                        {conv.metadata?.title || otherParticipant?.name || "Người dùng"}
+                                        {otherParticipant?.full_name || otherParticipant?.name || conv.metadata?.title || "Người dùng"}
                                     </p>
                                     {conv.lastMessage && (
                                         <span className="text-[10px] text-muted-foreground whitespace-nowrap">

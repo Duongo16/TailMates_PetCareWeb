@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Package, Loader2, Clock, CheckCircle2, XCircle, PawPrint, ShoppingBag, Store, MapPin, Truck, MessageSquare } from "lucide-react"
+import { startConversation } from "@/lib/chat-events"
 import Image from "next/image"
 
 // Order status configuration
@@ -328,7 +329,14 @@ function OrderCardWithProgress({
                 className="h-7 px-2 text-primary hover:bg-primary/5 rounded-lg font-bold"
                 onClick={() => {
                   const merchantId = order.merchant_id?._id || order.merchant_id;
-                  window.location.href = `/dashboard/customer?tab=messages&type=COMMERCE&contextId=${order._id}&participantId=${merchantId}`;
+                  startConversation({
+                    type: 'COMMERCE',
+                    participantId: merchantId,
+                    contextId: order._id,
+                    metadata: {
+                      title: order.merchant_id?.merchant_profile?.shop_name || "Shop",
+                    }
+                  });
                 }}
               >
                 <MessageSquare className="w-3.5 h-3.5 mr-1" />

@@ -7,7 +7,7 @@ import { UserRole } from "@/models/User";
 // GET /api/v1/admin/terms-policies/[id] - Get single document (Admin only)
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { user, error } = await authenticate(request);
@@ -18,7 +18,8 @@ export async function GET(
 
         await connectDB();
 
-        const document = await TermsAndPolicies.findById(params.id).select("-__v");
+        const { id } = await params;
+        const document = await TermsAndPolicies.findById(id).select("-__v");
 
         if (!document) {
             return apiResponse.notFound("Document not found");
@@ -34,7 +35,7 @@ export async function GET(
 // PUT /api/v1/admin/terms-policies/[id] - Update document (Admin only)
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { user, error } = await authenticate(request);
@@ -48,7 +49,8 @@ export async function PUT(
         const body = await request.json();
         const { title, content, version, is_active } = body;
 
-        const document = await TermsAndPolicies.findById(params.id);
+        const { id } = await params;
+        const document = await TermsAndPolicies.findById(id);
 
         if (!document) {
             return apiResponse.notFound("Document not found");
@@ -57,7 +59,7 @@ export async function PUT(
         // If setting as active, deactivate all other documents of the same type
         if (is_active && !document.is_active) {
             await TermsAndPolicies.updateMany(
-                { type: document.type, is_active: true, _id: { $ne: params.id } },
+                { type: document.type, is_active: true, _id: { $ne: id } },
                 { is_active: false }
             );
         }
@@ -80,7 +82,7 @@ export async function PUT(
 // DELETE /api/v1/admin/terms-policies/[id] - Delete document (Admin only)
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { user, error } = await authenticate(request);
@@ -91,14 +93,15 @@ export async function DELETE(
 
         await connectDB();
 
-        const document = await TermsAndPolicies.findByIdAndDelete(params.id);
+        const { id } = await params;
+        const document = await TermsAndPolicies.findByIdAndDelete(id);
 
         if (!document) {
             return apiResponse.notFound("Document not found");
         }
 
         return apiResponse.success(
-            { id: params.id },
+            { id },
             "Document deleted successfully"
         );
     } catch (error) {

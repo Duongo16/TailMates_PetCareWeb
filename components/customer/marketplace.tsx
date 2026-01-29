@@ -5,6 +5,7 @@ import { useProducts } from "@/lib/hooks"
 import { useCart } from "@/lib/cart-context"
 import { ordersAPI } from "@/lib/api"
 import { HEALTH_TAGS } from "@/lib/product-constants"
+import { startConversation } from "@/lib/chat-events"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -527,7 +528,15 @@ export function Marketplace() {
                   className="rounded-xl bg-white border-primary/20 text-primary hover:bg-primary hover:text-white font-bold"
                   onClick={() => {
                     const merchantId = selectedProduct.merchant_id?._id || selectedProduct.merchant_id;
-                    window.location.href = `/dashboard/customer?tab=messages&type=COMMERCE&participantId=${merchantId}&contextId=${selectedProduct._id}`;
+                    startConversation({
+                      type: 'COMMERCE',
+                      participantId: merchantId,
+                      contextId: selectedProduct._id,
+                      metadata: {
+                        title: selectedProduct.merchant_id?.merchant_profile?.shop_name || "Shop",
+                        image: selectedProduct.images?.[0]?.url,
+                      }
+                    });
                   }}
                 >
                   <MessageSquare className="w-4 h-4 mr-2" />

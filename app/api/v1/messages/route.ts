@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         }
 
         const messages = await Message.find({ conversationId })
-            .populate("senderId", "name image")
+            .populate("senderId", "full_name avatar")
             .sort({ created_at: 1 })
             .limit(100);
 
@@ -75,27 +75,27 @@ export async function POST(request: NextRequest) {
             media,
         });
 
-        // Update conversation's lastMessage and bump updated_at
-        await Conversation.findByIdAndUpdate(conversationId, {
-            lastMessage: newMessage._id,
-            updated_at: new Date(),
-            // Reset unread counts for others? Or increment?
-            // Logic: For each participant except sender, increment unreadCount
-        });
-
-        // Increment unread counts for other participants
-        const updateUnread: any = {};
+        // Update conversation's lastMessage, updated_at and increment unread counts for other participants
+        const incrementData: any = {};
         conversation.participants.forEach((pId: mongoose.Types.ObjectId) => {
             if (pId.toString() !== user!._id.toString()) {
-                updateUnread[`unreadCount.${pId}`] = 1;
+                incrementData[`unreadCount.${pId.toString()}`] = 1;
             }
         });
 
-        if (Object.keys(updateUnread).length > 0) {
-            await Conversation.findByIdAndUpdate(conversationId, { $inc: updateUnread });
-        }
+        const updatedConversation = await Conversation.findByIdAndUpdate(
+            conversationId,
+            {
+                $set: {
+                    lastMessage: newMessage._id,
+                    updated_at: new Date(),
+                },
+                $inc: incrementData
+            },
+            { new: true }
+        ).lean();
 
-        const populatedMessage = await Message.findById(newMessage._id).populate("senderId", "name image");
+        const populatedMessage = await Message.findById(newMessage._id).populate("senderId", "full_name avatar");
 
         // Trigger Pusher event
         if (pusherServer) {
@@ -103,9 +103,11 @@ export async function POST(request: NextRequest) {
 
             // Also trigger global event for sidebar notification update
             conversation.participants.forEach((pId: mongoose.Types.ObjectId) => {
-                pusherServer.trigger(`user-${pId}-chats`, "conversation-update", {
+                const pIdStr = pId.toString();
+                pusherServer.trigger(`user-${pIdStr}-chats`, "conversation-update", {
                     conversationId,
                     lastMessage: populatedMessage,
+                    unreadCount: updatedConversation?.unreadCount?.get(pIdStr) || 0
                 });
             });
         }

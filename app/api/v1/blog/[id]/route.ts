@@ -8,7 +8,7 @@ import { apiResponse, verifyToken } from "@/lib/auth";
 // GET /api/v1/blog/[id] - Public blog detail
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         await connectDB();
@@ -84,7 +84,7 @@ export async function GET(
 // PUT /api/v1/blog/[id] - Update blog post (Author only)
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         await connectDB();
@@ -99,8 +99,7 @@ export async function PUT(
             return apiResponse.unauthorized("Invalid token");
         }
 
-        const resolvedParams = await params;
-        const blogId = resolvedParams.id;
+        const { id: blogId } = await params;
         console.log('PUT - Received blog ID:', blogId, 'Type:', typeof blogId);
 
         const post = await BlogPost.findById(blogId);
@@ -144,7 +143,7 @@ export async function PUT(
 // DELETE /api/v1/blog/[id] - Delete blog post (Author or Admin)
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         await connectDB();
@@ -159,8 +158,7 @@ export async function DELETE(
             return apiResponse.unauthorized("Invalid token");
         }
 
-        const resolvedParams = await params;
-        const blogId = resolvedParams.id;
+        const { id: blogId } = await params;
         console.log('DELETE - Received blog ID:', blogId, 'Type:', typeof blogId);
 
         const post = await BlogPost.findById(blogId);

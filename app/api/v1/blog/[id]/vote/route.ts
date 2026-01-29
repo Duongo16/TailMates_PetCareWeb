@@ -8,7 +8,7 @@ import { apiResponse, verifyToken } from "@/lib/auth";
 // POST /api/v1/blog/[id]/vote - Vote on a blog post
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         await connectDB();
@@ -36,8 +36,7 @@ export async function POST(
         }
 
         // Get blog ID from params
-        const resolvedParams = await params;
-        const blogId = resolvedParams.id;
+        const { id: blogId } = await params;
         const post = await BlogPost.findById(blogId);
         if (!post) {
             return apiResponse.notFound("Blog post not found");

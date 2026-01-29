@@ -582,6 +582,44 @@ export const blogAPI = {
   },
 };
 
+// ==================== Conversations API ====================
+export const conversationsAPI = {
+  list: (type?: string) => {
+    const params = type ? `?type=${type}` : "";
+    return fetchWithAuth<any[]>(`/conversations${params}`);
+  },
+
+  create: (data: {
+    type: string;
+    participantIds: string[];
+    contextId?: string;
+    metadata?: any;
+  }) =>
+    fetchWithAuth<any>("/conversations", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  markAsRead: (id: string) =>
+    fetchWithAuth<any>(`/conversations/${id}/read`, {
+      method: "POST",
+    }),
+};
+
+// ==================== Messages API ====================
+export const messagesAPI = {
+  list: (conversationId: string) =>
+    fetchWithAuth<any[]>(`/messages?conversationId=${conversationId}`),
+
+  send: (data: { conversationId: string; content: string; media?: any[] }) =>
+    fetchWithAuth<any>("/messages", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+};
+
+// ==================== Manager Blog API ====================
+
 // ==================== Manager Blog API ====================
 export const managerBlogAPI = {
   list: (params?: { status?: string; page?: number }) => {

@@ -22,6 +22,7 @@ import { useState } from "react"
 import { useCart } from "@/lib/cart-context"
 import { CartModal } from "@/components/ui/cart-modal"
 import { useNotifications, type Notification } from "@/lib/hooks"
+import { GlobalChatOverlay } from "@/components/chat/global-chat-overlay"
 
 interface Tab {
   id: string
@@ -367,6 +368,9 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
           })}
         </div>
       </nav>
+
+      {/* Global Chat Overlay - accessible to all logged-in users */}
+      <GlobalChatOverlay />
 
       {/* Cart Modal */}
       <CartModal
