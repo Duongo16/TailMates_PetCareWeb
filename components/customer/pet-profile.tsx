@@ -41,6 +41,8 @@ interface PetProfileProps {
   onViewMedical?: () => void
   shouldOpenAddDialog?: boolean
   onAddDialogClose?: () => void
+  shouldOpenEditDialog?: boolean
+  onEditDialogClose?: () => void
 }
 
 const SPECIES_OPTIONS = [
@@ -129,7 +131,15 @@ const FUR_TYPE_OPTIONS = [
   { id: "curly", label: "Lông xoăn", emoji: "🌀" },
 ]
 
-export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOpenAddDialog, onAddDialogClose }: PetProfileProps) {
+export function PetProfile({ 
+  selectedPetId, 
+  onSelectPet, 
+  onViewMedical, 
+  shouldOpenAddDialog, 
+  onAddDialogClose,
+  shouldOpenEditDialog,
+  onEditDialogClose
+}: PetProfileProps) {
   const { data: pets, isLoading, refetch } = usePets()
   const [showQR, setShowQR] = useState(false)
   const [qrCodeData, setQrCodeData] = useState<any>(null)
@@ -181,6 +191,14 @@ export function PetProfile({ selectedPetId, onSelectPet, onViewMedical, shouldOp
       onAddDialogClose?.()
     }
   }, [shouldOpenAddDialog, onAddDialogClose])
+
+  // Auto-open edit dialog when triggered from PawMatch or elsewhere
+  useEffect(() => {
+    if (shouldOpenEditDialog && selectedPet) {
+      openEditDialog()
+      onEditDialogClose?.()
+    }
+  }, [shouldOpenEditDialog, selectedPet, onEditDialogClose])
 
   const resetForm = () => {
     setFormData({

@@ -34,6 +34,7 @@ export default function CustomerDashboardPage() {
   const [activeTab, setActiveTab] = useState<CustomerTab>("dashboard")
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null)
   const [shouldOpenAddPet, setShouldOpenAddPet] = useState(false)
+  const [shouldOpenEditPet, setShouldOpenEditPet] = useState(false)
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -58,6 +59,12 @@ export default function CustomerDashboardPage() {
 
   const handlePetSelect = (petId: string) => {
     setSelectedPetId(petId)
+    setActiveTab("pets")
+  }
+
+  const handlePetEdit = (petId: string) => {
+    setSelectedPetId(petId)
+    setShouldOpenEditPet(true)
     setActiveTab("pets")
   }
 
@@ -90,10 +97,18 @@ export default function CustomerDashboardPage() {
             onViewMedical={handleViewMedical}
             shouldOpenAddDialog={shouldOpenAddPet}
             onAddDialogClose={() => setShouldOpenAddPet(false)}
+            shouldOpenEditDialog={shouldOpenEditPet}
+            onEditDialogClose={() => setShouldOpenEditPet(false)}
           />
         )
       case "pawmatch":
-        return <PawMatchUI />
+        return <PawMatchUI 
+          onEditPet={handlePetEdit} 
+          onAddPet={() => {
+            setShouldOpenAddPet(true)
+            setActiveTab("pets")
+          }}
+        />
       case "medical":
         return (
           <MedicalRecords selectedPetId={selectedPetId} onSelectPet={setSelectedPetId} onBack={handleBackFromMedical} />

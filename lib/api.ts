@@ -654,7 +654,11 @@ export const pawmatchAPI = {
   }) =>
     fetchWithAuth("/pawmatch/swipe", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        actorPetId: data.swiperPetId,
+        targetPetId: data.targetPetId,
+        action: data.direction.toUpperCase()
+      }),
     }),
 
   getMatches: (petId: string) =>
