@@ -158,19 +158,21 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
           {/* User Menu */}
           <div className="flex items-center gap-3">
             {/* Shopping Cart */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative"
-              onClick={() => setCartOpen(true)}
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {totalItems > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                  {totalItems}
-                </span>
-              )}
-            </Button>
+            {user?.role === "customer" && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={() => setCartOpen(true)}
+              >
+                <ShoppingCart className="w-5 h-5" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                    {totalItems}
+                  </span>
+                )}
+              </Button>
+            )}
 
             {/* Notifications */}
             <DropdownMenu>
@@ -259,14 +261,18 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
                   <p className="text-sm text-foreground/60">{user?.email}</p>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onTabChange("orders")}>
-                  <Package className="w-4 h-4 mr-2" />
-                  Đơn hàng
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onTabChange("subscription")}>
-                  <Crown className="w-4 h-4 mr-2" />
-                  Nâng cấp
-                </DropdownMenuItem>
+                {user?.role === "customer" && (
+                  <>
+                    <DropdownMenuItem onClick={() => onTabChange("orders")}>
+                      <Package className="w-4 h-4 mr-2" />
+                      Đơn hàng
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onTabChange("subscription")}>
+                      <Crown className="w-4 h-4 mr-2" />
+                      Nâng cấp
+                    </DropdownMenuItem>
+                  </>
+                )}
                 {user?.role === "manager" && (
                   <DropdownMenuItem onClick={() => router.push("/dashboard/manager/terms-policies")}>
                     <FileText className="w-4 h-4 mr-2" />

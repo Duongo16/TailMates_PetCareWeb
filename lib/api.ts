@@ -60,6 +60,7 @@ async function fetchWithAuth<T>(
 
 // ==================== Auth API ====================
 export const authAPI = {
+  // Login with email/password
   login: async (email: string, password: string) => {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
@@ -69,6 +70,7 @@ export const authAPI = {
     return response.json();
   },
 
+  // Legacy register (kept for backward compatibility)
   register: async (data: {
     email: string;
     password: string;
@@ -83,6 +85,78 @@ export const authAPI = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+
+  // Send OTP for registration
+  sendOtp: async (data: {
+    email: string;
+    password: string;
+    full_name: string;
+    phone_number?: string;
+    role?: string;
+    shop_name?: string;
+    address?: string;
+    terms_accepted: boolean;
+  }) => {
+    const response = await fetch(`${API_BASE_URL}/auth/register/send-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+
+  // Verify OTP and complete registration
+  verifyOtp: async (email: string, otp: string) => {
+    const response = await fetch(`${API_BASE_URL}/auth/register/verify-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp }),
+    });
+    return response.json();
+  },
+
+  // Resend OTP
+  resendOtp: async (email: string) => {
+    const response = await fetch(`${API_BASE_URL}/auth/resend-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    return response.json();
+  },
+
+  // Login with Google OAuth
+  loginWithGoogle: async (idToken: string) => {
+    const response = await fetch(`${API_BASE_URL}/auth/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id_token: idToken }),
+    });
+    return response.json();
+  },
+
+  // Refresh access token
+  refreshToken: async (refreshToken: string) => {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+    return response.json();
+  },
+
+  // Logout (invalidate refresh tokens)
+  logout: async () => {
+    const token = getToken();
+    const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
     });
     return response.json();
   },
