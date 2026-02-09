@@ -53,3 +53,10 @@ export type { IMessage } from "./Message";
 export { default as TermsAndPolicies, TermsType } from "./TermsAndPolicies";
 export type { ITermsAndPolicies } from "./TermsAndPolicies";
 
+export {
+  default as Transaction,
+  TransactionStatus,
+  TransactionType,
+  PaymentMethodType,
+} from "./Transaction";
+export type { ITransaction } from "./Transaction";

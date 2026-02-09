@@ -34,13 +34,13 @@ function generateOTPEmailHTML(otp: string, fullName?: string): string {
     <tr>
       <td align="center" style="padding: 40px 0;">
         <table role="presentation" style="width: 600px; max-width: 100%; border-collapse: collapse; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-          <!-- Header -->
+          <!-- Header Content -->
           <tr>
-            <td style="padding: 40px 40px 20px; text-align: center; background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%); border-radius: 16px 16px 0 0;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
+            <td style="padding: 30px 40px 20px; text-align: center; border-bottom: 2px solid #f0f0f0;">
+              <h1 style="margin: 0; color: #004aad; font-size: 28px; font-weight: bold;">
                 🐾 TailMates
               </h1>
-              <p style="margin: 10px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 14px;">
+              <p style="margin: 10px 0 0; color: #666666; font-size: 14px;">
                 Nền tảng chăm sóc thú cưng toàn diện
               </p>
             </td>
@@ -58,7 +58,7 @@ function generateOTPEmailHTML(otp: string, fullName?: string): string {
               </p>
               
               <!-- OTP Box -->
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 30px; text-align: center; margin: 0 0 30px;">
+              <div style="background: linear-gradient(135deg, #004aad 0%, #002d6a 100%); border-radius: 12px; padding: 30px; text-align: center; margin: 0 0 30px; box-shadow: 0 4px 12px rgba(0, 74, 173, 0.2);">
                 <p style="margin: 0 0 10px; color: rgba(255, 255, 255, 0.8); font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">
                   Mã xác thực của bạn
                 </p>
@@ -67,8 +67,8 @@ function generateOTPEmailHTML(otp: string, fullName?: string): string {
                 </div>
               </div>
               
-              <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px 20px; border-radius: 0 8px 8px 0; margin: 0 0 30px;">
-                <p style="margin: 0; color: #856404; font-size: 14px;">
+              <div style="background-color: #fff7ed; border-left: 4px solid #f97316; padding: 15px 20px; border-radius: 0 8px 8px 0; margin: 0 0 30px;">
+                <p style="margin: 0; color: #9a3412; font-size: 14px;">
                   ⚠️ <strong>Lưu ý:</strong> Mã này sẽ hết hạn sau <strong>5 phút</strong>. Không chia sẻ mã này với bất kỳ ai.
                 </p>
               </div>

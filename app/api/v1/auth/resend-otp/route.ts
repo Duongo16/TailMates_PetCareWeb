@@ -7,6 +7,7 @@ import {
   getPendingRegistration 
 } from "@/lib/otp-service";
 import { sendOTPEmail } from "@/lib/email-service";
+import { getRedisClient, REDIS_KEYS } from "@/lib/redis";
 
 /**
  * POST /api/v1/auth/resend-otp
@@ -45,6 +46,10 @@ export async function POST(request: NextRequest) {
     // Generate and store new OTP
     const otp = generateOTP();
     await storeOTP(emailLower, otp);
+    
+    // Clear failed attempts when resending
+    const redis = getRedisClient();
+    await redis.del(REDIS_KEYS.OTP_ATTEMPTS(emailLower));
 
     // Send OTP email
     const emailResult = await sendOTPEmail(emailLower, otp, pendingData.full_name);

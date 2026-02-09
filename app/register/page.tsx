@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useAuth, type UserRole } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -13,13 +13,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Eye, EyeOff, ArrowLeft, PawPrint, User, Store, CheckCircle2, Sparkles, Shield, Gift } from "lucide-react"
+import { Eye, EyeOff, ArrowLeft, PawPrint, User, Store, CheckCircle2, Sparkles, Shield, Gift, MailOpen, Smartphone, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion-wrappers"
 import { TermsViewerModal } from "@/components/ui/terms-viewer-modal"
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
 
 export default function RegisterPage() {
-  const { register } = useAuth()
+  const { register, sendOtp, verifyOtp, resendOtp } = useAuth()
   const router = useRouter()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -37,6 +38,14 @@ export default function RegisterPage() {
   const [termsData, setTermsData] = useState<any>(null)
   const [privacyData, setPrivacyData] = useState<any>(null)
 
+  // Registration Flow State
+  const [step, setStep] = useState<"form" | "otp">("form")
+  const [otp, setOtp] = useState("")
+  const [waitSeconds, setWaitSeconds] = useState(0)
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const otpRef = useRef<HTMLInputElement>(null)
+
   // Fetch active terms and privacy policy on mount
   useEffect(() => {
     const fetchTerms = async () => {
@@ -53,6 +62,15 @@ export default function RegisterPage() {
     }
     fetchTerms()
   }, [])
+
+  // Handle Resend Cooldown Timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -80,21 +98,74 @@ export default function RegisterPage() {
 
     setIsLoading(true)
 
-    const result = await register(
-      name,
-      email,
-      password,
-      role,
-      role === "merchant" ? { shop_name: shopName.trim(), address: address.trim() } : undefined,
-      termsAccepted
-    )
+    const result = await sendOtp({
+      full_name: name,
+      email: email,
+      password: password,
+      role: role,
+      shop_name: role === "merchant" ? shopName.trim() : undefined,
+      address: role === "merchant" ? address.trim() : undefined,
+      terms_accepted: termsAccepted,
+    })
 
     if (result.success) {
-      router.push(`/dashboard/${role}`)
+      setStep("otp")
+      setResendCooldown(result.waitSeconds || 60)
     } else {
-      setError(result.error || "Đã có lỗi xảy ra")
+      setError(result.error || "Không thể gửi mã xác thực")
     }
 
+    setIsLoading(false)
+  }
+
+  const handleVerifyOtp = useCallback(async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (otp.length !== 6) return
+
+    setIsVerifying(true)
+    setError("")
+
+    const result = await verifyOtp(email, otp)
+    if (result.success) {
+      setError("") // Explicitly clear any errors on success
+      router.push(`/dashboard/${role}`)
+      return // Stop further execution to prevent setIsVerifying(false) triggering UI changes during redirect
+    } else {
+      setIsVerifying(false) // Set to false before clearing and focusing
+      setError(result.error || "Mã xác thực không đúng hoặc đã hết hạn")
+      setOtp("") // Clear OTP on error
+      
+      // Use a slightly longer timeout to ensure React has re-rendered and enabled the input
+      setTimeout(() => {
+        if (otpRef.current) {
+          otpRef.current.focus()
+          // Some OTP libraries need the cursor to be at the start after clearing
+          otpRef.current.setSelectionRange(0, 0)
+        }
+      }, 50)
+    }
+  }, [otp, email, verifyOtp, router, role])
+
+  // Auto-verify when OTP is full
+  useEffect(() => {
+    if (otp.length === 6 && step === "otp" && !isVerifying) {
+      handleVerifyOtp()
+    }
+  }, [otp, step, isVerifying, handleVerifyOtp])
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return
+
+    setIsLoading(true)
+    setError("")
+
+    const result = await resendOtp(email)
+    if (result.success) {
+      setResendCooldown(result.waitSeconds || 60)
+      setOtp("")
+    } else {
+      setError(result.error || "Không thể gửi lại mã xác thực")
+    }
     setIsLoading(false)
   }
 
@@ -192,227 +263,319 @@ export default function RegisterPage() {
               </FadeIn>
             </CardHeader>
             <CardContent className="px-0">
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Role Selection - Enhanced */}
-                <div className="space-y-3">
-                  <Label className="text-foreground font-medium">Bạn là</Label>
-                  <div className="grid grid-cols-1 gap-3">
-                    {roleOptions.map((option, index) => {
-                      const Icon = option.icon
-                      return (
-                        <motion.button
-                          key={option.id}
-                          type="button"
-                          onClick={() => setRole(option.id)}
-                          className={cn(
-                            "p-4 rounded-xl border-2 text-left transition-all",
-                            role === option.id
-                              ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
-                              : "border-border hover:border-primary/50 hover:bg-secondary/50",
-                          )}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.4 + index * 0.1 }}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <div className="flex items-start gap-4">
-                            <motion.div
+              <AnimatePresence mode="wait">
+                {step === "form" ? (
+                  <motion.form
+                    key="registration-form"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    onSubmit={handleSubmit}
+                    className="space-y-5"
+                  >
+                    {/* Role Selection - Enhanced */}
+                    <div className="space-y-3">
+                      <Label className="text-foreground font-medium">Bạn là</Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {roleOptions.map((option, index) => {
+                          const Icon = option.icon
+                          return (
+                            <motion.button
+                              key={option.id}
+                              type="button"
+                              onClick={() => setRole(option.id)}
                               className={cn(
-                                "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors",
+                                "p-3 rounded-xl border-2 text-left transition-all",
                                 role === option.id
-                                  ? "bg-gradient-to-br from-primary to-primary/70 text-white shadow-lg shadow-primary/25"
-                                  : "bg-secondary text-foreground",
+                                  ? "border-primary bg-primary/5 shadow-lg shadow-primary/10"
+                                  : "border-border hover:border-primary/50 hover:bg-secondary/50",
                               )}
-                              animate={role === option.id ? { scale: [1, 1.1, 1] } : {}}
-                              transition={{ duration: 0.3 }}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.4 + index * 0.1 }}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
                             >
-                              <Icon className="w-6 h-6" />
-                            </motion.div>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <p className="font-bold text-foreground">{option.label}</p>
-                                <AnimatePresence>
-                                  {role === option.id && (
-                                    <motion.div
-                                      initial={{ scale: 0 }}
-                                      animate={{ scale: 1 }}
-                                      exit={{ scale: 0 }}
-                                    >
-                                      <CheckCircle2 className="w-5 h-5 text-primary" />
-                                    </motion.div>
+                              <div className="flex items-center gap-3">
+                                <motion.div
+                                  className={cn(
+                                    "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors",
+                                    role === option.id
+                                      ? "bg-gradient-to-br from-primary to-primary/70 text-white shadow-lg shadow-primary/25"
+                                      : "bg-secondary text-foreground",
                                   )}
-                                </AnimatePresence>
+                                  animate={role === option.id ? { scale: [1, 1.1, 1] } : {}}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <Icon className="w-5 h-5" />
+                                </motion.div>
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <p className="font-bold text-foreground text-sm">{option.label}</p>
+                                    <AnimatePresence>
+                                      {role === option.id && (
+                                        <motion.div
+                                          initial={{ scale: 0 }}
+                                          animate={{ scale: 1 }}
+                                          exit={{ scale: 0 }}
+                                        >
+                                          <CheckCircle2 className="w-5 h-5 text-primary" />
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+                                  </div>
+                                  <p className="text-[11px] text-foreground/60 mt-0.5 leading-tight">{option.description}</p>
+                                </div>
                               </div>
-                              <p className="text-sm text-foreground/60 mt-1">{option.description}</p>
-                            </div>
-                          </div>
-                        </motion.button>
-                      )
-                    })}
-                  </div>
-                </div>
+                            </motion.button>
+                          )
+                        })}
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-foreground font-medium">
-                    Họ và tên
-                  </Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Nguyễn Văn A"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="rounded-xl h-12 bg-background border-border focus:border-primary"
-                    required
-                  />
-                </div>
-
-                {/* Merchant-specific fields */}
-                {role === "merchant" && (
-                  <>
                     <div className="space-y-2">
-                      <Label htmlFor="shopName" className="text-foreground font-medium">
-                        Tên cửa hàng <span className="text-destructive">*</span>
+                      <Label htmlFor="name" className="text-foreground font-medium">
+                        Họ và tên
                       </Label>
                       <Input
-                        id="shopName"
+                        id="name"
                         type="text"
-                        placeholder="VD: PetCare Shop"
-                        value={shopName}
-                        onChange={(e) => setShopName(e.target.value)}
+                        placeholder="Nguyễn Văn A"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="rounded-xl h-12 bg-background border-border focus:border-primary"
+                        required
+                      />
+                    </div>
+
+                    {/* Merchant-specific fields */}
+                    {role === "merchant" && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="shopName" className="text-foreground font-medium">
+                            Tên cửa hàng <span className="text-destructive">*</span>
+                          </Label>
+                          <Input
+                            id="shopName"
+                            type="text"
+                            placeholder="VD: PetCare Shop"
+                            value={shopName}
+                            onChange={(e) => setShopName(e.target.value)}
+                            className="rounded-xl h-12 bg-background border-border focus:border-primary"
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="address" className="text-foreground font-medium">
+                            Địa chỉ cửa hàng <span className="text-destructive">*</span>
+                          </Label>
+                          <Input
+                            id="address"
+                            type="text"
+                            placeholder="VD: 123 Đường ABC, Quận 1, TP.HCM"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            className="rounded-xl h-12 bg-background border-border focus:border-primary"
+                            required
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-foreground font-medium">
+                        Email
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="email@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         className="rounded-xl h-12 bg-background border-border focus:border-primary"
                         required
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="address" className="text-foreground font-medium">
-                        Địa chỉ cửa hàng <span className="text-destructive">*</span>
+                      <Label htmlFor="password" className="text-foreground font-medium">
+                        Mật khẩu
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Ít nhất 6 ký tự"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="rounded-xl h-12 pr-12 bg-background border-border focus:border-primary"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword" className="text-foreground font-medium">
+                        Xác nhận mật khẩu
                       </Label>
                       <Input
-                        id="address"
-                        type="text"
-                        placeholder="VD: 123 Đường ABC, Quận 1, TP.HCM"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
+                        id="confirmPassword"
+                        type="password"
+                        placeholder="Nhập lại mật khẩu"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
                         className="rounded-xl h-12 bg-background border-border focus:border-primary"
                         required
                       />
                     </div>
-                  </>
-                )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-foreground font-medium">
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="email@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="rounded-xl h-12 bg-background border-border focus:border-primary"
-                    required
-                  />
-                </div>
+                    {/* Terms and Privacy Policy Acceptance */}
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          id="terms"
+                          checked={termsAccepted}
+                          onCheckedChange={(checked) => setTermsAccepted(checked as boolean)}
+                          className="mt-1"
+                        />
+                        <label
+                          htmlFor="terms"
+                          className="text-sm text-foreground/80 leading-relaxed cursor-pointer select-none"
+                        >
+                          Tôi đồng ý với{" "}
+                          <button
+                            type="button"
+                            onClick={() => termsData && setShowTermsModal(true)}
+                            className="text-primary hover:underline font-medium"
+                            disabled={!termsData}
+                          >
+                            Điều khoản sử dụng
+                          </button>{" "}
+                          và{" "}
+                          <button
+                            type="button"
+                            onClick={() => privacyData && setShowPrivacyModal(true)}
+                            className="text-primary hover:underline font-medium"
+                            disabled={!privacyData}
+                          >
+                            Chính sách bảo mật
+                          </button>
+                        </label>
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-foreground font-medium">
-                    Mật khẩu
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Ít nhất 6 ký tự"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="rounded-xl h-12 pr-12 bg-background border-border focus:border-primary"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground transition-colors"
+                    {error && (
+                      <div className="p-3 rounded-xl bg-destructive/10 text-destructive text-sm border border-destructive/20">
+                        {error}
+                      </div>
+                    )}
+
+                    <Button
+                      type="submit"
+                      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 font-bold text-base shadow-lg shadow-primary/25 hover:shadow-xl transition-all"
+                      disabled={isLoading}
                     >
-                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                </div>
+                      {isLoading ? (
+                        <span className="flex items-center gap-2">
+                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Đang gửi mã...
+                        </span>
+                      ) : (
+                        "Đăng ký miễn phí"
+                      )}
+                    </Button>
+                  </motion.form>
+                ) : (
+                  <motion.div
+                    key="otp-form"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-6"
+                  >
+                    <div className="text-center space-y-2">
+                      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <MailOpen className="w-8 h-8 text-primary" />
+                      </div>
+                      <h3 className="text-xl font-bold">Xác thực Email</h3>
+                      <p className="text-foreground/60 text-sm">
+                        Mã xác thực đã được gửi đến <span className="font-semibold text-foreground">{email}</span>. Vui lòng kiểm tra hộp thư của bạn.
+                      </p>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-foreground font-medium">
-                    Xác nhận mật khẩu
-                  </Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Nhập lại mật khẩu"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="rounded-xl h-12 bg-background border-border focus:border-primary"
-                    required
-                  />
-                </div>
+                    <form onSubmit={handleVerifyOtp} className="space-y-6">
+                      <div className="flex justify-center">
+                        <InputOTP
+                          ref={otpRef}
+                          maxLength={6}
+                          value={otp}
+                          onChange={(value) => setOtp(value)}
+                          disabled={isVerifying}
+                          autoFocus
+                        >
+                          <InputOTPGroup className="gap-2">
+                            <InputOTPSlot index={0} className="w-12 h-14 text-xl rounded-xl border-2" />
+                            <InputOTPSlot index={1} className="w-12 h-14 text-xl rounded-xl border-2" />
+                            <InputOTPSlot index={2} className="w-12 h-14 text-xl rounded-xl border-2" />
+                            <InputOTPSlot index={3} className="w-12 h-14 text-xl rounded-xl border-2" />
+                            <InputOTPSlot index={4} className="w-12 h-14 text-xl rounded-xl border-2" />
+                            <InputOTPSlot index={5} className="w-12 h-14 text-xl rounded-xl border-2" />
+                          </InputOTPGroup>
+                        </InputOTP>
+                      </div>
 
-                {/* Terms and Privacy Policy Acceptance */}
-                <div className="space-y-3">
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      id="terms"
-                      checked={termsAccepted}
-                      onCheckedChange={(checked) => setTermsAccepted(checked as boolean)}
-                      className="mt-1"
-                    />
-                    <label
-                      htmlFor="terms"
-                      className="text-sm text-foreground/80 leading-relaxed cursor-pointer select-none"
-                    >
-                      Tôi đồng ý với{" "}
+                      {isVerifying && (
+                        <div className="flex flex-col items-center justify-center gap-2 py-2">
+                          <span className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                          <span className="text-sm text-primary font-medium">Đang xác thực...</span>
+                        </div>
+                      )}
+
+                      {error && (
+                        <div className="p-3 rounded-xl bg-destructive/10 text-destructive text-sm border border-destructive/20 text-center">
+                          {error}
+                        </div>
+                      )}
+                    </form>
+
+                    <div className="text-center space-y-4">
+                      <p className="text-sm text-foreground/60">
+                        Không nhận được mã?{" "}
+                        <button
+                          type="button"
+                          onClick={handleResendOtp}
+                          disabled={isLoading || resendCooldown > 0}
+                          className={cn(
+                            "font-semibold transition-colors",
+                            resendCooldown > 0 
+                              ? "text-foreground/40 cursor-not-allowed" 
+                              : "text-primary hover:underline"
+                          )}
+                        >
+                          {resendCooldown > 0 ? `Gửi lại sau (${resendCooldown}s)` : "Gửi lại mã"}
+                        </button>
+                      </p>
+
                       <button
                         type="button"
-                        onClick={() => termsData && setShowTermsModal(true)}
-                        className="text-primary hover:underline font-medium"
-                        disabled={!termsData}
+                        onClick={() => setStep("form")}
+                        className="text-sm text-foreground/60 flex items-center justify-center gap-2 mx-auto hover:text-primary transition-colors"
                       >
-                        Điều khoản sử dụng
-                      </button>{" "}
-                      và{" "}
-                      <button
-                        type="button"
-                        onClick={() => privacyData && setShowPrivacyModal(true)}
-                        className="text-primary hover:underline font-medium"
-                        disabled={!privacyData}
-                      >
-                        Chính sách bảo mật
+                        <ArrowLeft className="w-4 h-4" />
+                        Quay lại chỉnh sửa thông tin
                       </button>
-                    </label>
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="p-3 rounded-xl bg-destructive/10 text-destructive text-sm border border-destructive/20">
-                    {error}
-                  </div>
+                    </div>
+                  </motion.div>
                 )}
-
-                <Button
-                  type="submit"
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12 font-bold text-base shadow-lg shadow-primary/25 hover:shadow-xl transition-all"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Đang tạo tài khoản...
-                    </span>
-                  ) : (
-                    "Đăng ký miễn phí"
-                  )}
-                </Button>
-              </form>
+              </AnimatePresence>
 
               <p className="mt-6 text-center text-foreground/60">
                 Đã có tài khoản?{" "}

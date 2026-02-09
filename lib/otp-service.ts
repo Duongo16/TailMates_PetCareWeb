@@ -60,7 +60,7 @@ export async function verifyOTP(
   const attempts = parseInt((await redis.get(attemptsKey)) || "0", 10);
   
   if (attempts >= MAX_OTP_ATTEMPTS) {
-    return { valid: false, error: "Too many failed attempts. Please request a new OTP." };
+    return { valid: false, error: "Quá nhiều lần thử thất bại. Vui lòng yêu cầu mã OTP mới." };
   }
 
   // Get stored OTP
@@ -68,7 +68,7 @@ export async function verifyOTP(
   const storedOtp = await redis.get(otpKey);
 
   if (!storedOtp) {
-    return { valid: false, error: "OTP expired or not found. Please request a new one." };
+    return { valid: false, error: "Mã OTP đã hết hạn hoặc không tìm thấy. Vui lòng yêu cầu mã mới." };
   }
 
   if (storedOtp !== inputOtp) {
@@ -79,7 +79,7 @@ export async function verifyOTP(
     const remainingAttempts = MAX_OTP_ATTEMPTS - attempts - 1;
     return { 
       valid: false, 
-      error: `Invalid OTP. ${remainingAttempts} attempts remaining.` 
+      error: `Mã OTP không hợp lệ. Bạn còn ${remainingAttempts} lần thử.` 
     };
   }
 

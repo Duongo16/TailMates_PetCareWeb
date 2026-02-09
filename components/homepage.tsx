@@ -224,7 +224,7 @@ export function Homepage() {
                 </h1>
 
                 <p className="text-lg text-foreground/70 max-w-lg leading-relaxed">
-                  AI kiểm tra sức khỏe, quản lý hồ sơ y tế, mua sắm thông minh và đặt dịch vụ - tất cả trong một ứng dụng
+                  Nền tảng chăm sóc thú cưng thông minh All IN ONE - AI kiểm tra sức khỏe, quản lý hồ sơ y tế, mua sắm thông minh và đặt dịch vụ - tất cả trong một ứng dụng
                   duy nhất.
                 </p>
 
