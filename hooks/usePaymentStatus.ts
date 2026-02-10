@@ -1,6 +1,5 @@
-"use client";
-
 import { useState, useEffect, useCallback, useRef } from "react";
+import { pusherClient } from "@/lib/pusher";
 
 interface PaymentStatusData {
   transaction_id: string;
@@ -61,6 +60,21 @@ export function usePaymentStatus(
     onErrorRef.current = onError;
   }, [onSuccess, onExpired, onError]);
 
+  const handleStatusUpdate = useCallback((statusData: PaymentStatusData) => {
+    setData(statusData);
+
+    // Handle status changes
+    if (statusData.status === "SUCCESS") {
+      setIsPolling(false);
+      onSuccessRef.current?.(statusData);
+    } else if (statusData.status === "EXPIRED") {
+      setIsPolling(false);
+      onExpiredRef.current?.();
+    } else if (statusData.status === "FAILED") {
+      setIsPolling(false);
+    }
+  }, []);
+
   const fetchStatus = useCallback(async () => {
     if (!transactionId) return;
 
@@ -76,18 +90,7 @@ export function usePaymentStatus(
       }
 
       const statusData = result.data as PaymentStatusData;
-      setData(statusData);
-
-      // Handle status changes
-      if (statusData.status === "SUCCESS") {
-        setIsPolling(false);
-        onSuccessRef.current?.(statusData);
-      } else if (statusData.status === "EXPIRED") {
-        setIsPolling(false);
-        onExpiredRef.current?.();
-      } else if (statusData.status === "FAILED") {
-        setIsPolling(false);
-      }
+      handleStatusUpdate(statusData);
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Unknown error");
       setError(error);
@@ -95,7 +98,33 @@ export function usePaymentStatus(
     } finally {
       setIsLoading(false);
     }
-  }, [transactionId]);
+  }, [transactionId, handleStatusUpdate]);
+
+  // Real-time updates via Pusher
+  useEffect(() => {
+    if (!transactionId || !pusherClient) return;
+
+    const channelName = `payment-${transactionId}`;
+    console.log(`Subscribing to Pusher channel: ${channelName}`);
+    
+    const channel = pusherClient.subscribe(channelName);
+    
+    // Listen for payment_completed event
+    channel.bind("payment_completed", async (payload: any) => {
+      console.log("Payment status update received via Pusher:", payload);
+      
+      // If we got success payload, we might still want to fetch the full data 
+      // from server to ensure local state is 100% correct with all fields
+      if (payload.status === "SUCCESS") {
+        await fetchStatus();
+      }
+    });
+
+    return () => {
+      console.log(`Unsubscribing from Pusher channel: ${channelName}`);
+      pusherClient.unsubscribe(channelName);
+    };
+  }, [transactionId, fetchStatus]);
 
   const stopPolling = useCallback(() => {
     setIsPolling(false);
@@ -109,7 +138,7 @@ export function usePaymentStatus(
     setIsPolling(true);
   }, []);
 
-  // Setup polling
+  // Setup polling (fallback)
   useEffect(() => {
     if (!transactionId || !isPolling) {
       if (intervalRef.current) {
