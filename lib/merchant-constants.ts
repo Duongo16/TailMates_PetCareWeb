@@ -1,6 +1,6 @@
-import { Home, Package, Truck, Calendar, QrCode, Sparkles, Settings, FileText, Newspaper, BarChart3 } from "lucide-react"
+import { Home, Package, Truck, Calendar, QrCode, Sparkles, Settings, FileText, Newspaper, BarChart3, Coins } from "lucide-react"
 
-export type MerchantTab = "dashboard" | "products" | "services" | "orders" | "bookings" | "medical-records" | "blog" | "scanner" | "settings" | "analytics"
+export type MerchantTab = "dashboard" | "products" | "services" | "orders" | "bookings" | "medical-records" | "blog" | "scanner" | "settings" | "analytics" | "transactions"
 
 export const MERCHANT_TABS = [
     { id: "dashboard", label: "Tổng quan", icon: Home },

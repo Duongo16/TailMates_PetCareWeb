@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
       avatar: user!.avatar,
       subscription: user!.subscription,
       merchant_profile: user!.merchant_profile,
+      tm_balance: user!.tm_balance || 0,
       is_active: user!.is_active,
       created_at: user!.created_at,
     });
@@ -128,6 +129,7 @@ export async function PUT(request: NextRequest) {
         avatar: updatedUser!.avatar,
         subscription: updatedUser!.subscription,
         merchant_profile: updatedUser!.merchant_profile,
+        tm_balance: updatedUser!.tm_balance || 0,
       },
       "Profile updated successfully"
     );

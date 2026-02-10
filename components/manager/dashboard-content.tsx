@@ -779,7 +779,6 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
                   <TableHead className="w-[80px] font-bold">Thứ tự</TableHead>
                   <TableHead className="font-bold">Tên gói</TableHead>
                   <TableHead className="font-bold">Giá & Thời hạn</TableHead>
-                  <TableHead className="font-bold">Đặc quyền</TableHead>
                   <TableHead className="font-bold">Trạng thái</TableHead>
                   <TableHead className="text-right font-bold pr-6">Thao tác</TableHead>
                 </TableRow>
@@ -797,23 +796,6 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
                     <TableCell>
                       <p className="font-bold text-primary">{formatPrice(pkg.price)}</p>
                       <p className="text-xs text-foreground/50">{pkg.duration_months} tháng</p>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1 max-w-[300px]">
-                        {pkg.benefits?.slice(0, 3).map((b: any, i: number) => (
-                          <Badge 
-                            key={i} 
-                            variant="secondary" 
-                            className={`text-[10px] h-5 ${b.color === "orange" ? "bg-orange-100 text-orange-600" : ""} ${b.is_bold ? "font-black" : "font-normal"}`}
-                          >
-                            {b.text.slice(0, 20)}{b.text.length > 20 ? "..." : ""}
-                          </Badge>
-                        ))}
-                        {pkg.benefits?.length > 3 && (
-                          <span className="text-[10px] text-foreground/40">+{pkg.benefits.length - 3} nữa</span>
-                        )}
-                        {!pkg.benefits?.length && <span className="text-[10px] text-foreground/30 italic">Trống</span>}
-                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge className={`rounded-full px-3 ${pkg.is_active ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
@@ -852,7 +834,7 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
                 ))}
                 {!filteredPackages.length && (
                   <TableRow>
-                     <TableCell colSpan={6} className="h-40 text-center text-foreground/40 italic">
+                     <TableCell colSpan={5} className="h-40 text-center text-foreground/40 italic">
                        Chưa có gói nào cho {packageFilter === "CUSTOMER" ? "Khách hàng" : "Merchant"}
                      </TableCell>
                   </TableRow>

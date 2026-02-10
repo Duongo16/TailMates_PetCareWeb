@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Menu, X, LogOut, User, Bell, ShoppingCart, Package, Crown, Settings, Calendar, FileText, Info, CheckCheck, type LucideIcon, Coins } from "lucide-react"
+import { Menu, X, LogOut, User, Bell, ShoppingCart, Package, Crown, Settings, Calendar, FileText, Info, CheckCheck, type LucideIcon, Coins, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { useCart } from "@/lib/cart-context"
@@ -156,10 +156,7 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
             })}
           </nav>
 
-          {/* User Menu */}
           <div className="flex items-center gap-3">
-            <UserBalance className="hidden sm:flex" />
-
             {/* Shopping Cart */}
             {user?.role === "customer" && (
               <Button
@@ -272,6 +269,10 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
                     <DropdownMenuItem onClick={() => router.push("/top-up")}>
                       <Coins className="w-4 h-4 mr-2 text-yellow-500" />
                       Nạp tiền TM
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push("/dashboard/transactions")}>
+                      <Clock className="w-4 h-4 mr-2 text-blue-500" />
+                      Lịch sử giao dịch
                     </DropdownMenuItem>
                   </>
                 )}

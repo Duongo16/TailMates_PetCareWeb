@@ -14,7 +14,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { Menu, X, LogOut, Settings, LayoutDashboard, ShoppingCart, Bell, Coins } from "lucide-react"
+import { Menu, X, LogOut, Settings, LayoutDashboard, ShoppingCart, Bell, Coins, Clock } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useCart } from "@/lib/cart-context"
 import { UserBalance } from "@/components/user-balance"
@@ -113,9 +113,6 @@ export function SiteHeader({ showBlogLink = true }: SiteHeaderProps) {
                                     </Button>
                                 )}
 
-                                {/* TM Balance Badge */}
-                                <UserBalance className="hidden sm:flex" />
-
                                 {/* User Menu */}
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -152,10 +149,16 @@ export function SiteHeader({ showBlogLink = true }: SiteHeaderProps) {
                                             Cài đặt
                                         </DropdownMenuItem>
                                         {["customer", "merchant"].includes(user.role) && (
-                                            <DropdownMenuItem onClick={() => router.push("/top-up")}>
-                                                <Coins className="w-4 h-4 mr-2 text-yellow-500" />
-                                                Nạp tiền TM
-                                            </DropdownMenuItem>
+                                            <>
+                                                <DropdownMenuItem onClick={() => router.push("/top-up")}>
+                                                    <Coins className="w-4 h-4 mr-2 text-yellow-500" />
+                                                    Nạp tiền TM
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => router.push("/dashboard/transactions")}>
+                                                    <Clock className="w-4 h-4 mr-2 text-blue-500" />
+                                                    Lịch sử giao dịch
+                                                </DropdownMenuItem>
+                                            </>
                                         )}
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem onClick={handleLogout} className="text-destructive">

@@ -161,79 +161,82 @@ export function SwipeDeck({
     }
 
     const renderDiscovery = () => (
-        <div className="relative w-full max-w-[340px] xs:max-w-[380px] lg:max-w-[440px] h-[480px] sm:h-[600px] lg:h-[720px] perspective-1000 flex items-center justify-center">
-            {/* Mobile Mini Actions */}
+        <div className="flex flex-col items-center w-full h-full lg:justify-center">
+            {/* Card Deck Container */}
+            <div className="relative w-full max-w-[340px] xs:max-w-[380px] lg:max-w-[440px] h-[450px] sm:h-[580px] lg:h-[720px] perspective-1000 flex items-center justify-center mb-16 lg:mb-0">
+                {isLoading && queue.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center space-y-6">
+                        <div className="relative">
+                            <div className="w-16 h-16 border-4 border-orange-100 border-t-orange-500 rounded-full animate-spin" />
+                            <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-orange-500 animate-pulse" />
+                        </div>
+                        <p className="text-slate-400 font-black tracking-[0.3em] uppercase text-[10px] animate-pulse">Đang tìm cộng sự...</p>
+                    </div>
+                ) : queue.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center space-y-10 text-center px-8 animate-in fade-in zoom-in duration-700">
+                        <div className="relative group">
+                            <div className="absolute inset-0 bg-orange-500/10 rounded-[2.5rem] blur-3xl" />
+                            <div className="relative w-28 h-28 bg-white rounded-[2.5rem] shadow-2xl flex items-center justify-center rotate-6 group-hover:rotate-0 transition-transform duration-500">
+                                <Heart className="w-12 h-12 text-orange-200" />
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <h3 className="text-2xl font-black text-slate-800 tracking-tight">Hết gợi ý rồi!</h3>
+                            <p className="text-slate-400 font-medium max-w-[280px] leading-relaxed">
+                                Hãy thử làm mới hoặc chờ đợi thêm chút nhé.
+                            </p>
+                        </div>
+                        <button 
+                            onClick={fetchDiscovery}
+                            className="group relative bg-white text-slate-900 font-black py-4 px-10 rounded-2xl shadow-xl border-2 border-slate-100 hover:border-orange-500/20 transition-all active:scale-95 text-xs tracking-widest uppercase overflow-hidden"
+                        >
+                            <span className="relative z-10 flex items-center gap-3">
+                                <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                                Làm mới
+                            </span>
+                        </button>
+                    </div>
+                ) : (
+                    <AnimatePresence mode="popLayout">
+                        {queue.slice(0, 3).reverse().map((pet, index) => {
+                            const isTop = index === Math.min(queue.length, 3) - 1
+                            const visualIndex = Math.min(queue.length, 3) - 1 - index
+                            
+                            return (
+                                <motion.div
+                                    key={pet._id}
+                                    className="absolute inset-0"
+                                    style={{ zIndex: index }}
+                                    animate={{
+                                        scale: 1 - visualIndex * 0.05,
+                                        y: visualIndex * 15,
+                                        rotate: visualIndex * (visualIndex % 2 === 0 ? 1 : -1),
+                                        opacity: 1 - visualIndex * 0.25,
+                                    }}
+                                    transition={{ 
+                                        type: "spring", 
+                                        stiffness: 300, 
+                                        damping: 30,
+                                        mass: 1
+                                    }}
+                                >
+                                    <PetCard
+                                        pet={pet}
+                                        isTop={isTop}
+                                        onSwipe={isTop ? handleSwipe : () => { }}
+                                    />
+                                </motion.div>
+                            )
+                        })}
+                    </AnimatePresence>
+                )}
+            </div>
+
+            {/* Mobile Actions - Non-absolute to avoid covering info */}
             {activeTab === "discovery" && queue.length > 0 && (
-                <div className="lg:hidden absolute -top-2 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 bg-white/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/50 shadow-xl">
+                <div className="lg:hidden flex items-center gap-4 bg-white/90 backdrop-blur-md px-6 py-3 rounded-full border border-white shadow-2xl animate-in slide-in-from-bottom-5 duration-500 mt-auto mb-4">
                     {renderActions(true)}
                 </div>
-            )}
-
-            {isLoading && queue.length === 0 ? (
-                <div className="flex flex-col items-center justify-center space-y-6">
-                    <div className="relative">
-                        <div className="w-16 h-16 border-4 border-orange-100 border-t-orange-500 rounded-full animate-spin" />
-                        <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-orange-500 animate-pulse" />
-                    </div>
-                    <p className="text-slate-400 font-black tracking-[0.3em] uppercase text-[10px] animate-pulse">Đang tìm cộng sự...</p>
-                </div>
-            ) : queue.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center space-y-10 text-center px-8 animate-in fade-in zoom-in duration-700">
-                    <div className="relative group">
-                        <div className="absolute inset-0 bg-orange-500/10 rounded-[2.5rem] blur-3xl" />
-                        <div className="relative w-28 h-28 bg-white rounded-[2.5rem] shadow-2xl flex items-center justify-center rotate-6 group-hover:rotate-0 transition-transform duration-500">
-                            <Heart className="w-12 h-12 text-orange-200" />
-                        </div>
-                    </div>
-                    <div className="space-y-3">
-                        <h3 className="text-2xl font-black text-slate-800 tracking-tight">Hết lượt gợi ý!</h3>
-                        <p className="text-slate-400 font-medium max-w-[280px] leading-relaxed">
-                            Chưa tìm thấy bạn mới? Hãy làm mới hoặc chờ lượt quẹt tiếp theo nhé.
-                        </p>
-                    </div>
-                    <button 
-                        onClick={fetchDiscovery}
-                        className="group relative bg-white text-slate-900 font-black py-4 px-10 rounded-2xl shadow-xl border-2 border-slate-100 hover:border-orange-500/20 transition-all active:scale-95 text-xs tracking-widest uppercase overflow-hidden"
-                    >
-                        <span className="relative z-10 flex items-center gap-3">
-                            <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-                            Làm mới
-                        </span>
-                    </button>
-                </div>
-            ) : (
-                <AnimatePresence mode="popLayout">
-                    {queue.slice(0, 3).reverse().map((pet, index) => {
-                        const isTop = index === Math.min(queue.length, 3) - 1
-                        const visualIndex = Math.min(queue.length, 3) - 1 - index
-                        
-                        return (
-                            <motion.div
-                                key={pet._id}
-                                className="absolute inset-0"
-                                style={{ zIndex: index }}
-                                animate={{
-                                    scale: 1 - visualIndex * 0.05,
-                                    y: visualIndex * 15,
-                                    rotate: visualIndex * (visualIndex % 2 === 0 ? 1 : -1),
-                                    opacity: 1 - visualIndex * 0.25,
-                                }}
-                                transition={{ 
-                                    type: "spring", 
-                                    stiffness: 300, 
-                                    damping: 30,
-                                    mass: 1
-                                }}
-                            >
-                                <PetCard
-                                    pet={pet}
-                                    isTop={isTop}
-                                    onSwipe={isTop ? handleSwipe : () => { }}
-                                />
-                            </motion.div>
-                        )
-                    })}
-                </AnimatePresence>
             )}
         </div>
     )

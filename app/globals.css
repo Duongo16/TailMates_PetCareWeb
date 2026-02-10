@@ -48,6 +48,13 @@
   --color-peach: #fef3ef;
   --color-blue: #3b6db3;
   --color-sky: #e8f4fd;
+  
+  /* Pastel Palette for Kawaii UI */
+  --color-pastel-peach: #fff5f0;
+  --color-pastel-orange: #ffdab9;
+  --color-pastel-blue: #e0f2fe;
+  --color-pastel-green: #f0fdf4;
+  --color-soft-bg: #fffbf8;
 }
 
 :root {
@@ -235,6 +242,16 @@ html {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
+}
+
+/* Hidden scrollbar but still scrollable */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 /* Radix ScrollArea prominence */

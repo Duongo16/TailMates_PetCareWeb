@@ -3,7 +3,20 @@
  * Centralized API service with authentication handling
  */
 
-const API_BASE_URL = "/api/v1";
+// Helper to determine the base URL
+const getBaseUrl = () => {
+  if (typeof window !== "undefined") return ""; // Browser uses relative URL
+  
+  // Server environment needs absolute URL
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    const url = process.env.NEXT_PUBLIC_APP_URL;
+    return url.startsWith("http") ? url : `https://${url}`;
+  }
+  
+  return "http://localhost:3000"; // Fallback for local development
+};
+
+const API_BASE_URL = `${getBaseUrl()}/api/v1`;
 
 // Get token from localStorage
 function getToken(): string | null {
@@ -17,6 +30,7 @@ async function fetchWithAuth<T>(
   options: RequestInit = {}
 ): Promise<{ success: boolean; data?: T; message?: string; error?: string }> {
   const token = getToken();
+  const url = `${API_BASE_URL}${endpoint}`;
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -28,7 +42,7 @@ async function fetchWithAuth<T>(
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(url, {
       ...options,
       headers,
     });
@@ -101,7 +115,13 @@ async function fetchWithAuth<T>(
       message: data.message,
     };
   } catch (error) {
-    console.error("API Error:", error);
+    const isServer = typeof window === "undefined";
+    console.error(`API Error [${isServer ? "SERVER" : "CLIENT"}]:`, {
+      url,
+      method: options.method || "GET",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+
     return {
       success: false,
       message: "Network error",
@@ -342,6 +362,18 @@ export const paymentAPI = {
     }),
   
   getStatus: (id: string) => fetchWithAuth<any>(`/payment/status/${id}`),
+};
+
+// ==================== Transactions API ====================
+export const transactionsAPI = {
+  list: (params?: { page?: number; limit?: number; type?: string; status?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.type) searchParams.append("type", params.type);
+    if (params?.status) searchParams.append("status", params.status);
+    return fetchWithAuth<any>(`/transactions?${searchParams.toString()}`);
+  },
 };
 
 // ==================== AI API ====================

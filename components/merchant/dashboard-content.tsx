@@ -58,6 +58,7 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
+import { TransactionHistory } from "@/components/dashboard/transaction-history"
 
 const MerchantSettings = dynamic(() => import("./merchant-settings").then((mod) => mod.MerchantSettings), {
   loading: () => <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>

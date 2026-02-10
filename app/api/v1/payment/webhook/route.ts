@@ -139,6 +139,21 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Process based on transaction type BEFORE marking as SUCCESS in DB
+    // this ensures that when status polling returns SUCCESS, the side effects (balance update, etc) are done
+    try {
+      if (transaction.type === TransactionType.SUBSCRIPTION) {
+        await processSubscription(transaction);
+      } else if (transaction.type === TransactionType.ORDER) {
+        await processOrder(transaction);
+      } else if (transaction.type === TransactionType.TOP_UP) {
+        await processTopUp(transaction);
+      }
+    } catch (processError) {
+      console.error(`Process error for type ${transaction.type}:`, processError);
+      // We don't want to halt the webhook, but we should log it
+    }
+
     // Update transaction to SUCCESS
     transaction.status = TransactionStatus.SUCCESS;
     transaction.sepay_transaction_id = String(webhookPayload.id);
@@ -161,22 +176,7 @@ export async function POST(request: NextRequest) {
         console.log(`Pusher notification sent for transaction ${transactionCode}`);
       } catch (pusherError) {
         console.error("Pusher trigger failed:", pusherError);
-        // Don't fail the whole webhook if Pusher fails
       }
-    }
-
-    // Process based on transaction type
-    try {
-      if (transaction.type === TransactionType.SUBSCRIPTION) {
-        await processSubscription(transaction);
-      } else if (transaction.type === TransactionType.ORDER) {
-        await processOrder(transaction);
-      } else if (transaction.type === TransactionType.TOP_UP) {
-        await processTopUp(transaction);
-      }
-    } catch (processError) {
-      console.error(`Process error for type ${transaction.type}:`, processError);
-      // Even if post-processing fails, we've marked transaction as paid
     }
 
     console.log(

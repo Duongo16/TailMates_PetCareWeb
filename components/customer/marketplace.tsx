@@ -13,10 +13,9 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Star, ShoppingCart, Loader2, Store, Package, Check, Search, ChevronLeft, ChevronRight, ArrowUpDown, Filter, ChevronDown, Dog, Cat, Leaf, Sparkles, Bone, Gamepad2, Shirt, HeartPulse, MessageSquare } from "lucide-react"
+import { Star, ShoppingCart, Loader2, Store, Package, Check, Search, ChevronLeft, ChevronRight, ArrowUpDown, Filter, ChevronDown, Dog, Cat, Leaf, MessageSquare } from "lucide-react"
 import Image from "next/image"
 import { AlertDialog, useAlertDialog } from "@/components/ui/alert-dialog-custom"
-import { BannerCarousel } from "@/components/ui/banner-carousel"
 
 const CATEGORIES = [
   { value: "all", label: "Tất cả danh mục" },
@@ -169,76 +168,7 @@ export function Marketplace() {
 
   return (
     <div className="space-y-4">
-      {/* Banner - Full Width */}
-      <BannerCarousel location="SHOP" />
 
-      {/* AI Product Recommendations - Active Feature */}
-      <Card className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/10" />
-        <CardContent className="p-3 relative">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-foreground text-sm">Gợi ý sản phẩm AI</h3>
-                <Badge variant="secondary" className="bg-green-100 text-green-700 text-[10px] px-1.5 h-5">
-                  Mới
-                </Badge>
-              </div>
-              <p className="text-xs text-foreground/60">Gợi ý dựa trên hồ sơ thú cưng</p>
-            </div>
-          </div>
-
-          {/* Active Feature Buttons */}
-          <div className="grid grid-cols-4 gap-2">
-            {/* Food */}
-            <button
-              onClick={() => {
-                handleCategoryChange("FOOD")
-                setShowAdvancedFilters(true)
-              }}
-              className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/70 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
-                <Bone className="w-4 h-4 text-orange-600" />
-              </div>
-              <span className="text-[10px] font-medium text-center hidden sm:block">Thức ăn</span>
-            </button>
-            {/* Toys */}
-            <button
-              onClick={() => handleCategoryChange("TOY")}
-              className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/70 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                <Gamepad2 className="w-4 h-4 text-blue-600" />
-              </div>
-              <span className="text-[10px] font-medium text-center hidden sm:block">Đồ chơi</span>
-            </button>
-            {/* Accessories */}
-            <button
-              onClick={() => handleCategoryChange("ACCESSORY")}
-              className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/70 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
-                <Shirt className="w-4 h-4 text-pink-600" />
-              </div>
-              <span className="text-[10px] font-medium text-center hidden sm:block">Phụ kiện</span>
-            </button>
-            {/* Health */}
-            <button
-              onClick={() => handleCategoryChange("MEDICINE")}
-              className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/70 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
-            >
-              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
-                <HeartPulse className="w-4 h-4 text-green-600" />
-              </div>
-              <span className="text-[10px] font-medium text-center hidden sm:block">Sức khỏe</span>
-            </button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Added to Cart Toast */}
       {addedToCart && (

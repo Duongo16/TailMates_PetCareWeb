@@ -11,31 +11,30 @@ import { ProfileSettings } from "@/components/customer/profile-settings"
 import { OrderTracking } from "@/components/customer/order-tracking"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { useRouter } from "next/navigation"
-import { Home, PawPrint, FileText, ShoppingBag, Calendar, Newspaper, Loader2, Sparkles, Crown } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Loader2 } from "lucide-react"
+import { CUSTOMER_TABS, type CustomerTab } from "@/lib/customer-constants"
 import BlogList from "@/components/customer/blog-list"
 import { PawMatchUI } from "@/components/pawmatch/pawmatch-ui"
+import { TransactionHistory } from "@/components/dashboard/transaction-history"
 
-type CustomerTab = "dashboard" | "pets" | "pawmatch" | "medical" | "marketplace" | "booking" | "orders" | "blog" | "subscription" | "settings"
-
-const tabs = [
-  { id: "dashboard" as CustomerTab, label: "Trang chủ", icon: Home },
-  { id: "pets" as CustomerTab, label: "Thú cưng", icon: PawPrint },
-  { id: "pawmatch" as CustomerTab, label: "PawMatch", icon: Sparkles },
-  { id: "marketplace" as CustomerTab, label: "Mua sắm", icon: ShoppingBag },
-  { id: "booking" as CustomerTab, label: "Đặt lịch", icon: Calendar },
-  { id: "medical" as CustomerTab, label: "Sổ y tế", icon: FileText },
-  { id: "blog" as CustomerTab, label: "Blog", icon: Newspaper },
-  { id: "subscription" as CustomerTab, label: "Nâng cấp", icon: Crown },
-]
 
 export default function CustomerDashboardPage() {
   const { user, isLoading, refreshUser } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<CustomerTab>("dashboard")
   const [selectedPetId, setSelectedPetId] = useState<string | null>(null)
   const [shouldOpenAddPet, setShouldOpenAddPet] = useState(false)
   const [shouldOpenEditPet, setShouldOpenEditPet] = useState(false)
+
+  // Handle tab from URL
+  useEffect(() => {
+    const tab = searchParams.get("tab") as CustomerTab
+    if (tab && CUSTOMER_TABS.some(t => t.id === tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -124,6 +123,8 @@ export default function CustomerDashboardPage() {
         return <BlogList />
       case "subscription":
         return <Subscription />
+      case "subscription":
+        return <Subscription />
       case "settings":
         return <ProfileSettings user={user} onUpdate={refreshUser} />
       default:
@@ -132,7 +133,7 @@ export default function CustomerDashboardPage() {
   }
 
   return (
-    <DashboardShell tabs={tabs} activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as CustomerTab)}>
+    <DashboardShell tabs={CUSTOMER_TABS} activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as CustomerTab)}>
       {renderContent()}
     </DashboardShell>
   )
