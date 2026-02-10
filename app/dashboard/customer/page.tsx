@@ -12,7 +12,7 @@ import { OrderTracking } from "@/components/customer/order-tracking"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
-import { Home, PawPrint, FileText, ShoppingBag, Calendar, Newspaper, Loader2, Sparkles } from "lucide-react"
+import { Home, PawPrint, FileText, ShoppingBag, Calendar, Newspaper, Loader2, Sparkles, Crown } from "lucide-react"
 import BlogList from "@/components/customer/blog-list"
 import { PawMatchUI } from "@/components/pawmatch/pawmatch-ui"
 
@@ -26,6 +26,7 @@ const tabs = [
   { id: "booking" as CustomerTab, label: "Đặt lịch", icon: Calendar },
   { id: "medical" as CustomerTab, label: "Sổ y tế", icon: FileText },
   { id: "blog" as CustomerTab, label: "Blog", icon: Newspaper },
+  { id: "subscription" as CustomerTab, label: "Nâng cấp", icon: Crown },
 ]
 
 export default function CustomerDashboardPage() {

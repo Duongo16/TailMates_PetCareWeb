@@ -22,6 +22,14 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { ImageUpload } from "@/components/ui/image-upload"
 import { ProfileSettings } from "@/components/customer/profile-settings"
 import {
@@ -49,6 +57,10 @@ import {
   ImageIcon,
   Upload,
   ExternalLink,
+  ChevronUp,
+  ChevronDown,
+  Check,
+  X,
 } from "lucide-react"
 import Image from "next/image"
 import {
@@ -73,6 +85,69 @@ interface ManagerDashboardContentProps {
 
 const COLORS = ["#F15A29", "#3B6DB3", "#2D3561", "#FAD5C8", "#00C49F", "#FFBB28", "#FF8042"]
 
+const BenefitsEditor = ({ benefits, onChange }: { benefits: any[], onChange: (benefits: any[]) => void }) => {
+  const addBenefit = () => onChange([...benefits, { text: "", is_bold: false, color: "" }])
+  const removeBenefit = (index: number) => onChange(benefits.filter((_, i) => i !== index))
+  const updateBenefit = (index: number, field: string, value: any) => {
+    const newBenefits = [...benefits]
+    newBenefits[index] = { ...newBenefits[index], [field]: value }
+    onChange(newBenefits)
+  }
+
+  return (
+    <div className="space-y-3 mt-4 border-t pt-4">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-bold">Danh sách đặc quyền</Label>
+        <Button type="button" variant="outline" size="sm" onClick={addBenefit} className="h-7 px-2 rounded-lg">
+          <Plus className="w-3 h-3 mr-1" /> Thêm
+        </Button>
+      </div>
+      <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
+        {benefits.map((benefit, index) => (
+          <div key={index} className="flex flex-col gap-2 p-2 bg-secondary/30 rounded-lg relative group">
+            <Input
+              value={benefit.text}
+              onChange={(e) => updateBenefit(index, "text", e.target.value)}
+              placeholder="Nhập đặc quyền..."
+              className="h-8 text-sm"
+            />
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={benefit.is_bold}
+                  onChange={(e) => updateBenefit(index, "is_bold", e.target.checked)}
+                  className="w-3.5 h-3.5 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <span className="text-xs">In đậm</span>
+              </label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                 <input
+                  type="checkbox"
+                  checked={benefit.color === "orange"}
+                  onChange={(e) => updateBenefit(index, "color", e.target.checked ? "orange" : "")}
+                  className="w-3.5 h-3.5 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
+                />
+                <span className="text-xs text-orange-600">Màu cam</span>
+              </label>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => removeBenefit(index)}
+                className="h-6 w-6 ml-auto text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+        ))}
+        {benefits.length === 0 && <p className="text-xs text-center text-foreground/40 py-2">Chưa có đặc quyền nào</p>}
+      </div>
+    </div>
+  )
+}
+
 export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentProps) {
   const { data: statsData, isLoading: statsLoading } = useManagerStats()
   const { data: merchantsData, isLoading: merchantsLoading, refetch: refetchMerchants } = useManagerMerchants()
@@ -90,6 +165,8 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
     price: "",
     duration_months: "",
     description: "",
+    order: 0,
+    benefits: [] as { text: string; is_bold: boolean; color: string }[],
     // Simplify features config for now
     features_config: {
       ai_limit_per_day: 5,
@@ -150,7 +227,13 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
         refetchPackages()
         // Reset
         setNewPackage({
-          name: "", target_role: packageFilter, price: "", duration_months: "", description: "",
+          name: "", 
+          target_role: packageFilter, 
+          price: "", 
+          duration_months: "", 
+          description: "",
+          order: 0,
+          benefits: [],
           features_config: { ai_limit_per_day: 5, max_pets: 1, priority_support: false }
         })
       } else {
@@ -174,6 +257,8 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
         price: Number(editingPackage.price),
         duration_months: Number(editingPackage.duration_months),
         description: editingPackage.description,
+        benefits: editingPackage.benefits,
+        order: Number(editingPackage.order),
         is_active: editingPackage.is_active,
       })
       if (res.success) {
@@ -191,17 +276,16 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
     }
   }
 
-  const handleDeletePackage = async (packageId: string) => {
-    if (!confirm("Bạn có chắc muốn xóa gói này?")) return
+  const handleUpdatePackageFields = async (packageId: string, fields: any) => {
     try {
-      const res = await packagesAPI.delete(packageId)
+      const res = await packagesAPI.update(packageId, fields)
       if (res.success) {
         refetchPackages()
       } else {
         alert(res.message)
       }
     } catch {
-      alert("Lỗi xóa gói")
+      alert("Lỗi cập nhật nhanh")
     }
   }
 
@@ -521,53 +605,69 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Gói đăng ký</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Quản lý Gói đăng ký</h1>
+            <p className="text-sm text-foreground/60">Thiết lập các gói dịch vụ cho khách hàng và merchant</p>
+          </div>
           <Dialog open={showAddPackage} onOpenChange={setShowAddPackage}>
             <DialogTrigger asChild>
-              <Button className="rounded-xl" onClick={() => setNewPackage({ ...newPackage, target_role: packageFilter })}>
+              <Button className="rounded-xl shadow-lg shadow-primary/20" onClick={() => setNewPackage({ ...newPackage, target_role: packageFilter })}>
                 <Plus className="w-4 h-4 mr-2" />
                 Thêm gói mới
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-3xl max-w-md">
+            <DialogContent className="rounded-3xl max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Thêm gói đăng ký mới</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Tên gói *</Label>
-                  <Input
-                    value={newPackage.name}
-                    onChange={(e) => setNewPackage({ ...newPackage, name: e.target.value })}
-                    placeholder="VD: Gói Premium" className="rounded-xl mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Đối tượng</Label>
-                  <Select value={newPackage.target_role} onValueChange={(val) => setNewPackage({ ...newPackage, target_role: val })}>
-                    <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CUSTOMER">Khách hàng</SelectItem>
-                      <SelectItem value="MERCHANT">Merchant</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tên gói *</Label>
+                    <Input
+                      value={newPackage.name}
+                      onChange={(e) => setNewPackage({ ...newPackage, name: e.target.value })}
+                      placeholder="VD: Gói Premium" className="rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Thứ tự hiển thị</Label>
+                    <Input
+                      type="number"
+                      value={newPackage.order}
+                      onChange={(e) => setNewPackage({ ...newPackage, order: Number(e.target.value) })}
+                      placeholder="0" className="rounded-xl"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Giá (VND/tháng) *</Label>
-                    <Input type="number" value={newPackage.price} onChange={(e) => setNewPackage({ ...newPackage, price: e.target.value })} placeholder="99000" className="rounded-xl mt-1" />
+                  <div className="space-y-2">
+                    <Label>Đối tượng</Label>
+                    <Select value={newPackage.target_role} onValueChange={(val) => setNewPackage({ ...newPackage, target_role: val })}>
+                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CUSTOMER">Khách hàng</SelectItem>
+                        <SelectItem value="MERCHANT">Merchant</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label>Thời hạn (tháng) *</Label>
-                    <Input type="number" value={newPackage.duration_months} onChange={(e) => setNewPackage({ ...newPackage, duration_months: e.target.value })} placeholder="1" className="rounded-xl mt-1" />
+                    <Input type="number" value={newPackage.duration_months} onChange={(e) => setNewPackage({ ...newPackage, duration_months: e.target.value })} placeholder="1" className="rounded-xl" />
                   </div>
                 </div>
-                <div>
-                  <Label>Mô tả</Label>
-                  <Input value={newPackage.description} onChange={(e) => setNewPackage({ ...newPackage, description: e.target.value })} placeholder="Mô tả tính năng gói..." className="rounded-xl mt-1" />
+                <div className="space-y-2">
+                  <Label>Giá (VND) *</Label>
+                  <Input type="number" value={newPackage.price} onChange={(e) => setNewPackage({ ...newPackage, price: e.target.value })} placeholder="99000" className="rounded-xl" />
                 </div>
-                <Button className="w-full rounded-xl" onClick={handleCreatePackage} disabled={isSubmitting || !newPackage.name || !newPackage.price}>
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : "Lưu gói"}
+                
+                <BenefitsEditor 
+                  benefits={newPackage.benefits} 
+                  onChange={(benefits) => setNewPackage({ ...newPackage, benefits })} 
+                />
+
+                <Button className="w-full rounded-xl h-11 text-lg" onClick={handleCreatePackage} disabled={isSubmitting || !newPackage.name || !newPackage.price}>
+                  {isSubmitting ? <Loader2 className="animate-spin" /> : "Tạo gói ngay"}
                 </Button>
               </div>
             </DialogContent>
@@ -576,56 +676,70 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
 
         {/* Edit Package Dialog */}
         <Dialog open={showEditPackage} onOpenChange={setShowEditPackage}>
-          <DialogContent className="rounded-3xl max-w-md">
+          <DialogContent className="rounded-3xl max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Chỉnh sửa gói</DialogTitle>
             </DialogHeader>
             {editingPackage && (
-              <div className="space-y-4">
-                <div>
-                  <Label>Tên gói *</Label>
-                  <Input
-                    value={editingPackage.name}
-                    onChange={(e) => setEditingPackage({ ...editingPackage, name: e.target.value })}
-                    className="rounded-xl mt-1"
-                  />
-                </div>
-                <div>
-                  <Label>Đối tượng</Label>
-                  <Select value={editingPackage.target_role} onValueChange={(val) => setEditingPackage({ ...editingPackage, target_role: val })}>
-                    <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CUSTOMER">Khách hàng</SelectItem>
-                      <SelectItem value="MERCHANT">Merchant</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <div className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tên gói *</Label>
+                    <Input
+                      value={editingPackage.name}
+                      onChange={(e) => setEditingPackage({ ...editingPackage, name: e.target.value })}
+                      className="rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Thứ tự hiển thị</Label>
+                    <Input
+                      type="number"
+                      value={editingPackage.order}
+                      onChange={(e) => setEditingPackage({ ...editingPackage, order: Number(e.target.value) })}
+                      className="rounded-xl"
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Giá (VND/tháng) *</Label>
-                    <Input type="number" value={editingPackage.price} onChange={(e) => setEditingPackage({ ...editingPackage, price: e.target.value })} className="rounded-xl mt-1" />
+                  <div className="space-y-2">
+                    <Label>Đối tượng</Label>
+                    <Select value={editingPackage.target_role} onValueChange={(val) => setEditingPackage({ ...editingPackage, target_role: val })}>
+                      <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CUSTOMER">Khách hàng</SelectItem>
+                        <SelectItem value="MERCHANT">Merchant</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div>
+                  <div className="space-y-2">
                     <Label>Thời hạn (tháng) *</Label>
-                    <Input type="number" value={editingPackage.duration_months} onChange={(e) => setEditingPackage({ ...editingPackage, duration_months: e.target.value })} className="rounded-xl mt-1" />
+                    <Input type="number" value={editingPackage.duration_months} onChange={(e) => setEditingPackage({ ...editingPackage, duration_months: e.target.value })} className="rounded-xl" />
                   </div>
                 </div>
-                <div>
-                  <Label>Mô tả</Label>
-                  <Input value={editingPackage.description || ""} onChange={(e) => setEditingPackage({ ...editingPackage, description: e.target.value })} className="rounded-xl mt-1" />
+                <div className="space-y-2">
+                  <Label>Giá (VND) *</Label>
+                  <Input type="number" value={editingPackage.price} onChange={(e) => setEditingPackage({ ...editingPackage, price: e.target.value })} className="rounded-xl" />
                 </div>
-                <div className="flex items-center gap-2">
+
+                <BenefitsEditor 
+                  benefits={editingPackage.benefits || []} 
+                  onChange={(benefits) => setEditingPackage({ ...editingPackage, benefits })} 
+                />
+
+                <div className="flex items-center gap-2 p-2 bg-secondary/20 rounded-xl">
                   <input
                     type="checkbox"
                     id="pkg-active"
                     checked={editingPackage.is_active}
                     onChange={(e) => setEditingPackage({ ...editingPackage, is_active: e.target.checked })}
-                    className="w-4 h-4 rounded"
+                    className="w-4 h-4 rounded text-primary"
                   />
-                  <Label htmlFor="pkg-active" className="cursor-pointer">Đang hoạt động</Label>
+                  <Label htmlFor="pkg-active" className="cursor-pointer font-medium">Đang cho phép đăng ký</Label>
                 </div>
-                <Button className="w-full rounded-xl" onClick={handleUpdatePackage} disabled={isSubmitting || !editingPackage.name || !editingPackage.price}>
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : "Cập nhật"}
+
+                <Button className="w-full rounded-xl h-11 text-lg" onClick={handleUpdatePackage} disabled={isSubmitting || !editingPackage.name || !editingPackage.price}>
+                  {isSubmitting ? <Loader2 className="animate-spin" /> : "Cập nhật thay đổi"}
                 </Button>
               </div>
             )}
@@ -633,48 +747,119 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
         </Dialog>
 
         {/* Package Type Tabs */}
-        <Tabs value={packageFilter} onValueChange={(val) => setPackageFilter(val as any)}>
-          <TabsList className="bg-card rounded-xl">
-            <TabsTrigger value="CUSTOMER" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Gói Khách hàng
-            </TabsTrigger>
-            <TabsTrigger value="MERCHANT" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Gói Merchant
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="bg-card/50 p-1.5 rounded-2xl inline-flex border">
+          <button 
+            onClick={() => setPackageFilter("CUSTOMER")}
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
+              packageFilter === "CUSTOMER" ? "bg-primary text-white shadow-md" : "text-foreground/60 hover:text-foreground"
+            }`}
+          >
+            Dành cho Khách hàng
+          </button>
+          <button 
+            onClick={() => setPackageFilter("MERCHANT")}
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
+              packageFilter === "MERCHANT" ? "bg-primary text-white shadow-md" : "text-foreground/60 hover:text-foreground"
+            }`}
+          >
+            Dành cho Merchant
+          </button>
+        </div>
 
-        {packagesLoading ? <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div> : (
-          <div className="grid lg:grid-cols-3 gap-4">
-            {filteredPackages.map((pkg: any) => (
-              <Card key={pkg._id} className="relative overflow-hidden group">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <Badge
-                      className={pkg.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}
-                    >
-                      {pkg.is_active ? "Hoạt động" : "Tạm ngưng"}
-                    </Badge>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEditPackage(pkg)}>
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => handleDeletePackage(pkg._id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <h3 className="font-bold text-foreground text-xl mb-2">{pkg.name}</h3>
-                  <p className="text-3xl font-bold text-primary mb-4">
-                    {formatPrice(pkg.price)}
-                    <span className="text-sm font-normal text-foreground/60">/{pkg.duration_months} tháng</span>
-                  </p>
-                  {pkg.description && <p className="text-sm text-foreground/60 mb-4">{pkg.description}</p>}
-                </CardContent>
-              </Card>
-            ))}
-            {!filteredPackages.length && <p className="col-span-3 text-center text-foreground/50 py-10">Chưa có gói nào cho {packageFilter === "CUSTOMER" ? "Khách hàng" : "Merchant"}</p>}
+        {packagesLoading ? (
+          <div className="flex flex-col items-center justify-center p-20 gap-4">
+            <Loader2 className="animate-spin w-10 h-10 text-primary" />
+            <p className="text-foreground/50">Đang tải danh sách gói...</p>
           </div>
+        ) : (
+          <Card className="rounded-2xl overflow-hidden border-none shadow-sm">
+            <Table>
+              <TableHeader className="bg-secondary/30">
+                <TableRow>
+                  <TableHead className="w-[80px] font-bold">Thứ tự</TableHead>
+                  <TableHead className="font-bold">Tên gói</TableHead>
+                  <TableHead className="font-bold">Giá & Thời hạn</TableHead>
+                  <TableHead className="font-bold">Đặc quyền</TableHead>
+                  <TableHead className="font-bold">Trạng thái</TableHead>
+                  <TableHead className="text-right font-bold pr-6">Thao tác</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredPackages.map((pkg: any) => (
+                  <TableRow key={pkg._id} className="hover:bg-secondary/10 transition-colors">
+                    <TableCell className="font-medium text-center">
+                      <Badge variant="outline" className="rounded-lg">{pkg.order}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <p className="font-bold text-foreground">{pkg.name}</p>
+                      <p className="text-xs text-foreground/50">{pkg.target_role === "CUSTOMER" ? "Khách hàng" : "Merchant"}</p>
+                    </TableCell>
+                    <TableCell>
+                      <p className="font-bold text-primary">{formatPrice(pkg.price)}</p>
+                      <p className="text-xs text-foreground/50">{pkg.duration_months} tháng</p>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1 max-w-[300px]">
+                        {pkg.benefits?.slice(0, 3).map((b: any, i: number) => (
+                          <Badge 
+                            key={i} 
+                            variant="secondary" 
+                            className={`text-[10px] h-5 ${b.color === "orange" ? "bg-orange-100 text-orange-600" : ""} ${b.is_bold ? "font-black" : "font-normal"}`}
+                          >
+                            {b.text.slice(0, 20)}{b.text.length > 20 ? "..." : ""}
+                          </Badge>
+                        ))}
+                        {pkg.benefits?.length > 3 && (
+                          <span className="text-[10px] text-foreground/40">+{pkg.benefits.length - 3} nữa</span>
+                        )}
+                        {!pkg.benefits?.length && <span className="text-[10px] text-foreground/30 italic">Trống</span>}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={`rounded-full px-3 ${pkg.is_active ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+                        {pkg.is_active ? "Đang hoạt động" : "Tạm ngưng"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right pr-6">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary"
+                          onClick={() => openEditPackage(pkg)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className={`h-8 w-8 p-0 rounded-lg ${pkg.is_active ? "hover:bg-destructive/10 hover:text-destructive" : "hover:bg-green-100 hover:text-green-600"}`}
+                          onClick={() => {
+                            if (pkg.is_active) {
+                              if (confirm("Vô hiệu hóa gói này? Phải chỉnh sửa để kích hoạt lại.")) {
+                                handleUpdatePackageFields(pkg._id, { is_active: false })
+                              }
+                            } else {
+                               handleUpdatePackageFields(pkg._id, { is_active: true })
+                            }
+                          }}
+                        >
+                          {pkg.is_active ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!filteredPackages.length && (
+                  <TableRow>
+                     <TableCell colSpan={6} className="h-40 text-center text-foreground/40 italic">
+                       Chưa có gói nào cho {packageFilter === "CUSTOMER" ? "Khách hàng" : "Merchant"}
+                     </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Card>
         )}
       </div>
     )
@@ -699,7 +884,7 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
           setShowAddBanner(false)
           refetchBanners()
           setNewBanner({
-            image: { url: "", public_id: "" },
+            image: { url: "", public_id: "banner" },
             targetUrl: "",
             priority: 0,
             displayLocation: "ALL",
@@ -805,9 +990,8 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
               <div className="space-y-4">
                 <ImageUpload
                   label="Ảnh Banner"
-                  required
-                  value={newBanner.image.url}
-                  onChange={(url, publicId) => setNewBanner({ ...newBanner, image: { url, public_id: publicId || 'banner' } })}
+                  value={newBanner.image}
+                  onChange={(img) => setNewBanner({ ...newBanner, image: img ? { url: img.url, public_id: img.public_id || "banner" } : { url: "", public_id: "banner" } })}
                 />
                 <div>
                   <Label>Tiêu đề (tùy chọn)</Label>
@@ -889,9 +1073,8 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
               <div className="space-y-4">
                 <ImageUpload
                   label="Ảnh Banner"
-                  required
-                  value={editingBanner.image?.url || ""}
-                  onChange={(url, publicId) => setEditingBanner({ ...editingBanner, image: { url, public_id: publicId || 'banner' } })}
+                  value={editingBanner.image}
+                  onChange={(img) => setEditingBanner({ ...editingBanner, image: img ? { url: img.url, public_id: img.public_id || "banner" } : { url: "", public_id: "banner" } })}
                 />
                 <div>
                   <Label>Tiêu đề</Label>

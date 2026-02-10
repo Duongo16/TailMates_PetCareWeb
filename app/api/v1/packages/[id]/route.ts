@@ -59,7 +59,9 @@ export async function PUT(
       "price",
       "duration_months",
       "description",
+      "benefits",
       "features_config",
+      "order",
       "is_active",
     ];
 
@@ -78,7 +80,7 @@ export async function PUT(
   }
 }
 
-// DELETE /api/v1/packages/:id - Delete package
+// DELETE /api/v1/packages/:id - Deactivate package (Soft Delete as requested)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -93,14 +95,17 @@ export async function DELETE(
     await connectDB();
     const { id } = await params;
 
-    const pkg = await Package.findByIdAndDelete(id);
+    const pkg = await Package.findById(id);
     if (!pkg) {
       return apiResponse.notFound("Package not found");
     }
 
-    return apiResponse.success(null, "Package deleted successfully");
+    pkg.is_active = false;
+    await pkg.save();
+
+    return apiResponse.success(null, "Package deactivated successfully");
   } catch (error) {
     console.error("Delete package error:", error);
-    return apiResponse.serverError("Failed to delete package");
+    return apiResponse.serverError("Failed to deactivate package");
   }
 }

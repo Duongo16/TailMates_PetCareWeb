@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    const packages = await Package.find().sort({ created_at: -1 });
+    const packages = await Package.find().sort({ order: 1, created_at: -1 });
 
     return apiResponse.success(packages);
   } catch (error) {
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { name, target_role, price, duration_months, features_config, description } = body;
+    const { name, target_role, price, duration_months, features_config, description, benefits, order } = body;
 
     if (!name || !target_role || price === undefined || !duration_months || !features_config) {
       return apiResponse.error("Missing required fields");
@@ -49,6 +49,8 @@ export async function POST(request: NextRequest) {
       duration_months,
       features_config,
       description,
+      benefits: benefits || [],
+      order: order !== undefined ? order : 0,
       is_active: true,
     });
 

@@ -32,40 +32,49 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
         return pId !== currentUserId
     })
 
+    // Subscribe to real-time messages
     useEffect(() => {
-        fetchMessages()
-        markAsRead()
+        if (!conversation?._id || !pusherClient) return
 
-        const channel = pusherClient.subscribe(`conversation-${conversation._id}`)
-        channel.bind("new-message", (message: any) => {
-            setMessages((prev) => {
-                // Prevent duplication
-                if (prev.find(m => m._id === message._id)) return prev
-
-                // Remove optimistic message if it was from me
-                const senderId = message.senderId?._id?.toString() || message.senderId?.id?.toString() || message.senderId?.toString()
-                const currentUserId = currentUser?.id?.toString() || currentUser?._id?.toString()
-
-                if (senderId === currentUserId) {
-                    return prev.filter(m => !m.isOptimistic).concat(message)
-                }
-
-                return [...prev, message]
-            })
-
-            // Auto mark as read if message is from others
-            const senderId = message.senderId?._id?.toString() || message.senderId?.id?.toString() || message.senderId?.toString()
+        const channelName = `conversation-${conversation._id}`
+        const channel = pusherClient.subscribe(channelName)
+        
+        const handleNewMessage = (data: any) => {
+            // Standardize message object extraction
+            const receivedMsg = data.message || data
             const currentUserId = currentUser?.id?.toString() || currentUser?._id?.toString()
+            const senderId = receivedMsg.senderId?._id?.toString() || receivedMsg.senderId?.id?.toString() || receivedMsg.senderId?.toString()
+            
             if (senderId !== currentUserId) {
+                setMessages(prev => {
+                    if (prev.find(m => m._id === receivedMsg._id)) return prev
+                    return [...prev, receivedMsg]
+                })
                 markAsRead()
+            } else {
+                // If it's our own message, find a matching optimistic message to replace
+                setMessages(prev => {
+                    const optimisticIndex = prev.findIndex(m => m.isOptimistic && m.content === receivedMsg.content)
+                    if (optimisticIndex !== -1) {
+                        const newMessages = [...prev]
+                        newMessages[optimisticIndex] = receivedMsg
+                        return newMessages
+                    }
+                    if (prev.find(m => m._id === receivedMsg._id)) return prev
+                    return [...prev, receivedMsg]
+                })
             }
-        })
+        }
+
+        channel.bind("new-message", handleNewMessage)
 
         return () => {
-            pusherClient.unsubscribe(`conversation-${conversation._id}`)
+            channel.unbind("new-message", handleNewMessage)
+            pusherClient.unsubscribe(channelName)
         }
-    }, [conversation._id])
+    }, [conversation?._id, currentUser])
 
+    // Presence tracking for mobile
     useEffect(() => {
         if (!pusherClient || !otherParticipant) return;
 
@@ -88,6 +97,7 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
         }
     }, [otherParticipant])
 
+    // Scroll behavior
     useEffect(() => {
         if (scrollRef.current) {
             const scrollArea = scrollRef.current;
@@ -106,7 +116,7 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
                             behavior: 'smooth'
                         });
                     }
-                }, 150); // Increased delay to account for keyboard animation
+                }, 150);
             }
         }
     }, [messages, currentUser])
@@ -122,7 +132,6 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
             console.error("Failed to fetch messages:", err)
         } finally {
             setIsLoading(false)
-            // Force scroll to bottom after initial load
             setTimeout(() => {
                 if (scrollRef.current) {
                     scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -139,44 +148,10 @@ export function ChatWindow({ conversation, currentUser }: ChatWindowProps) {
         }
     }
 
-    // Subscribe to real-time messages
     useEffect(() => {
-        if (!conversation?._id || !pusherClient) return
-
-        const channel = pusherClient.subscribe(`conversation-${conversation._id}`)
-        
-        channel.bind("new-message", (data: any) => {
-            const newMessage = data.message
-            // Avoid adding if it's from the same user (handled by optimistic UI)
-            // or if it's already in the list
-            const currentUserId = currentUser?.id?.toString() || currentUser?._id?.toString()
-            const senderId = newMessage.senderId?._id?.toString() || newMessage.senderId?.id?.toString() || newMessage.senderId?.toString()
-            
-            if (senderId !== currentUserId) {
-                setMessages(prev => {
-                    if (prev.find(m => m._id === newMessage._id)) return prev
-                    return [...prev, newMessage]
-                })
-            } else {
-                // If it's our own message, find a matching optimistic message to replace
-                setMessages(prev => {
-                    const optimisticIndex = prev.findIndex(m => m.isOptimistic && m.content === newMessage.content)
-                    if (optimisticIndex !== -1) {
-                        const newMessages = [...prev]
-                        newMessages[optimisticIndex] = newMessage
-                        return newMessages
-                    }
-                    // If no optimistic message found (e.g. sent from another tab), just add it if not exists
-                    if (prev.find(m => m._id === newMessage._id)) return prev
-                    return [...prev, newMessage]
-                })
-            }
-        })
-
-        return () => {
-            pusherClient.unsubscribe(`private-conversation-${conversation._id}`)
-        }
-    }, [conversation?._id, currentUser])
+        fetchMessages()
+        markAsRead()
+    }, [conversation._id])
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault()

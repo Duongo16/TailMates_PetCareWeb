@@ -5,9 +5,12 @@ import { authAPI, petsAPI } from "@/lib/api"
 import { AuthPromptModal } from "@/components/ui/auth-prompt-modal"
 
 const TEMP_PET_DATA_KEY = "temp_pet_data"
-const TOKEN_EXPIRY_HOURS = 1 // Token expires after 1 hour
+const ACCESS_TOKEN_KEY = "tailmates_token"
+const REFRESH_TOKEN_KEY = "tailmates_refresh_token"
+const USER_KEY = "tailmates_user"
 
 export type UserRole = "customer" | "merchant" | "manager" | "admin"
+export type AuthProvider = "EMAIL" | "GOOGLE"
 
 export interface User {
   id: string
@@ -16,6 +19,8 @@ export interface User {
   role: UserRole
   avatar?: string
   phone_number?: string
+  is_email_verified?: boolean
+  auth_provider?: AuthProvider
   subscription?: {
     package_id?: string
     started_at?: string
@@ -38,6 +43,13 @@ export interface User {
       zalo?: string
     }
   }
+  tm_balance?: number
+}
+
+interface AuthResult {
+  success: boolean
+  error?: string
+  waitSeconds?: number
 }
 
 interface AuthContextType {
@@ -46,7 +58,22 @@ interface AuthContextType {
   showAuthPrompt: boolean
   setShowAuthPrompt: (show: boolean) => void
   requireAuth: (callback?: () => void) => boolean
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  // Email/Password login
+  login: (email: string, password: string) => Promise<AuthResult>
+  // OTP Registration flow
+  sendOtp: (data: {
+    email: string
+    password: string
+    full_name: string
+    phone_number?: string
+    role?: UserRole
+    shop_name?: string
+    address?: string
+    terms_accepted: boolean
+  }) => Promise<AuthResult>
+  verifyOtp: (email: string, otp: string) => Promise<AuthResult>
+  resendOtp: (email: string) => Promise<AuthResult>
+  // Legacy register (direct without OTP)
   register: (
     name: string,
     email: string,
@@ -54,9 +81,13 @@ interface AuthContextType {
     role: UserRole,
     merchantData?: { shop_name?: string; address?: string },
     termsAccepted?: boolean
-  ) => Promise<{ success: boolean; error?: string }>
-  logout: () => void
+  ) => Promise<AuthResult>
+  // Google OAuth
+  loginWithGoogle: (idToken: string) => Promise<AuthResult & { isNewUser?: boolean; accountLinked?: boolean }>
+  // Session management
+  logout: () => Promise<void>
   refreshUser: () => Promise<void>
+  refreshAccessToken: () => Promise<boolean>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -81,9 +112,25 @@ function mapApiUserToUser(apiUser: any): User {
     role: mapRole(apiUser.role),
     avatar: apiUser.avatar?.url || apiUser.avatar,
     phone_number: apiUser.phone_number,
+    is_email_verified: apiUser.is_email_verified,
+    auth_provider: apiUser.auth_provider,
     subscription: apiUser.subscription,
     merchant_profile: apiUser.merchant_profile,
+    tm_balance: apiUser.tm_balance,
   }
+}
+
+// Helper to save tokens
+function saveTokens(accessToken: string, refreshToken: string) {
+  localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
+  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken)
+}
+
+// Helper to clear tokens
+function clearTokens() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY)
+  localStorage.removeItem(REFRESH_TOKEN_KEY)
+  localStorage.removeItem(USER_KEY)
 }
 
 // Helper to sync onboarding pet data after login/register
@@ -118,7 +165,7 @@ async function syncOnboardingPet(): Promise<void> {
 // Helper to check profile/pet completeness and create reminder notifications
 async function checkProfileNotifications(): Promise<void> {
   try {
-    const token = localStorage.getItem("tailmates_token")
+    const token = localStorage.getItem(ACCESS_TOKEN_KEY)
     if (!token) return
 
     await fetch("/api/v1/notifications/check-profile", {
@@ -135,7 +182,6 @@ async function checkProfileNotifications(): Promise<void> {
   }
 }
 
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -151,41 +197,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false
   }, [user])
 
+  // Refresh access token using refresh token
+  const refreshAccessToken = useCallback(async (): Promise<boolean> => {
+    const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY)
+    if (!refreshToken) return false
+
+    try {
+      const response = await authAPI.refreshToken(refreshToken)
+      if (response.success && response.data) {
+        saveTokens(response.data.accessToken, response.data.refreshToken)
+        return true
+      }
+      // Refresh token expired or invalid
+      clearTokens()
+      setUser(null)
+      return false
+    } catch (error) {
+      console.error("Refresh token error:", error)
+      return false
+    }
+  }, [])
+
   // Check for existing session on mount
   useEffect(() => {
     const checkSession = async () => {
-      const token = localStorage.getItem("tailmates_token")
-      const savedUser = localStorage.getItem("tailmates_user")
-      const tokenExpiry = localStorage.getItem("tailmates_token_expiry")
+      const token = localStorage.getItem(ACCESS_TOKEN_KEY)
+      const savedUser = localStorage.getItem(USER_KEY)
 
       if (token && savedUser) {
-        // Check if token has expired
-        if (tokenExpiry) {
-          const expiryTime = parseInt(tokenExpiry, 10)
-          const now = Date.now()
-
-          if (now > expiryTime) {
-            // Token expired, clear storage
-            localStorage.removeItem("tailmates_token")
-            localStorage.removeItem("tailmates_user")
-            localStorage.removeItem("tailmates_token_expiry")
-            setIsLoading(false)
-            return
-          }
-        }
-
         try {
           // Verify token is still valid by fetching current user
           const response = await authAPI.getMe()
           if (response.success && response.data) {
             const mappedUser = mapApiUserToUser(response.data)
             setUser(mappedUser)
-            localStorage.setItem("tailmates_user", JSON.stringify(mappedUser))
+            localStorage.setItem(USER_KEY, JSON.stringify(mappedUser))
+          } else if (response.message?.includes("TOKEN_EXPIRED") || response.message?.includes("expired")) {
+            // Try to refresh the token
+            const refreshed = await refreshAccessToken()
+            if (refreshed) {
+              // Retry getting user
+              const retryResponse = await authAPI.getMe()
+              if (retryResponse.success && retryResponse.data) {
+                const mappedUser = mapApiUserToUser(retryResponse.data)
+                setUser(mappedUser)
+                localStorage.setItem(USER_KEY, JSON.stringify(mappedUser))
+              } else {
+                clearTokens()
+              }
+            }
           } else {
             // Token invalid, clear storage
-            localStorage.removeItem("tailmates_token")
-            localStorage.removeItem("tailmates_user")
-            localStorage.removeItem("tailmates_token_expiry")
+            clearTokens()
           }
         } catch {
           // Network error, use cached user
@@ -196,29 +259,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     checkSession()
-  }, [])
+  }, [refreshAccessToken])
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  // Login with email and password
+  const login = async (email: string, password: string): Promise<AuthResult> => {
     try {
       const response = await authAPI.login(email, password)
 
       if (response.success && response.data) {
-        const { user: apiUser, token } = response.data
+        const { user: apiUser, accessToken, refreshToken, token } = response.data
         const mappedUser = mapApiUserToUser(apiUser)
 
-        // Calculate token expiry time (1 hour from now)
-        const expiryTime = Date.now() + (TOKEN_EXPIRY_HOURS * 60 * 60 * 1000)
-
-        // Save token, user, and expiry time
-        localStorage.setItem("tailmates_token", token)
-        localStorage.setItem("tailmates_user", JSON.stringify(mappedUser))
-        localStorage.setItem("tailmates_token_expiry", expiryTime.toString())
+        // Support both new (accessToken/refreshToken) and legacy (token) response
+        if (accessToken && refreshToken) {
+          saveTokens(accessToken, refreshToken)
+        } else if (token) {
+          localStorage.setItem(ACCESS_TOKEN_KEY, token)
+        }
+        
+        localStorage.setItem(USER_KEY, JSON.stringify(mappedUser))
         setUser(mappedUser)
 
         // Auto-sync onboarding pet data if exists (for customers only)
         if (mappedUser.role === "customer") {
           await syncOnboardingPet()
-          // Check for incomplete profile/pet data and create notifications
           await checkProfileNotifications()
         }
 
@@ -232,6 +296,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Send OTP for registration
+  const sendOtp = async (data: {
+    email: string
+    password: string
+    full_name: string
+    phone_number?: string
+    role?: UserRole
+    shop_name?: string
+    address?: string
+    terms_accepted: boolean
+  }): Promise<AuthResult> => {
+    try {
+      const roleMap: Record<UserRole, string> = {
+        customer: "CUSTOMER",
+        merchant: "MERCHANT",
+        manager: "MANAGER",
+        admin: "ADMIN",
+      }
+
+      const response = await authAPI.sendOtp({
+        ...data,
+        role: data.role ? roleMap[data.role] : "CUSTOMER",
+      })
+
+      if (response.success) {
+        return { success: true, waitSeconds: response.data?.waitSeconds || 60 }
+      }
+
+      return { 
+        success: false, 
+        error: response.message || "Không thể gửi OTP",
+        waitSeconds: response.retryAfter 
+      }
+    } catch (error) {
+      console.error("Send OTP error:", error)
+      return { success: false, error: "Lỗi kết nối. Vui lòng thử lại." }
+    }
+  }
+
+  // Verify OTP and complete registration
+  const verifyOtp = async (email: string, otp: string): Promise<AuthResult> => {
+    try {
+      const response = await authAPI.verifyOtp(email, otp)
+
+      if (response.success && response.data) {
+        const { user: apiUser, accessToken, refreshToken } = response.data
+        const mappedUser = mapApiUserToUser(apiUser)
+
+        saveTokens(accessToken, refreshToken)
+        localStorage.setItem(USER_KEY, JSON.stringify(mappedUser))
+        setUser(mappedUser)
+
+        // Auto-sync onboarding pet data if exists (for customers only)
+        if (mappedUser.role === "customer") {
+          await syncOnboardingPet()
+          await checkProfileNotifications()
+        }
+
+        return { success: true }
+      }
+
+      return { success: false, error: response.message || "Xác thực OTP thất bại" }
+    } catch (error) {
+      console.error("Verify OTP error:", error)
+      return { success: false, error: "Lỗi kết nối. Vui lòng thử lại." }
+    }
+  }
+
+  // Resend OTP
+  const resendOtp = async (email: string): Promise<AuthResult> => {
+    try {
+      const response = await authAPI.resendOtp(email)
+
+      if (response.success) {
+        return { success: true, waitSeconds: response.data?.waitSeconds || 60 }
+      }
+
+      return { 
+        success: false, 
+        error: response.message || "Không thể gửi lại OTP",
+        waitSeconds: response.retryAfter 
+      }
+    } catch (error) {
+      console.error("Resend OTP error:", error)
+      return { success: false, error: "Lỗi kết nối. Vui lòng thử lại." }
+    }
+  }
+
+  // Legacy register (direct without OTP - kept for backward compatibility)
   const register = async (
     name: string,
     email: string,
@@ -239,7 +392,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     role: UserRole,
     merchantData?: { shop_name?: string; address?: string },
     termsAccepted?: boolean
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<AuthResult> => {
     try {
       const roleMap: Record<UserRole, string> = {
         customer: "CUSTOMER",
@@ -259,22 +412,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       if (response.success && response.data) {
-        const { user: apiUser, token } = response.data
+        const { user: apiUser, accessToken, refreshToken, token } = response.data
         const mappedUser = mapApiUserToUser(apiUser)
 
-        // Calculate token expiry time (1 hour from now)
-        const expiryTime = Date.now() + (TOKEN_EXPIRY_HOURS * 60 * 60 * 1000)
-
-        // Save token, user, and expiry time
-        localStorage.setItem("tailmates_token", token)
-        localStorage.setItem("tailmates_user", JSON.stringify(mappedUser))
-        localStorage.setItem("tailmates_token_expiry", expiryTime.toString())
+        // Support both new and legacy response
+        if (accessToken && refreshToken) {
+          saveTokens(accessToken, refreshToken)
+        } else if (token) {
+          localStorage.setItem(ACCESS_TOKEN_KEY, token)
+        }
+        
+        localStorage.setItem(USER_KEY, JSON.stringify(mappedUser))
         setUser(mappedUser)
 
         // Auto-sync onboarding pet data if exists (for customers only)
         if (mappedUser.role === "customer") {
           await syncOnboardingPet()
-          // Check for incomplete profile/pet data and create notifications
           await checkProfileNotifications()
         }
 
@@ -288,20 +441,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem("tailmates_token")
-    localStorage.removeItem("tailmates_user")
-    localStorage.removeItem("tailmates_token_expiry")
+  // Login with Google OAuth
+  const loginWithGoogle = async (idToken: string): Promise<AuthResult & { isNewUser?: boolean; accountLinked?: boolean }> => {
+    try {
+      const response = await authAPI.loginWithGoogle(idToken)
+
+      if (response.success && response.data) {
+        const { user: apiUser, accessToken, refreshToken, isNewUser, accountLinked } = response.data
+        const mappedUser = mapApiUserToUser(apiUser)
+
+        saveTokens(accessToken, refreshToken)
+        localStorage.setItem(USER_KEY, JSON.stringify(mappedUser))
+        setUser(mappedUser)
+
+        // Auto-sync onboarding pet data if exists (for customers only)
+        if (mappedUser.role === "customer") {
+          await syncOnboardingPet()
+          await checkProfileNotifications()
+        }
+
+        return { success: true, isNewUser, accountLinked }
+      }
+
+      return { success: false, error: response.message || "Đăng nhập Google thất bại" }
+    } catch (error) {
+      console.error("Google login error:", error)
+      return { success: false, error: "Lỗi kết nối. Vui lòng thử lại." }
+    }
   }
 
+  // Logout
+  const logout = async () => {
+    try {
+      // Call logout API to invalidate refresh tokens
+      await authAPI.logout()
+    } catch (error) {
+      console.error("Logout API error:", error)
+      // Continue with local logout even if API fails
+    }
+    
+    setUser(null)
+    clearTokens()
+  }
+
+  // Refresh user data
   const refreshUser = async () => {
     try {
       const response = await authAPI.getMe()
       if (response.success && response.data) {
         const mappedUser = mapApiUserToUser(response.data)
         setUser(mappedUser)
-        localStorage.setItem("tailmates_user", JSON.stringify(mappedUser))
+        localStorage.setItem(USER_KEY, JSON.stringify(mappedUser))
       }
     } catch (error) {
       console.error("Refresh user error:", error)
@@ -316,9 +506,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setShowAuthPrompt,
       requireAuth,
       login,
+      sendOtp,
+      verifyOtp,
+      resendOtp,
       register,
+      loginWithGoogle,
       logout,
-      refreshUser
+      refreshUser,
+      refreshAccessToken,
     }}>
       {children}
       <AuthPromptModal

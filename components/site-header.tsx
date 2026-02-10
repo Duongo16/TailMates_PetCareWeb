@@ -13,9 +13,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Menu, X, LogOut, Settings, LayoutDashboard, ShoppingCart, Bell } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Menu, X, LogOut, Settings, LayoutDashboard, ShoppingCart, Bell, Coins } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useCart } from "@/lib/cart-context"
+import { UserBalance } from "@/components/user-balance"
 
 interface SiteHeaderProps {
     showBlogLink?: boolean
@@ -111,6 +113,9 @@ export function SiteHeader({ showBlogLink = true }: SiteHeaderProps) {
                                     </Button>
                                 )}
 
+                                {/* TM Balance Badge */}
+                                <UserBalance className="hidden sm:flex" />
+
                                 {/* User Menu */}
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
@@ -131,6 +136,11 @@ export function SiteHeader({ showBlogLink = true }: SiteHeaderProps) {
                                         <div className="px-3 py-2">
                                             <p className="font-medium">{user?.name}</p>
                                             <p className="text-sm text-foreground/60">{user?.email}</p>
+                                            {["customer", "merchant"].includes(user.role) && (
+                                                <div className="mt-2 sm:hidden">
+                                                    <UserBalance showAdd={false} />
+                                                </div>
+                                            )}
                                         </div>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem onClick={() => router.push(`/dashboard/${user.role}`)}>
@@ -141,6 +151,12 @@ export function SiteHeader({ showBlogLink = true }: SiteHeaderProps) {
                                             <Settings className="w-4 h-4 mr-2" />
                                             Cài đặt
                                         </DropdownMenuItem>
+                                        {["customer", "merchant"].includes(user.role) && (
+                                            <DropdownMenuItem onClick={() => router.push("/top-up")}>
+                                                <Coins className="w-4 h-4 mr-2 text-yellow-500" />
+                                                Nạp tiền TM
+                                            </DropdownMenuItem>
+                                        )}
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                                             <LogOut className="w-4 h-4 mr-2" />

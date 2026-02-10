@@ -277,10 +277,10 @@ export function usePackages() {
 }
 
 // ==================== Admin Hooks ====================
-export function useAdminUsers(params?: { role?: string; status?: string; search?: string; page?: number }) {
+export function useAdminUsers(params?: { role?: string; status?: string; search?: string; page?: number; limit?: number }) {
   return useFetch<{ users: any[]; stats: any; pagination: any }>(
     () => import("@/lib/api").then(m => m.adminAPI.listUsers(params)),
-    [params?.role, params?.status, params?.search, params?.page]
+    [params?.role, params?.status, params?.search, params?.page, params?.limit]
   )
 }
 

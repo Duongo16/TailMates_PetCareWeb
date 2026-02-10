@@ -19,8 +19,14 @@ export interface IPackage extends Document {
   price: number;
   duration_months: number;
   description?: string;
+  benefits?: {
+    text: string;
+    is_bold?: boolean;
+    color?: string; // e.g., 'orange'
+  }[];
   features_config: IFeaturesConfig;
   commission_rate: number;
+  order: number;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
@@ -64,6 +70,13 @@ const PackageSchema = new Schema<IPackage>(
     description: {
       type: String,
     },
+    benefits: [
+      {
+        text: { type: String, required: true },
+        is_bold: { type: Boolean, default: false },
+        color: { type: String, default: "" },
+      },
+    ],
     features_config: {
       type: FeaturesConfigSchema,
       required: true,
@@ -73,6 +86,10 @@ const PackageSchema = new Schema<IPackage>(
       default: 0.1, // 10%
       min: 0,
       max: 1,
+    },
+    order: {
+      type: Number,
+      default: 0,
     },
     is_active: {
       type: Boolean,
@@ -85,8 +102,10 @@ const PackageSchema = new Schema<IPackage>(
 );
 
 // ==================== Indexes ====================
-PackageSchema.index({ target_role: 1 });
-PackageSchema.index({ is_active: 1 });
+// (Removed manual indexes to resolve duplicate warnings)
+// PackageSchema.index({ target_role: 1 });
+// PackageSchema.index({ is_active: 1 });
+// PackageSchema.index({ order: 1 });
 
 // ==================== Model Export ====================
 const Package: Model<IPackage> =

@@ -1,9 +1,13 @@
 import { NextRequest } from "next/server";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
-import User from "@/models/User";
-import { generateToken, apiResponse } from "@/lib/auth";
+import User, { AuthProvider } from "@/models/User";
+import { generateTokenPair, apiResponse } from "@/lib/auth";
 
+/**
+ * POST /api/v1/auth/login
+ * Login with email and password
+ */
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
@@ -13,31 +17,43 @@ export async function POST(request: NextRequest) {
 
     // Validation
     if (!email || !password) {
-      return apiResponse.error("Email and password are required");
+      return apiResponse.error("Email và mật khẩu là bắt buộc");
     }
 
     // Find user
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return apiResponse.error("Invalid email or password", 401);
+      return apiResponse.error("Email hoặc mật khẩu không đúng", 401);
+    }
+
+    // Check if user registered with Google (no password)
+    if (user.auth_provider === AuthProvider.GOOGLE && !user.password) {
+      return apiResponse.error(
+        "Tài khoản này đã đăng ký bằng Google. Vui lòng đăng nhập bằng Google.",
+        400
+      );
     }
 
     // Check password
+    if (!user.password) {
+      return apiResponse.error("Tài khoản không có mật khẩu", 400);
+    }
+
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-      return apiResponse.error("Invalid email or password", 401);
+      return apiResponse.error("Email hoặc mật khẩu không đúng", 401);
     }
 
     // Check if account is active
     if (!user.is_active) {
       return apiResponse.error(
-        "Account is not active. Please contact support.",
+        "Tài khoản chưa được kích hoạt. Vui lòng liên hệ hỗ trợ.",
         403
       );
     }
 
-    // Generate token
-    const token = generateToken(user);
+    // Generate tokens
+    const { accessToken, refreshToken } = generateTokenPair(user);
 
     // Return user without password
     const userResponse = {
@@ -49,14 +65,16 @@ export async function POST(request: NextRequest) {
       avatar: user.avatar,
       subscription: user.subscription,
       merchant_profile: user.merchant_profile,
+      is_email_verified: user.is_email_verified,
+      auth_provider: user.auth_provider,
     };
 
     return apiResponse.success(
-      { user: userResponse, token },
-      "Login successful"
+      { user: userResponse, accessToken, refreshToken },
+      "Đăng nhập thành công"
     );
   } catch (error) {
     console.error("Login error:", error);
-    return apiResponse.serverError("Login failed");
+    return apiResponse.serverError("Đăng nhập thất bại");
   }
 }

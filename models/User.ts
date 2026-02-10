@@ -8,6 +8,11 @@ export enum UserRole {
   ADMIN = "ADMIN",
 }
 
+export enum AuthProvider {
+  EMAIL = "EMAIL",
+  GOOGLE = "GOOGLE",
+}
+
 // ==================== Sub-Schemas (Embedded) ====================
 interface ICloudinaryImage {
   url: string;
@@ -42,7 +47,7 @@ interface IMerchantProfile {
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
   email: string;
-  password: string;
+  password?: string; // Optional for Google OAuth users
   full_name: string;
   phone_number?: string;
   role: UserRole;
@@ -50,6 +55,12 @@ export interface IUser extends Document {
   is_active: boolean;
   subscription?: ISubscription;
   merchant_profile?: IMerchantProfile;
+  // Authentication fields
+  auth_provider: AuthProvider;
+  google_id?: string;
+  is_email_verified: boolean;
+  refresh_token_version: number;
+  tm_balance: number; // Virtual currency (1000 TM = 1000 VND)
   created_at: Date;
   updated_at: Date;
 }
@@ -104,7 +115,7 @@ const UserSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
+      // Password is optional for Google OAuth users
       minlength: [6, "Password must be at least 6 characters"],
     },
     full_name: {
@@ -128,6 +139,27 @@ const UserSchema = new Schema<IUser>(
     },
     subscription: SubscriptionSchema,
     merchant_profile: MerchantProfileSchema,
+    // Authentication fields
+    auth_provider: {
+      type: String,
+      enum: Object.values(AuthProvider),
+      default: AuthProvider.EMAIL,
+    },
+    google_id: {
+      type: String,
+    },
+    is_email_verified: {
+      type: Boolean,
+      default: false,
+    },
+    refresh_token_version: {
+      type: Number,
+      default: 0,
+    },
+    tm_balance: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
@@ -138,6 +170,7 @@ const UserSchema = new Schema<IUser>(
 // Note: email index is automatically created by unique: true
 UserSchema.index({ role: 1 });
 UserSchema.index({ is_active: 1 });
+UserSchema.index({ google_id: 1 }, { sparse: true });
 
 // ==================== Model Export ====================
 const User: Model<IUser> =

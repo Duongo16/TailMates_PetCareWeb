@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const packages = await Package.find({
       target_role: "CUSTOMER",
       is_active: true,
-    }).sort({ price: 1 });
+    }).sort({ order: 1, price: 1 });
 
     return apiResponse.success(packages);
   } catch (error) {
