@@ -31,11 +31,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse webhook payload
-    const data = JSON.parse(rawBody);
+    let data;
+    try {
+      data = JSON.parse(rawBody);
+    } catch (e) {
+      console.error("Failed to parse webhook JSON:", rawBody);
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    }
+
     const webhookPayload = parseWebhookPayload(data);
 
     if (!webhookPayload) {
-      console.error("Invalid webhook payload:", data);
+      console.error("Invalid webhook payload structure:", data);
       return NextResponse.json(
         { error: "Invalid payload format" },
         { status: 400 }
@@ -50,7 +57,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    await connectDB();
+    console.log("Processing webhook for transfer ID:", webhookPayload.id);
+
+    try {
+      await connectDB();
+    } catch (dbError) {
+      console.error("Database connection failed in webhook:", dbError);
+      throw dbError; // Rethrow to hit the 500 catch block with original error
+    }
 
     // Extract transaction code from content
     const transactionCode = parseTransactionCode(webhookPayload.content);
@@ -82,6 +96,7 @@ export async function POST(request: NextRequest) {
 
     // Check if transaction has expired
     if (new Date() > transaction.expire_at) {
+      console.log("Transaction code", transactionCode, "has expired");
       transaction.status = TransactionStatus.EXPIRED;
       await transaction.save();
       return NextResponse.json({
@@ -93,7 +108,7 @@ export async function POST(request: NextRequest) {
     // Verify amount matches
     if (webhookPayload.transferAmount !== transaction.amount) {
       console.log(
-        `Amount mismatch: expected ${transaction.amount}, got ${webhookPayload.transferAmount}`
+        `Amount mismatch for ${transactionCode}: expected ${transaction.amount}, got ${webhookPayload.transferAmount}`
       );
       return NextResponse.json({
         success: true,
@@ -109,26 +124,36 @@ export async function POST(request: NextRequest) {
 
     // Trigger real-time notification via Pusher
     if (pusherServer) {
-      await pusherServer.trigger(
-        `payment-${transaction._id}`,
-        "payment_completed",
-        {
-          status: TransactionStatus.SUCCESS,
-          transaction_id: transaction._id,
-          transaction_code: transactionCode,
-          amount: transaction.amount,
-        }
-      );
-      console.log(`Pusher notification sent for transaction ${transactionCode}`);
+      try {
+        await pusherServer.trigger(
+          `payment-${transaction._id}`,
+          "payment_completed",
+          {
+            status: TransactionStatus.SUCCESS,
+            transaction_id: transaction._id,
+            transaction_code: transactionCode,
+            amount: transaction.amount,
+          }
+        );
+        console.log(`Pusher notification sent for transaction ${transactionCode}`);
+      } catch (pusherError) {
+        console.error("Pusher trigger failed:", pusherError);
+        // Don't fail the whole webhook if Pusher fails
+      }
     }
 
     // Process based on transaction type
-    if (transaction.type === TransactionType.SUBSCRIPTION) {
-      await processSubscription(transaction);
-    } else if (transaction.type === TransactionType.ORDER) {
-      await processOrder(transaction);
-    } else if (transaction.type === TransactionType.TOP_UP) {
-      await processTopUp(transaction);
+    try {
+      if (transaction.type === TransactionType.SUBSCRIPTION) {
+        await processSubscription(transaction);
+      } else if (transaction.type === TransactionType.ORDER) {
+        await processOrder(transaction);
+      } else if (transaction.type === TransactionType.TOP_UP) {
+        await processTopUp(transaction);
+      }
+    } catch (processError) {
+      console.error(`Process error for type ${transaction.type}:`, processError);
+      // Even if post-processing fails, we've marked transaction as paid
     }
 
     console.log(
@@ -141,9 +166,9 @@ export async function POST(request: NextRequest) {
       transaction_id: transaction._id,
     });
   } catch (error) {
-    console.error("Webhook processing error:", error);
+    console.error("Webhook Internal Server Error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }
     );
   }

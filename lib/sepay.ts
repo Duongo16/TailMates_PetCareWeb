@@ -110,14 +110,21 @@ export const verifyWebhookSignature = (
     return true; // Allow in development without secret
   }
 
+  if (!signature) return false;
+
   const expectedSignature = createHmac("sha256", config.webhookSecret)
     .update(payload)
     .digest("hex");
 
-  return timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+  // timingSafeEqual requires same length buffers
+  const signatureBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+
+  if (signatureBuffer.length !== expectedBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(signatureBuffer, expectedBuffer);
 };
 
 // ==================== Transaction Content Parser ====================
@@ -146,17 +153,22 @@ export const parseWebhookPayload = (
   data: Record<string, unknown>
 ): WebhookPayload | null => {
   try {
-    // Validate required fields
+    // Validate required fields (handle potential string-to-number conversion)
+    const id = typeof data.id === "number" ? data.id : Number(data.id);
+    const transferAmount = typeof data.transferAmount === "number" ? data.transferAmount : Number(data.transferAmount);
+    const accumulated = typeof data.accumulated === "number" ? data.accumulated : Number(data.accumulated);
+
     if (
-      typeof data.id !== "number" ||
+      isNaN(id) ||
       typeof data.content !== "string" ||
-      typeof data.transferAmount !== "number"
+      isNaN(transferAmount)
     ) {
+      console.error("Invalid SePay data:", data);
       return null;
     }
 
     return {
-      id: data.id as number,
+      id,
       gateway: (data.gateway as string) || "",
       transactionDate: (data.transactionDate as string) || "",
       accountNumber: (data.accountNumber as string) || "",
@@ -165,11 +177,12 @@ export const parseWebhookPayload = (
       content: data.content as string,
       transferType: (data.transferType as "in" | "out") || "in",
       description: data.description as string | undefined,
-      transferAmount: data.transferAmount as number,
+      transferAmount,
       referenceCode: (data.referenceCode as string) || "",
-      accumulated: (data.accumulated as number) || 0,
+      accumulated,
     };
-  } catch {
+  } catch (err) {
+    console.error("Error parsing SePay payload:", err);
     return null;
   }
 };
