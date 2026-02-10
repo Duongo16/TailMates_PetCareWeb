@@ -107,24 +107,39 @@ export const verifyWebhookSignature = (
 
   if (!config.webhookSecret) {
     console.warn("SEPAY_WEBHOOK_SECRET not configured, skipping verification");
-    return true; // Allow in development without secret
+    return true;
   }
 
-  if (!signature) return false;
+  if (!signature) {
+    console.error("Webhook signature missing in headers");
+    return false;
+  }
 
+  // Method 1: Literal comparison (Standard for many simple webhooks)
+  if (signature === config.webhookSecret) {
+    return true;
+  }
+
+  // Method 2: HMAC SHA256 comparison
   const expectedSignature = createHmac("sha256", config.webhookSecret)
     .update(payload)
     .digest("hex");
 
-  // timingSafeEqual requires same length buffers
   const signatureBuffer = Buffer.from(signature);
   const expectedBuffer = Buffer.from(expectedSignature);
 
-  if (signatureBuffer.length !== expectedBuffer.length) {
-    return false;
+  if (
+    signatureBuffer.length === expectedBuffer.length &&
+    timingSafeEqual(signatureBuffer, expectedBuffer)
+  ) {
+    return true;
   }
 
-  return timingSafeEqual(signatureBuffer, expectedBuffer);
+  console.error("Webhook signature mismatch.");
+  console.log("Received signature (first 5 chars):", signature.substring(0, 5) + "...");
+  // DO NOT log the whole expected signature or secret for security
+  
+  return false;
 };
 
 // ==================== Transaction Content Parser ====================

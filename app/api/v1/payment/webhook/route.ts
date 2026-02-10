@@ -19,14 +19,20 @@ import { pusherServer } from "@/lib/pusher";
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
-    const signature = request.headers.get("x-sepay-signature") || "";
+    const signature = 
+      request.headers.get("x-sepay-signature") || 
+      request.headers.get("x-sepay-secret") ||
+      request.headers.get("Authorization") ||
+      "";
 
     // Verify webhook signature (optional in development)
     if (
       process.env.NODE_ENV === "production" &&
       !verifyWebhookSignature(rawBody, signature)
     ) {
-      console.error("Invalid webhook signature");
+      console.error("Invalid webhook signature. headers received:", 
+        JSON.stringify(Object.fromEntries(request.headers.entries()))
+      );
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
