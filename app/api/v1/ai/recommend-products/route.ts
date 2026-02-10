@@ -4,6 +4,7 @@ import Pet from "@/models/Pet";
 import Product from "@/models/Product";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 import { UserRole } from "@/models/User";
+import { checkFeatureAccess } from "@/lib/subscription-guard";
 import mongoose from "mongoose";
 
 // POST /api/v1/ai/recommend-products - AI product recommendations
@@ -14,6 +15,12 @@ export async function POST(request: NextRequest) {
 
     const authError = authorize(user!, [UserRole.CUSTOMER]);
     if (authError) return authError;
+
+    // Check ai_recommendations feature from subscription
+    const featureCheck = await checkFeatureAccess(user!, "ai_recommendations");
+    if (!featureCheck.allowed) {
+      return apiResponse.forbidden(featureCheck.reason);
+    }
 
     await connectDB();
 

@@ -6,28 +6,66 @@ import { Button } from "@/components/ui/button"
 import { useCustomerPackages } from "@/lib/hooks"
 import { packagesAPI } from "@/lib/api"
 import { motion, AnimatePresence } from "framer-motion"
+import { useAuth } from "@/lib/auth-context"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export function Subscription() {
   const { data: packages, isLoading } = useCustomerPackages()
+  const { user, refreshUser } = useAuth()
+  const router = useRouter()
   const [isSubscribing, setIsSubscribing] = useState<string | null>(null)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    package: any | null;
+  }>({
+    isOpen: false,
+    package: null,
+  })
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const featuredRef = useRef<HTMLDivElement>(null)
 
-  const handleSubscribe = async (packageId: string) => {
-    setIsSubscribing(packageId)
+  const handleSubscribeClick = (pkg: any) => {
+    setConfirmDialog({
+      isOpen: true,
+      package: pkg,
+    })
+  }
+
+  const handleConfirmSubscribe = async () => {
+    const pkg = confirmDialog.package
+    if (!pkg) return
+
+    // Check balance
+    if ((user?.tm_balance || 0) < pkg.price) {
+      toast.error("Số dư TM không đủ để đăng ký gói này.")
+      router.push("/top-up")
+      return
+    }
+
+    setIsSubscribing(pkg._id)
+    setConfirmDialog({ isOpen: false, package: null })
+
     try {
-      const res = await packagesAPI.subscribeCustomer(packageId)
-      if (res.success && res.data) {
-        if ((res.data as any).payment_url) {
-          window.location.href = (res.data as any).payment_url
-        } else {
-          alert("Đăng ký thành công!")
-        }
+      const res = await packagesAPI.subscribeCustomer(pkg._id)
+      if (res.success) {
+        toast.success("Đăng ký thành công!")
+        await refreshUser()
       } else {
-        alert(res.message || "Đăng ký thất bại")
+        toast.error(res.message || "Đăng ký thất bại")
       }
     } catch {
-      alert("Lỗi kết nối hệ thống")
+      toast.error("Lỗi kết nối hệ thống")
     } finally {
       setIsSubscribing(null)
     }
@@ -227,7 +265,7 @@ export function Subscription() {
                             ? "bg-primary text-white shadow-xl shadow-primary/20 hover:scale-[1.02] border-none" 
                             : "bg-secondary text-primary hover:bg-primary hover:text-white border-none"
                         }`}
-                        onClick={() => handleSubscribe(pkg._id)}
+                        onClick={() => handleSubscribeClick(pkg)}
                         disabled={isSubscribing === pkg._id}
                       >
                         {isSubscribing === pkg._id ? (
@@ -262,6 +300,66 @@ export function Subscription() {
           <Sparkles className="w-3 h-3 text-primary animate-pulse" />
         </p>
       </div>
+      {/* Confirmation Dialog */}
+      <AlertDialog
+        open={confirmDialog.isOpen}
+        onOpenChange={(open) => !open && setConfirmDialog({ ...confirmDialog, isOpen: false })}
+      >
+        <AlertDialogContent className="rounded-[32px] border-none shadow-2xl p-8 max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-2xl font-black text-navy text-center">
+              Xác nhận đăng ký
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center pt-4 space-y-4">
+              <div className="bg-primary/5 rounded-2xl p-4 border border-primary/10">
+                <p className="text-sm font-bold text-foreground/60 uppercase tracking-widest mb-1">Gói dịch vụ</p>
+                <p className="text-xl font-black text-primary">{confirmDialog.package?.name}</p>
+                <p className="text-sm font-bold text-foreground/40 mt-1">{confirmDialog.package?.duration_months} tháng</p>
+              </div>
+
+              <div className="flex justify-between items-center px-2">
+                <span className="text-sm font-bold text-foreground/60">Giá gói</span>
+                <span className="text-lg font-black text-navy">{confirmDialog.package && formatPrice(confirmDialog.package.price)}</span>
+              </div>
+
+              <div className="flex justify-between items-center px-2">
+                <span className="text-sm font-bold text-foreground/60">Số dư hiện tại</span>
+                <span className="text-lg font-black text-primary">{user?.tm_balance?.toLocaleString()} TM</span>
+              </div>
+
+              {(user?.tm_balance || 0) < (confirmDialog.package?.price || 0) ? (
+                <div className="bg-red-50 text-red-500 rounded-xl p-3 text-xs font-bold border border-red-100 mt-4">
+                  ⚠️ Số dư không đủ. Vui lòng nạp thêm Xu để tiếp tục.
+                </div>
+              ) : (
+                <p className="text-xs text-foreground/40 font-medium">
+                  Số tiền sẽ được trừ trực tiếp vào ví TailMates của bạn.
+                </p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex flex-col sm:flex-row gap-3 pt-6">
+            <AlertDialogCancel className="w-full sm:w-1/2 h-12 rounded-2xl border-none bg-secondary text-primary font-black m-0">
+              Hủy bỏ
+            </AlertDialogCancel>
+            {(user?.tm_balance || 0) < (confirmDialog.package?.price || 0) ? (
+              <Button
+                className="w-full sm:w-1/2 h-12 rounded-2xl bg-primary text-white font-black shadow-lg shadow-primary/20"
+                onClick={() => router.push("/top-up")}
+              >
+                Nạp thêm Xu
+              </Button>
+            ) : (
+              <AlertDialogAction
+                className="w-full sm:w-1/2 h-12 rounded-2xl bg-primary text-white font-black shadow-lg shadow-primary/20 m-0"
+                onClick={handleConfirmSubscribe}
+              >
+                Xác nhận thanh toán
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

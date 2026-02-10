@@ -85,6 +85,58 @@ interface ManagerDashboardContentProps {
 
 const COLORS = ["#F15A29", "#3B6DB3", "#2D3561", "#FAD5C8", "#00C49F", "#FFBB28", "#FF8042"]
 
+const FEATURE_TOGGLE_LABELS: Record<string, string> = {
+  pawmate_connect: "🐾 PawMate kết nối",
+  blog_posting: "📝 Đăng blog",
+  ai_personality: "🤖 AI phân tích tính cách",
+  ai_recommendations: "🍖 AI gợi ý thức ăn/dịch vụ",
+  priority_support: "⭐ Hỗ trợ ưu tiên",
+}
+
+const FeaturesConfigEditor = ({ config, onChange }: { config: any, onChange: (config: any) => void }) => {
+  const toggleKeys = ["pawmate_connect", "blog_posting", "ai_personality", "ai_recommendations", "priority_support"]
+  return (
+    <div className="space-y-3 mt-4 border-t pt-4">
+      <Label className="text-sm font-bold">Cấu hình tính năng</Label>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-xs text-foreground/60">Số thú cưng tối đa</Label>
+          <Input
+            type="number"
+            min={1}
+            value={config.max_pets ?? 1}
+            onChange={(e) => onChange({ ...config, max_pets: Number(e.target.value) })}
+            className="rounded-xl h-8"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-xs text-foreground/60">Giới hạn AI / ngày</Label>
+          <Input
+            type="number"
+            min={0}
+            value={config.ai_limit_per_day ?? 5}
+            onChange={(e) => onChange({ ...config, ai_limit_per_day: Number(e.target.value) })}
+            className="rounded-xl h-8"
+          />
+        </div>
+      </div>
+      <div className="space-y-2">
+        {toggleKeys.map((key) => (
+          <label key={key} className="flex items-center gap-2.5 p-2 bg-secondary/20 rounded-xl cursor-pointer hover:bg-secondary/40 transition-colors">
+            <input
+              type="checkbox"
+              checked={!!config[key]}
+              onChange={(e) => onChange({ ...config, [key]: e.target.checked })}
+              className="w-4 h-4 rounded text-primary focus:ring-primary"
+            />
+            <span className="text-sm font-medium">{FEATURE_TOGGLE_LABELS[key]}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 const BenefitsEditor = ({ benefits, onChange }: { benefits: any[], onChange: (benefits: any[]) => void }) => {
   const addBenefit = () => onChange([...benefits, { text: "", is_bold: false, color: "" }])
   const removeBenefit = (index: number) => onChange(benefits.filter((_, i) => i !== index))
@@ -167,11 +219,14 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
     description: "",
     order: 0,
     benefits: [] as { text: string; is_bold: boolean; color: string }[],
-    // Simplify features config for now
     features_config: {
       ai_limit_per_day: 5,
       max_pets: 1,
-      priority_support: false
+      priority_support: false,
+      pawmate_connect: false,
+      blog_posting: false,
+      ai_personality: false,
+      ai_recommendations: false,
     }
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -234,7 +289,7 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
           description: "",
           order: 0,
           benefits: [],
-          features_config: { ai_limit_per_day: 5, max_pets: 1, priority_support: false }
+          features_config: { ai_limit_per_day: 5, max_pets: 1, priority_support: false, pawmate_connect: false, blog_posting: false, ai_personality: false, ai_recommendations: false }
         })
       } else {
         alert(res.message)
@@ -258,6 +313,7 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
         duration_months: Number(editingPackage.duration_months),
         description: editingPackage.description,
         benefits: editingPackage.benefits,
+        features_config: editingPackage.features_config,
         order: Number(editingPackage.order),
         is_active: editingPackage.is_active,
       })
@@ -661,6 +717,11 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
                   <Input type="number" value={newPackage.price} onChange={(e) => setNewPackage({ ...newPackage, price: e.target.value })} placeholder="99000" className="rounded-xl" />
                 </div>
                 
+                <FeaturesConfigEditor
+                  config={newPackage.features_config}
+                  onChange={(features_config) => setNewPackage({ ...newPackage, features_config })}
+                />
+
                 <BenefitsEditor 
                   benefits={newPackage.benefits} 
                   onChange={(benefits) => setNewPackage({ ...newPackage, benefits })} 
@@ -721,6 +782,11 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
                   <Label>Giá (VND) *</Label>
                   <Input type="number" value={editingPackage.price} onChange={(e) => setEditingPackage({ ...editingPackage, price: e.target.value })} className="rounded-xl" />
                 </div>
+
+                <FeaturesConfigEditor
+                  config={editingPackage.features_config || {}}
+                  onChange={(features_config) => setEditingPackage({ ...editingPackage, features_config })}
+                />
 
                 <BenefitsEditor 
                   benefits={editingPackage.benefits || []} 

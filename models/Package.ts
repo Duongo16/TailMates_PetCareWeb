@@ -9,6 +9,11 @@ interface IFeaturesConfig {
   unlimited_products?: boolean;
   qr_scanning?: boolean;
   advanced_analytics?: boolean;
+  // Customer feature toggles
+  pawmate_connect: boolean;
+  blog_posting: boolean;
+  ai_personality: boolean;
+  ai_recommendations: boolean;
 }
 
 // ==================== Main Interface ====================
@@ -41,6 +46,11 @@ const FeaturesConfigSchema = new Schema<IFeaturesConfig>(
     unlimited_products: { type: Boolean, default: false },
     qr_scanning: { type: Boolean, default: false },
     advanced_analytics: { type: Boolean, default: false },
+    // Customer feature toggles
+    pawmate_connect: { type: Boolean, default: false },
+    blog_posting: { type: Boolean, default: false },
+    ai_personality: { type: Boolean, default: false },
+    ai_recommendations: { type: Boolean, default: false },
   },
   { _id: false }
 );

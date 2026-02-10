@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyToken, extractToken } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import Pet from "@/models/Pet";
+import User from "@/models/User";
 import MedicalRecord from "@/models/MedicalRecord";
 import { generatePersonalityAnalysis, generateRuleBasedPersonality } from "@/lib/openrouter";
+import { checkFeatureAccess } from "@/lib/subscription-guard";
 
 // Helper to check if analysis is outdated (> 30 days)
 function isAnalysisOutdated(analyzedAt: Date | null | undefined): boolean {
@@ -129,6 +131,22 @@ export async function POST(req: NextRequest) {
         }
 
         await connectDB();
+
+        // Check ai_personality feature from subscription
+        const userDoc = await User.findById(decoded.userId);
+        if (!userDoc) {
+            return NextResponse.json(
+                { success: false, message: "User not found" },
+                { status: 404 }
+            );
+        }
+        const featureCheck = await checkFeatureAccess(userDoc, "ai_personality");
+        if (!featureCheck.allowed) {
+            return NextResponse.json(
+                { success: false, message: featureCheck.reason },
+                { status: 403 }
+            );
+        }
 
         const pet = await Pet.findOne({ _id: petId, owner_id: decoded.userId });
         if (!pet) {

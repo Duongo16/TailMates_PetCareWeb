@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 import Pet from "@/models/Pet";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 import { UserRole } from "@/models/User";
+import { checkQuantityLimit } from "@/lib/subscription-guard";
 
 // GET /api/v1/pets - List user's pets
 export async function GET(request: NextRequest) {
@@ -34,6 +35,13 @@ export async function POST(request: NextRequest) {
     if (authError) return authError;
 
     await connectDB();
+
+    // Check max_pets limit from subscription
+    const petCount = await Pet.countDocuments({ owner_id: user!._id });
+    const limitCheck = await checkQuantityLimit(user!, "max_pets", petCount);
+    if (!limitCheck.allowed) {
+      return apiResponse.forbidden(limitCheck.reason);
+    }
 
     const body = await request.json();
     const {

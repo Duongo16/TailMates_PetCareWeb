@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import connectDB from "@/lib/db";
 import BlogPost, { BlogStatus } from "@/models/BlogPost";
 import { authenticate, apiResponse } from "@/lib/auth";
+import { checkFeatureAccess } from "@/lib/subscription-guard";
 
 // GET /api/v1/blog - List blog posts (Public)
 export async function GET(request: NextRequest) {
@@ -66,6 +67,12 @@ export async function POST(request: NextRequest) {
     try {
         const { user, error } = await authenticate(request);
         if (error) return error;
+
+        // Check blog_posting feature from subscription
+        const featureCheck = await checkFeatureAccess(user!, "blog_posting");
+        if (!featureCheck.allowed) {
+            return apiResponse.forbidden(featureCheck.reason);
+        }
 
         await connectDB();
 

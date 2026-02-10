@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import connectDB from "@/lib/db";
 import { Pet, SwipeInteraction } from "@/models";
 import { authenticate, apiResponse } from "@/lib/auth";
+import { checkFeatureAccess } from "@/lib/subscription-guard";
 import mongoose from "mongoose";
 
 // GET /api/v1/pawmatch/discovery?petId=...&species=...
@@ -9,6 +10,12 @@ export async function GET(request: NextRequest) {
     try {
         const { user, error } = await authenticate(request);
         if (error) return error;
+
+        // Check pawmate_connect feature from subscription
+        const featureCheck = await checkFeatureAccess(user!, "pawmate_connect");
+        if (!featureCheck.allowed) {
+            return apiResponse.forbidden(featureCheck.reason);
+        }
 
         await connectDB();
 

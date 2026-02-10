@@ -86,8 +86,22 @@ const SubscriptionSchema = new Schema<ISubscription>(
 
 const MerchantProfileSchema = new Schema<IMerchantProfile>(
   {
-    shop_name: { type: String, required: true },
-    address: { type: String, required: true },
+    shop_name: {
+      type: String,
+      required: function (this: any) {
+        // Special case for subdocument validation in Mongoose
+        // When validating the parent User, we want this required IF role is MERCHANT
+        const parent = this.parent ? this.parent() : this;
+        return parent?.role === UserRole.MERCHANT;
+      },
+    },
+    address: {
+      type: String,
+      required: function (this: any) {
+        const parent = this.parent ? this.parent() : this;
+        return parent?.role === UserRole.MERCHANT;
+      },
+    },
     description: { type: String },
     rating: { type: Number, default: 0, min: 0, max: 5 },
     revenue_stats: { type: Number, default: 0 },

@@ -66,6 +66,10 @@ export async function POST(request: NextRequest) {
         ai_limit_per_day: 5,
         max_pets: 1,
         priority_support: false,
+        pawmate_connect: false,
+        blog_posting: false,
+        ai_personality: false,
+        ai_recommendations: false,
       },
       is_active: true,
     });
