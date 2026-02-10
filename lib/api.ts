@@ -36,6 +36,58 @@ async function fetchWithAuth<T>(
     const data = await response.json();
 
     if (!response.ok) {
+      // Automatic token refresh logic
+      if (data.code === "TOKEN_EXPIRED") {
+        const refreshToken = typeof window !== "undefined" ? localStorage.getItem("tailmates_refresh_token") : null;
+        
+        if (refreshToken) {
+          console.log("Token expired, attempting refresh...");
+          try {
+            const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ refreshToken }),
+            });
+            
+            const refreshData = await refreshResponse.json();
+            
+            if (refreshResponse.ok && refreshData.success && refreshData.data) {
+              const { accessToken, refreshToken: newRefreshToken } = refreshData.data;
+              
+              // Save new tokens
+              localStorage.setItem("tailmates_token", accessToken);
+              localStorage.setItem("tailmates_refresh_token", newRefreshToken);
+              localStorage.setItem("tailmates_user", JSON.stringify(refreshData.data.user || {}));
+              
+              console.log("Token refreshed successfully, retrying request...");
+              
+              // Retry the original request with new token
+              const retryHeaders = {
+                ...headers,
+                "Authorization": `Bearer ${accessToken}`
+              };
+              
+              const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
+                ...options,
+                headers: retryHeaders,
+              });
+              
+              const retryData = await retryResponse.json();
+              
+              if (retryResponse.ok) {
+                return {
+                  success: true,
+                  data: retryData.data,
+                  message: retryData.message,
+                };
+              }
+            }
+          } catch (refreshErr) {
+            console.error("Token refresh failed:", refreshErr);
+          }
+        }
+      }
+
       return {
         success: false,
         message: data.message || "Request failed",
