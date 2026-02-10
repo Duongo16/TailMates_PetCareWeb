@@ -86,17 +86,34 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Find pending transaction with this code
+    // Find transaction with this code
     const transaction = await Transaction.findOne({
       transaction_code: transactionCode,
-      status: TransactionStatus.PENDING,
     });
 
     if (!transaction) {
-      console.log("No pending transaction found for code:", transactionCode);
+      console.log("No transaction found for code:", transactionCode);
       return NextResponse.json({
         success: true,
-        message: "No pending transaction found",
+        message: "No matching transaction found",
+      });
+    }
+
+    // Check if already processed
+    if (transaction.status === TransactionStatus.SUCCESS) {
+      console.log(`Transaction ${transactionCode} was already successful. Skipping.`);
+      return NextResponse.json({
+        success: true,
+        message: "Transaction already processed",
+        transaction_id: String(transaction._id),
+      });
+    }
+
+    if (transaction.status !== TransactionStatus.PENDING) {
+      console.log(`Transaction ${transactionCode} is in status ${transaction.status}. Skipping.`);
+      return NextResponse.json({
+        success: true,
+        message: `Transaction is ${transaction.status}`,
       });
     }
 
@@ -169,7 +186,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: "Transaction processed successfully",
-      transaction_id: transaction._id,
+      transaction_id: String(transaction._id),
     });
   } catch (error) {
     console.error("Webhook Internal Server Error:", error);

@@ -138,6 +138,11 @@ export function usePaymentStatus(
     setIsPolling(true);
   }, []);
 
+  // Sync isPolling with enabled prop
+  useEffect(() => {
+    setIsPolling(enabled);
+  }, [enabled]);
+
   // Setup polling (fallback)
   useEffect(() => {
     if (!transactionId || !isPolling) {
