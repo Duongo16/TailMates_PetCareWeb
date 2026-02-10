@@ -115,8 +115,14 @@ export const verifyWebhookSignature = (
     return false;
   }
 
+  // SePay might send Authorization: "Apikey YOUR_KEY"
+  // We need to extract the actual key
+  const actualToken = signature.startsWith("Apikey ") 
+    ? signature.substring(7) 
+    : signature;
+
   // Method 1: Literal comparison (Standard for many simple webhooks)
-  if (signature === config.webhookSecret) {
+  if (actualToken === config.webhookSecret) {
     return true;
   }
 
@@ -125,7 +131,7 @@ export const verifyWebhookSignature = (
     .update(payload)
     .digest("hex");
 
-  const signatureBuffer = Buffer.from(signature);
+  const signatureBuffer = Buffer.from(actualToken);
   const expectedBuffer = Buffer.from(expectedSignature);
 
   if (
