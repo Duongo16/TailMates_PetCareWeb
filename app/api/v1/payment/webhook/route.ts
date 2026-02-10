@@ -263,18 +263,23 @@ async function processOrder(transaction: InstanceType<typeof Transaction>) {
 // Helper function to process top up
 async function processTopUp(transaction: InstanceType<typeof Transaction>) {
   try {
-    const user = await User.findByIdAndUpdate(transaction.user_id, {
-      $inc: { tm_balance: transaction.amount },
-    });
+    console.log(`Starting Top-up for user ${transaction.user_id} with amount ${transaction.amount}`);
+    
+    // Use new: true to get the updated document for logging
+    const user = await User.findByIdAndUpdate(
+      transaction.user_id, 
+      { $inc: { tm_balance: transaction.amount } },
+      { new: true }
+    );
 
     if (user) {
       console.log(
-        `Top-up of ${transaction.amount} TM completed for user ${user.full_name} (${user._id}). New balance: ${(user.tm_balance || 0) + transaction.amount}`
+        `Top-up SUCCESS: User ${user.full_name} (${user._id}) new balance: ${user.tm_balance} TM`
       );
     } else {
-      console.error("User not found for top-up:", transaction.user_id);
+      console.error(`Top-up FAILED: User ${transaction.user_id} not found`);
     }
   } catch (error) {
-    console.error("Failed to process top-up:", error);
+    console.error("Failed to process top-up internal error:", error);
   }
 }

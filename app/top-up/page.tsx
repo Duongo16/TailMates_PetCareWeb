@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { usePaymentStatus } from "@/hooks/usePaymentStatus";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,19 +29,42 @@ const TOP_UP_OPTIONS = [
 ];
 
 export default function TopUpPage() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const router = useRouter();
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState<string>("");
   const [isCreating, setIsCreating] = useState(false);
   const [transaction, setTransaction] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const [countdown, setCountdown] = useState(5);
 
   const { status } = usePaymentStatus(transaction?.transaction_id, {
     enabled: !!transaction?.transaction_id,
-    onSuccess: () => {
-      toast.success("Payment Received! Your balance has been updated.");
+    onSuccess: async () => {
+      toast.success("Nạp xu thành công! Đang cập nhật số dư...");
+      await refreshUser();
     },
   });
+
+  useEffect(() => {
+    if (status === "SUCCESS") {
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            if (user?.role === "merchant") {
+              router.push("/dashboard/merchant");
+            } else {
+              router.push("/dashboard/customer");
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [status, router, user?.role]);
 
   const handleCreateQR = async () => {
     const amount = selectedAmount || parseInt(customAmount);
@@ -246,6 +270,7 @@ export default function TopUpPage() {
                         <div className="space-y-1">
                           <h3 className="text-2xl font-black text-slate-900">Thành công!</h3>
                           <p className="text-slate-500 font-medium">Tài khoản của bạn đã được cộng <span className="text-[#FF5722] font-bold">{transaction.amount.toLocaleString()}đ</span></p>
+                          <p className="text-xs text-slate-400 mt-2 italic">Đang chuyển hướng về Dashboard sau {countdown}s...</p>
                         </div>
                         <Button variant="ghost" className="text-slate-400 font-bold hover:text-[#FF5722] mt-4" onClick={() => setTransaction(null)}>Thực hiện giao dịch khác</Button>
                       </motion.div>
