@@ -43,6 +43,7 @@ export interface User {
       zalo?: string
     }
   }
+  tm_balance?: number
 }
 
 interface AuthResult {
@@ -115,6 +116,7 @@ function mapApiUserToUser(apiUser: any): User {
     auth_provider: apiUser.auth_provider,
     subscription: apiUser.subscription,
     merchant_profile: apiUser.merchant_profile,
+    tm_balance: apiUser.tm_balance,
   }
 }
 

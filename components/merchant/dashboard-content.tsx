@@ -53,6 +53,7 @@ import {
   BarChart as BarChartIcon,
   ChevronLeft,
   ChevronRight,
+  Coins,
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -796,6 +797,22 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
                   <div>
                     <p className="text-[10px] font-bold text-foreground/50 uppercase tracking-widest leading-none mb-1">Doanh thu</p>
                     <p className="text-xl font-bold text-foreground">{formatPrice(stats.totalRevenue)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card
+              className="border-none shadow-sm bg-white/40 backdrop-blur-md transition-all hover:scale-[1.02] hover:shadow-md group cursor-pointer"
+              onClick={() => router.push("/top-up")}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-yellow-50 flex items-center justify-center transition-transform group-hover:rotate-12">
+                    <Coins className="w-6 h-6 text-yellow-600" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-foreground/50 uppercase tracking-widest leading-none mb-1">Số dư TM</p>
+                    <p className="text-xl font-bold text-yellow-600">{(user as any).tm_balance?.toLocaleString() || 0} TM</p>
                   </div>
                 </div>
               </CardContent>

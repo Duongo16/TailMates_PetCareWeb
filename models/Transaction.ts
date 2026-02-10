@@ -95,7 +95,6 @@ const TransactionSchema = new Schema<ITransaction>(
 
 // ==================== Indexes ====================
 TransactionSchema.index({ user_id: 1 });
-TransactionSchema.index({ transaction_code: 1 }, { unique: true });
 TransactionSchema.index({ status: 1 });
 TransactionSchema.index({ expire_at: 1 });
 TransactionSchema.index({ created_at: -1 });

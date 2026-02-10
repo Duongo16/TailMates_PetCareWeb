@@ -6,12 +6,14 @@ import Transaction, {
 } from "@/models/Transaction";
 import User from "@/models/User";
 import Package from "@/models/Package";
+import Order, { OrderStatus } from "@/models/Order";
 import SubscriptionLog from "@/models/SubscriptionLog";
 import {
   verifyWebhookSignature,
   parseTransactionCode,
   parseWebhookPayload,
 } from "@/lib/sepay";
+import { pusherServer } from "@/lib/pusher";
 
 // POST /api/v1/payment/webhook - SePay webhook callback
 export async function POST(request: NextRequest) {
@@ -105,12 +107,29 @@ export async function POST(request: NextRequest) {
     transaction.paid_at = new Date();
     await transaction.save();
 
+    // Trigger real-time notification via Pusher
+    if (pusherServer) {
+      await pusherServer.trigger(
+        `payment-${transaction._id}`,
+        "payment_completed",
+        {
+          status: TransactionStatus.SUCCESS,
+          transaction_id: transaction._id,
+          transaction_code: transactionCode,
+          amount: transaction.amount,
+        }
+      );
+      console.log(`Pusher notification sent for transaction ${transactionCode}`);
+    }
+
     // Process based on transaction type
     if (transaction.type === TransactionType.SUBSCRIPTION) {
       await processSubscription(transaction);
+    } else if (transaction.type === TransactionType.ORDER) {
+      await processOrder(transaction);
+    } else if (transaction.type === TransactionType.TOP_UP) {
+      await processTopUp(transaction);
     }
-
-    // TODO: Handle ORDER type when implementing e-commerce payment
 
     console.log(
       `Transaction ${transactionCode} completed successfully for amount ${transaction.amount}`
@@ -185,5 +204,46 @@ async function processSubscription(
     );
   } catch (error) {
     console.error("Failed to process subscription:", error);
+  }
+}
+
+// Helper function to process order after successful payment
+async function processOrder(transaction: InstanceType<typeof Transaction>) {
+  try {
+    if (!transaction.reference_id) {
+      console.error("No reference_id for order transaction");
+      return;
+    }
+
+    const order = await Order.findByIdAndUpdate(transaction.reference_id, {
+      $set: { status: OrderStatus.CONFIRMED },
+    });
+
+    if (order) {
+      console.log(`Order ${order._id} confirmed via payment`);
+    } else {
+      console.error("Order not found:", transaction.reference_id);
+    }
+  } catch (error) {
+    console.error("Failed to process order:", error);
+  }
+}
+
+// Helper function to process top up
+async function processTopUp(transaction: InstanceType<typeof Transaction>) {
+  try {
+    const user = await User.findByIdAndUpdate(transaction.user_id, {
+      $inc: { tm_balance: transaction.amount },
+    });
+
+    if (user) {
+      console.log(
+        `Top-up of ${transaction.amount} TM completed for user ${user.full_name} (${user._id}). New balance: ${(user.tm_balance || 0) + transaction.amount}`
+      );
+    } else {
+      console.error("User not found for top-up:", transaction.user_id);
+    }
+  } catch (error) {
+    console.error("Failed to process top-up:", error);
   }
 }

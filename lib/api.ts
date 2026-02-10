@@ -275,6 +275,21 @@ export const petsAPI = {
   getQRCode: (petId: string) => fetchWithAuth(`/pets/${petId}/qr-code`),
 };
 
+// ==================== Payment API ====================
+export const paymentAPI = {
+  createQR: (data: { type: string; amount: number; reference_id?: string }) =>
+    fetchWithAuth<any>("/payment/create-qr", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  payWithTM: (data: { type: string; amount: number; reference_id: string }) =>
+    fetchWithAuth<any>("/payment/pay-with-tm", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+};
+
 // ==================== AI API ====================
 export const aiAPI = {
   consultation: (petId: string, symptomsInput: string) =>

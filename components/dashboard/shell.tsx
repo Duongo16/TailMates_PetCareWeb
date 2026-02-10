@@ -16,13 +16,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Menu, X, LogOut, User, Bell, ShoppingCart, Package, Crown, Settings, Calendar, FileText, Info, CheckCheck, type LucideIcon } from "lucide-react"
+import { Menu, X, LogOut, User, Bell, ShoppingCart, Package, Crown, Settings, Calendar, FileText, Info, CheckCheck, type LucideIcon, Coins } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { useCart } from "@/lib/cart-context"
 import { CartModal } from "@/components/ui/cart-modal"
 import { useNotifications, type Notification } from "@/lib/hooks"
 import { GlobalChatOverlay } from "@/components/chat/global-chat-overlay"
+import { UserBalance } from "@/components/user-balance"
 
 interface Tab {
   id: string
@@ -157,6 +158,8 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
 
           {/* User Menu */}
           <div className="flex items-center gap-3">
+            <UserBalance className="hidden sm:flex" />
+
             {/* Shopping Cart */}
             {user?.role === "customer" && (
               <Button
@@ -261,6 +264,17 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
                   <p className="text-sm text-foreground/60">{user?.email}</p>
                 </div>
                 <DropdownMenuSeparator />
+                {["customer", "merchant"].includes(user?.role || "") && (
+                  <>
+                    <div className="px-3 pb-2">
+                      <UserBalance showAdd={false} />
+                    </div>
+                    <DropdownMenuItem onClick={() => router.push("/top-up")}>
+                      <Coins className="w-4 h-4 mr-2 text-yellow-500" />
+                      Nạp tiền TM
+                    </DropdownMenuItem>
+                  </>
+                )}
                 {user?.role === "customer" && (
                   <>
                     <DropdownMenuItem onClick={() => onTabChange("orders")}>

@@ -26,6 +26,7 @@ import {
   Loader2,
   Zap,
   FileText,
+  Coins,
 } from "lucide-react"
 import Image from "next/image"
 import { aiAPI } from "@/lib/api"
@@ -431,6 +432,16 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                     {user?.subscription?.features?.length ? "PRO" : "FREE"}
                   </p>
                   <p className="text-foreground/60 text-xs">Gói thành viên</p>
+                </div>
+                <div 
+                  className="bg-yellow-50 rounded-xl p-2 text-center flex flex-col justify-center cursor-pointer hover:bg-yellow-100 transition-colors"
+                  onClick={() => window.location.href = "/top-up"}
+                >
+                  <p className="text-lg font-bold text-yellow-600 flex items-center justify-center gap-1">
+                    <Coins className="w-4 h-4" />
+                    {(user as any).tm_balance?.toLocaleString() || 0}
+                  </p>
+                  <p className="text-foreground/60 text-xs font-bold">Số dư TM</p>
                 </div>
               </div>
             </CardContent>

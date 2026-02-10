@@ -67,24 +67,29 @@ export const generateTransactionCode = (): string => {
  */
 export const generateQRCodeUrl = (options: QRCodeOptions): string => {
   const config = getSePayConfig();
-  const { amount, transactionCode, description, accountName } = options;
+  const { amount, transactionCode, description } = options;
 
   // Build transfer content (nội dung chuyển khoản)
-  const transferContent = description || `TailMates ${transactionCode}`;
+  // MUST start with TKPTM2
+  const prefix = "TKPTM2";
+  const transferContent = description || `${prefix} ${transactionCode}`;
 
-  // VietQR URL format
-  // https://img.vietqr.io/image/{BANK_ID}-{ACCOUNT_NUMBER}-{TEMPLATE}.png?amount={AMOUNT}&addInfo={CONTENT}&accountName={NAME}
-  const baseUrl = "https://img.vietqr.io/image";
-  const template = "compact2"; // compact, compact2, qr_only, print
+  // Ensure description starts with prefix if user provides a custom one
+  const finalContent = transferContent.startsWith(prefix) 
+    ? transferContent 
+    : `${prefix} ${transferContent}`;
+
+  // SePay QR URL format
+  // https://qr.sepay.vn/img?acc={ACCOUNT_NUMBER}&bank={BANK_ID}&amount={AMOUNT}&des={CONTENT}
+  const baseUrl = "https://qr.sepay.vn/img";
 
   const params = new URLSearchParams();
+  params.append("acc", config.accountNumber);
+  params.append("bank", config.bankId);
   params.append("amount", amount.toString());
-  params.append("addInfo", transferContent);
-  if (accountName) {
-    params.append("accountName", accountName);
-  }
+  params.append("des", finalContent);
 
-  return `${baseUrl}/${config.bankId}-${config.accountNumber}-${template}.png?${params.toString()}`;
+  return `${baseUrl}?${params.toString()}`;
 };
 
 // ==================== Webhook Verification ====================
@@ -125,7 +130,8 @@ export const verifyWebhookSignature = (
 export const parseTransactionCode = (content: string): string | null => {
   if (!content) return null;
 
-  // Match pattern: TM + 6 alphanumeric characters
+  // Match pattern: TM + 6 alphanumeric characters or TKPTM2 + 6 alphanumeric characters
+  // SePay might send the full description, we need to find our transaction code
   const match = content.toUpperCase().match(/TM[A-Z0-9]{6}/);
   return match ? match[0] : null;
 };

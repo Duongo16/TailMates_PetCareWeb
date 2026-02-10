@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const qrCodeUrl = generateQRCodeUrl({
       amount,
       transactionCode,
-      description: `TailMates ${transactionCode}`,
+      description: `TKPTM2 ${transactionCode}`,
     });
 
     // Calculate expiry time (15 minutes)
@@ -128,6 +128,9 @@ export async function POST(request: NextRequest) {
         qr_code_url: qrCodeUrl,
         amount,
         expire_at: expireAt,
+        bank_name: process.env.SEPAY_BANK_ID || "TPBank",
+        account_number: process.env.SEPAY_ACCOUNT_NUMBER || "00000119563",
+        account_name: "NGO TUNG DUONG", 
       },
       "QR code created successfully"
     );

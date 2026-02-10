@@ -60,6 +60,7 @@ export interface IUser extends Document {
   google_id?: string;
   is_email_verified: boolean;
   refresh_token_version: number;
+  tm_balance: number; // Virtual currency (1000 TM = 1000 VND)
   created_at: Date;
   updated_at: Date;
 }
@@ -146,13 +147,16 @@ const UserSchema = new Schema<IUser>(
     },
     google_id: {
       type: String,
-      sparse: true,
     },
     is_email_verified: {
       type: Boolean,
       default: false,
     },
     refresh_token_version: {
+      type: Number,
+      default: 0,
+    },
+    tm_balance: {
       type: Number,
       default: 0,
     },
