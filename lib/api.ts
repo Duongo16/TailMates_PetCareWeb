@@ -288,6 +288,8 @@ export const paymentAPI = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  
+  getStatus: (id: string) => fetchWithAuth<any>(`/payment/status/${id}`),
 };
 
 // ==================== AI API ====================

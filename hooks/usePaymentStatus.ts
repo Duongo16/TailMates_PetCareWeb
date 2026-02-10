@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { pusherClient } from "@/lib/pusher";
+import { paymentAPI } from "@/lib/api";
 
 interface PaymentStatusData {
   transaction_id: string;
@@ -82,10 +83,9 @@ export function usePaymentStatus(
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/v1/payment/status/${transactionId}`);
-      const result = await response.json();
+      const result = await paymentAPI.getStatus(transactionId);
 
-      if (!response.ok) {
+      if (!result.success) {
         throw new Error(result.error || "Failed to fetch status");
       }
 
