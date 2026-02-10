@@ -34,6 +34,8 @@ import {
   Check,
 } from "lucide-react"
 import Image from "next/image"
+import { AISuggestions } from "@/components/customer/ai-suggestions"
+import { PetPersonalityAnalysis } from "@/components/customer/pet-personality-analysis"
 
 interface PetProfileProps {
   selectedPetId: string | null
@@ -131,16 +133,17 @@ const FUR_TYPE_OPTIONS = [
   { id: "curly", label: "Lông xoăn", emoji: "🌀" },
 ]
 
-export function PetProfile({ 
-  selectedPetId, 
-  onSelectPet, 
-  onViewMedical, 
-  shouldOpenAddDialog, 
+export function PetProfile({
+  selectedPetId,
+  onSelectPet,
+  onViewMedical,
+  shouldOpenAddDialog,
   onAddDialogClose,
   shouldOpenEditDialog,
   onEditDialogClose
 }: PetProfileProps) {
   const { data: pets, isLoading, refetch } = usePets()
+  const [isMounted, setIsMounted] = useState(false)
   const [showQR, setShowQR] = useState(false)
   const [qrCodeData, setQrCodeData] = useState<any>(null)
 
@@ -199,6 +202,10 @@ export function PetProfile({
       onEditDialogClose?.()
     }
   }, [shouldOpenEditDialog, selectedPet, onEditDialogClose])
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   const resetForm = () => {
     setFormData({
@@ -1072,53 +1079,12 @@ export function PetProfile({
             </TabsContent>
 
             <TabsContent value="personality" className="mt-4">
-              <Card className="border-dashed border-2">
-                <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-75" />
-                    <div className="relative w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Sparkles className="w-8 h-8 text-primary animate-pulse" />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground">Tính năng sắp ra mắt</h3>
-                    <p className="text-sm text-foreground/60 max-w-[250px] mx-auto mt-2">
-                      AI phân tích tính cách thú cưng sẽ sớm được ra mắt. Vui lòng quay lại sau!
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="border-primary text-primary">
-                    Đang phát triển
-                  </Badge>
-                </CardContent>
-              </Card>
+              <PetPersonalityAnalysis petId={selectedPet._id} petName={selectedPet.name} />
             </TabsContent>
 
             <TabsContent value="health" className="mt-4 space-y-4">
-              {/* View Full Medical Records - Keep this accessible */}
-              <Button onClick={onViewMedical} className="w-full rounded-xl py-6 mb-4">
-                Xem sổ y tế đầy đủ
-                <ChevronRight className="w-5 h-5 ml-2" />
-              </Button>
-
-              <Card className="border-dashed border-2">
-                <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping opacity-75" />
-                    <div className="relative w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center">
-                      <Heart className="w-8 h-8 text-green-600 animate-pulse" />
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground">Tính năng sắp ra mắt</h3>
-                    <p className="text-sm text-foreground/60 max-w-[250px] mx-auto mt-2">
-                      Phân tích sức khỏe nâng cao và lời khuyên dinh dưỡng từ AI sẽ sớm có mặt.
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="border-green-600 text-green-600">
-                    Đang phát triển
-                  </Badge>
-                </CardContent>
-              </Card>
+              {/* AI Suggestions */}
+              <AISuggestions petId={selectedPet._id} petName={selectedPet.name} />
             </TabsContent>
           </Tabs>
         </>

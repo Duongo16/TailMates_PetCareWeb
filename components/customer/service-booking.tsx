@@ -477,57 +477,71 @@ export function ServiceBooking() {
             </CardContent>
           </Card>
 
-          {/* AI Suggestions Card */}
+          {/* AI Suggestions Card - Active */}
           <Card className="relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/20" />
             <CardHeader className="relative pb-1 pt-3 px-4">
               <CardTitle className="flex items-center gap-2 text-sm">
                 <Sparkles className="w-4 h-4 text-primary" />
                 Gợi ý thông minh từ AI
-                <Badge variant="secondary" className="ml-1 bg-primary/10 text-primary text-[10px] px-1.5">
-                  Sắp ra mắt
+                <Badge variant="secondary" className="ml-1 bg-green-100 text-green-700 text-[10px] px-1.5">
+                  Mới
                 </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="relative pt-0 pb-3 px-4">
-              <div className="grid grid-cols-2 gap-1.5 opacity-60">
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-background/50 border border-border/50">
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={() => {
+                    setFilterCategory("Y tế")
+                    setSearchTerm("tiêm")
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-lg bg-background/70 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
+                >
                   <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
                     <Syringe className="w-3 h-3 text-orange-600" />
                   </div>
-                  <p className="font-medium text-foreground text-xs truncate">Nhắc tiêm phòng</p>
-                </div>
+                  <p className="font-medium text-foreground text-xs truncate">Tiêm phòng</p>
+                </button>
 
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-background/50 border border-border/50">
+                <button
+                  onClick={() => {
+                    setFilterCategory("Spa & Grooming")
+                    setSearchTerm("")
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-lg bg-background/70 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
+                >
                   <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                     <Bath className="w-3 h-3 text-blue-600" />
                   </div>
-                  <p className="font-medium text-foreground text-xs truncate">Gợi ý spa</p>
-                </div>
+                  <p className="font-medium text-foreground text-xs truncate">Spa & Grooming</p>
+                </button>
 
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-background/50 border border-border/50">
+                <button
+                  onClick={() => {
+                    setFilterCategory("all")
+                    setSearchTerm("tẩy giun")
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-lg bg-background/70 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
+                >
                   <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                     <Bug className="w-3 h-3 text-green-600" />
                   </div>
-                  <p className="font-medium text-foreground text-xs truncate">Nhắc tẩy giun</p>
-                </div>
+                  <p className="font-medium text-foreground text-xs truncate">Tẩy giun</p>
+                </button>
 
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-background/50 border border-border/50">
+                <button
+                  onClick={() => {
+                    setFilterCategory("Y tế")
+                    setSearchTerm("khám")
+                  }}
+                  className="flex items-center gap-2 p-2 rounded-lg bg-background/70 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
+                >
                   <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
                     <Stethoscope className="w-3 h-3 text-purple-600" />
                   </div>
                   <p className="font-medium text-foreground text-xs truncate">Khám định kỳ</p>
-                </div>
-              </div>
-
-              {/* Coming Soon Overlay */}
-              <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-1">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                  </div>
-                  <p className="font-bold text-foreground text-sm">Sắp ra mắt</p>
-                </div>
+                </button>
               </div>
             </CardContent>
           </Card>

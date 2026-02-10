@@ -51,8 +51,8 @@ export function Marketplace() {
   const [sortBy, setSortBy] = useState("newest")
   const [currentPage, setCurrentPage] = useState(1)
   // Advanced filter states
-  const [targetSpecies, setTargetSpecies] = useState("")
-  const [lifeStage, setLifeStage] = useState("")
+  const [targetSpecies, setTargetSpecies] = useState("all")
+  const [lifeStage, setLifeStage] = useState("all")
   const [selectedHealthTags, setSelectedHealthTags] = useState<string[]>([])
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
 
@@ -65,8 +65,8 @@ export function Marketplace() {
     page: currentPage,
     limit: ITEMS_PER_PAGE,
     // Advanced filters
-    targetSpecies: targetSpecies || undefined,
-    lifeStage: lifeStage || undefined,
+    targetSpecies: targetSpecies && targetSpecies !== "all" ? targetSpecies : undefined,
+    lifeStage: lifeStage && lifeStage !== "all" ? lifeStage : undefined,
     healthTags: selectedHealthTags.length > 0 ? selectedHealthTags : undefined,
   })
 
@@ -156,13 +156,13 @@ export function Marketplace() {
 
   // Reset advanced filters
   const handleResetAdvancedFilters = () => {
-    setTargetSpecies("")
-    setLifeStage("")
+    setTargetSpecies("all")
+    setLifeStage("all")
     setSelectedHealthTags([])
     setCurrentPage(1)
   }
 
-  const hasAdvancedFilters = targetSpecies || lifeStage || selectedHealthTags.length > 0
+  const hasAdvancedFilters = (targetSpecies !== "all") || (lifeStage !== "all") || selectedHealthTags.length > 0
 
   const pagination = products?.pagination
   const totalPages = pagination?.total_pages || 1
@@ -172,10 +172,10 @@ export function Marketplace() {
       {/* Banner - Full Width */}
       <BannerCarousel location="SHOP" />
 
-      {/* AI Product Recommendations - Compact with Feature Buttons */}
+      {/* AI Product Recommendations - Active Feature */}
       <Card className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-secondary/10" />
-        <CardContent className="p-3">
+        <CardContent className="p-3 relative">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-primary" />
@@ -183,54 +183,61 @@ export function Marketplace() {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-foreground text-sm">Gợi ý sản phẩm AI</h3>
-                <Badge variant="secondary" className="bg-primary/10 text-primary text-[10px] px-1.5 h-5">
-                  Sắp ra mắt
+                <Badge variant="secondary" className="bg-green-100 text-green-700 text-[10px] px-1.5 h-5">
+                  Mới
                 </Badge>
               </div>
               <p className="text-xs text-foreground/60">Gợi ý dựa trên hồ sơ thú cưng</p>
             </div>
           </div>
 
-          {/* Mock Feature Buttons behind overlay */}
-          <div className="grid grid-cols-4 gap-2 opacity-50">
+          {/* Active Feature Buttons */}
+          <div className="grid grid-cols-4 gap-2">
             {/* Food */}
-            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/50 border border-border/50">
+            <button
+              onClick={() => {
+                handleCategoryChange("FOOD")
+                setShowAdvancedFilters(true)
+              }}
+              className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/70 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
+            >
               <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
                 <Bone className="w-4 h-4 text-orange-600" />
               </div>
               <span className="text-[10px] font-medium text-center hidden sm:block">Thức ăn</span>
-            </div>
+            </button>
             {/* Toys */}
-            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/50 border border-border/50">
+            <button
+              onClick={() => handleCategoryChange("TOY")}
+              className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/70 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
+            >
               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
                 <Gamepad2 className="w-4 h-4 text-blue-600" />
               </div>
               <span className="text-[10px] font-medium text-center hidden sm:block">Đồ chơi</span>
-            </div>
+            </button>
             {/* Accessories */}
-            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/50 border border-border/50">
+            <button
+              onClick={() => handleCategoryChange("ACCESSORY")}
+              className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/70 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
+            >
               <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
                 <Shirt className="w-4 h-4 text-pink-600" />
               </div>
               <span className="text-[10px] font-medium text-center hidden sm:block">Phụ kiện</span>
-            </div>
+            </button>
             {/* Health */}
-            <div className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/50 border border-border/50">
+            <button
+              onClick={() => handleCategoryChange("MEDICINE")}
+              className="flex flex-col items-center gap-1 p-2 rounded-lg bg-background/70 border border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer"
+            >
               <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
                 <HeartPulse className="w-4 h-4 text-green-600" />
               </div>
               <span className="text-[10px] font-medium text-center hidden sm:block">Sức khỏe</span>
-            </div>
+            </button>
           </div>
         </CardContent>
-
-        {/* Improved Overlay */}
-        <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] flex items-center justify-center">
-          <div className="flex items-center gap-2 px-4 py-2 bg-background/80 shadow-sm rounded-full border border-primary/10">
-            <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-            <span className="text-xs font-bold text-primary">Tính năng đang phát triển</span>
-          </div>
-        </div>
       </Card>
 
       {/* Added to Cart Toast */}
@@ -322,7 +329,7 @@ export function Marketplace() {
                         <SelectValue placeholder="Loài" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">🐾 Tất cả</SelectItem>
+                        <SelectItem value="all">🐾 Tất cả</SelectItem>
                         <SelectItem value="DOG">🐕 Chó</SelectItem>
                         <SelectItem value="CAT">🐱 Mèo</SelectItem>
                       </SelectContent>
@@ -335,7 +342,7 @@ export function Marketplace() {
                         <SelectValue placeholder="Độ tuổi" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Tất cả</SelectItem>
+                        <SelectItem value="all">Tất cả</SelectItem>
                         <SelectItem value="KITTEN_PUPPY">Con nhỏ</SelectItem>
                         <SelectItem value="ADULT">Trưởng thành</SelectItem>
                         <SelectItem value="SENIOR">Lớn tuổi</SelectItem>

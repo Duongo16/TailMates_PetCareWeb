@@ -223,6 +223,26 @@ export const aiAPI = {
       method: "POST",
       body: JSON.stringify({ pet_id: petId, need_type: needType }),
     }),
+
+  suggestions: (petId: string, type?: "food" | "service" | "all") =>
+    fetchWithAuth<any>("/ai/suggestions", {
+      method: "POST",
+      body: JSON.stringify({ petId, type: type || "all" }),
+    }),
+
+  // Personality Analysis
+  getPersonalityAnalysis: (petId: string) =>
+    fetchWithAuth<any>(`/ai/personality?petId=${petId}`),
+
+  analyzePersonality: (petId: string) =>
+    fetchWithAuth<any>("/ai/personality", {
+      method: "POST",
+      body: JSON.stringify({ petId }),
+    }),
+
+  // Health Analysis (cached)
+  getCachedHealthAnalysis: (petId: string) =>
+    fetchWithAuth<any>(`/ai/suggestions?petId=${petId}`),
 };
 
 // ==================== Products API (Public) ====================
