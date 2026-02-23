@@ -69,6 +69,9 @@ const MerchantMedicalRecords = dynamic(() => import("./merchant-medical-records"
 const MerchantAnalyticsComponent = dynamic(() => import("./merchant-analytics").then((mod) => mod.MerchantAnalytics), {
   loading: () => <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
 })
+const MerchantSubscriptionComponent = dynamic(() => import("./subscription").then((mod) => mod.MerchantSubscription), {
+  loading: () => <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
+})
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Area, AreaChart, CartesianGrid } from "recharts"
 import Image from "next/image"
 import { useToast } from "@/components/ui/use-toast"
@@ -2701,6 +2704,10 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
 
     if (activeTab === "analytics") {
       return <MerchantAnalyticsComponent onBack={() => setActiveTab("dashboard")} />
+    }
+
+    if (activeTab === "subscription") {
+      return <MerchantSubscriptionComponent />
     }
 
     return null

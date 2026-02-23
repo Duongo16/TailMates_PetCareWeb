@@ -3,7 +3,8 @@
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardHeader, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import {
   PawPrint,
   Sparkles,
@@ -20,8 +21,10 @@ import {
   Award,
   Clock,
   MessageCircle,
+  Store,
 } from "lucide-react"
 import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
 import { useCustomerPackages, useMerchantPackages } from "@/lib/hooks"
 import { OnboardingModal } from "@/components/onboarding-modal"
 import { SiteHeader } from "@/components/site-header"
@@ -127,29 +130,32 @@ export function Homepage() {
   const pricingPlans = [
     ...(customerPackages || []).map((pkg: any) => ({
       name: pkg.name,
-      price: new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(pkg.price),
-      period: pkg.duration_months === 1 ? "/tháng" : `/${pkg.duration_months} tháng`,
-      features: Array.isArray(pkg.features) ? pkg.features : [],
+      price: pkg.price === 0 ? "Miễn phí" : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(pkg.price),
+      period: pkg.price === 0 ? "" : pkg.duration_months === 1 ? "/tháng" : `/${pkg.duration_months} tháng`,
+      features: Array.isArray(pkg.benefits) ? pkg.benefits.map((b: any) => b.text || b) : [],
       popular: pkg.price > 0 && pkg.price < 200000,
       cta: "Bắt đầu ngay",
-      role: "CUSTOMER"
+      role: "CUSTOMER",
+      rawPrice: pkg.price,
+      limits: pkg.features_config,
     })),
     ...(merchantPackages || []).map((pkg: any) => ({
       name: pkg.name,
-      price: new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(pkg.price),
-      period: pkg.duration_months === 1 ? "/tháng" : `/${pkg.duration_months} tháng`,
-      features: Array.isArray(pkg.features) ? pkg.features : [],
+      price: pkg.price === 0 ? "Miễn phí" : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(pkg.price),
+      period: pkg.price === 0 ? "" : pkg.duration_months === 1 ? "/tháng" : `/${pkg.duration_months} tháng`,
+      features: Array.isArray(pkg.benefits) ? pkg.benefits.map((b: any) => b.text || b) : [],
       popular: false,
       cta: "Đăng ký đối tác",
-      role: "MERCHANT"
+      role: "MERCHANT",
+      rawPrice: pkg.price,
+      limits: pkg.features_config,
     }))
   ]
 
-  // Fallback if no API data yet (e.g. initial load or empty db)
+  // Bug fix: sort using rawPrice (number), not the formatted VND string
   const finalPricingPlans = pricingPlans.length > 0 ? pricingPlans.sort((a, b) => {
-    // Basic sorting to keep free/cheaper first, but Merchant usually last
     if (a.role !== b.role) return a.role === "CUSTOMER" ? -1 : 1
-    return parseInt(a.price) - parseInt(b.price)
+    return (a.rawPrice ?? 0) - (b.rawPrice ?? 0)
   }) : [
     {
       name: "Miễn Phí",
@@ -432,6 +438,92 @@ export function Homepage() {
                     </div>
                   </CardContent>
                 </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="py-20 lg:py-32 bg-secondary/30 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+          
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="text-center max-w-3xl mx-auto mb-16 lg:mb-24">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-bold text-sm mb-6 uppercase tracking-wider">
+                <Zap className="w-4 h-4" />
+                Gói dịch vụ
+              </div>
+              <h2 className="text-3xl lg:text-5xl font-bold text-foreground mb-4 leading-tight">Lựa chọn gói phù hợp với bạn</h2>
+              <p className="text-lg text-foreground/70">Nâng tầm trải nghiệm chăm sóc thú cưng với các tính năng độc quyền</p>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 gap-y-12">
+              {finalPricingPlans.map((plan: any, index: number) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="h-full flex flex-col"
+                >
+                  <Card className={`h-full border-none shadow-xl flex flex-col relative transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 rounded-[2.5rem] overflow-hidden ${plan.popular ? "ring-2 ring-primary/20 bg-card z-10 shadow-primary/10" : "bg-card/80 backdrop-blur-sm"}`}>
+                    {plan.popular && (
+                      <div className="absolute -top-1 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-black px-4 py-1.5 rounded-b-xl uppercase tracking-widest shadow-lg">
+                        Phổ biến nhất
+                      </div>
+                    )}
+                    <CardHeader className="p-8 pb-4">
+                      <div className="flex justify-between items-start mb-6">
+                        <div className={`p-3 rounded-2xl ${plan.role === "CUSTOMER" ? "bg-green-50 text-green-600" : "bg-blue-50 text-blue-600"}`}>
+                          {plan.role === "CUSTOMER" ? <Heart className="w-6 h-6" /> : <Store className="w-6 h-6" />}
+                        </div>
+                        <Badge variant="outline" className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${plan.role === "CUSTOMER" ? "bg-green-50/50 text-green-600 border-green-200" : "bg-blue-50/50 text-blue-600 border-blue-200"}`}>
+                          {plan.role === "CUSTOMER" ? "Khách hàng" : "Đối tác"}
+                        </Badge>
+                      </div>
+                      <h3 className="text-2xl font-black text-foreground mb-2">{plan.name}</h3>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-4xl font-black text-primary">{plan.price}</span>
+                        {plan.period && <span className="text-foreground/40 font-bold text-sm tracking-wide">{plan.period}</span>}
+                      </div>
+                    </CardHeader>
+                    <CardContent className="px-8 py-4 flex-grow">
+                      <div className="flex flex-wrap gap-2 mb-8">
+                        {plan.limits?.max_pets && (
+                          <div className="bg-primary/5 text-primary text-[10px] font-black px-3 py-1.5 rounded-xl border border-primary/10 flex items-center gap-1.5">
+                            <PawPrint className="w-3.5 h-3.5" />
+                            {plan.limits.max_pets} Thú cưng
+                          </div>
+                        )}
+                        {plan.limits?.ai_limit_per_day && (
+                          <div className="bg-accent/5 text-accent text-[10px] font-black px-3 py-1.5 rounded-xl border border-accent/10 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            {plan.limits.ai_limit_per_day} Lượt AI/ngày
+                          </div>
+                        )}
+                      </div>
+                      <ul className="space-y-4">
+                        {plan.features.slice(0, 6).map((feature: string, fIndex: number) => (
+                          <li key={fIndex} className="flex items-start gap-3 group">
+                            <div className="mt-1 p-0.5 rounded-full bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            </div>
+                            <span className="text-foreground/70 text-sm font-medium leading-relaxed">{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                    <div className="p-8 pt-4 mt-auto">
+                      <Button 
+                        onClick={() => window.location.href = "/register"}
+                        className={`w-full py-7 rounded-2xl font-black text-base shadow-lg transition-all active:scale-[0.98] ${plan.popular ? "bg-primary hover:bg-primary/90 shadow-primary/25" : "bg-secondary text-primary hover:bg-primary hover:text-white shadow-secondary/20"}`}>
+                        {plan.cta}
+                      </Button>
+                    </div>
+                  </Card>
+                </motion.div>
               ))}
             </div>
           </div>

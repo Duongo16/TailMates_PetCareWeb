@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { package_id, payment_gateway_id } = body;
+    const { package_id } = body;
 
     if (!package_id || !mongoose.Types.ObjectId.isValid(package_id)) {
       return apiResponse.error("Valid package_id is required");
@@ -52,14 +52,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Deduct balance
-    freshUser.tm_balance = (freshUser.tm_balance || 0) - pkg.price;
-    await freshUser.save();
+    // --- Bug 3 Fix: Downgrade protection ---
+    // If merchant already has an active subscription to a higher-tier package,
+    // prevent them from downgrading while the subscription is still active.
+    const existingSub = freshUser.subscription;
+    if (
+      existingSub?.package_id &&
+      existingSub?.expired_at &&
+      new Date(existingSub.expired_at) > new Date()
+    ) {
+      const existingPkg = await Package.findById(existingSub.package_id).lean();
+      if (existingPkg && existingSub.package_id.toString() !== pkg._id.toString()) {
+        if (existingPkg.price > pkg.price) {
+          return apiResponse.error(
+            `Bạn đang dùng gói "${existingPkg.name}" có giá trị cao hơn. Không thể đăng ký gói thấp hơn trong khi gói cũ còn hiệu lực (hết hạn: ${new Date(existingSub.expired_at).toLocaleDateString("vi-VN")}).`
+          );
+        }
+      }
+    }
 
     // Calculate subscription dates
     // If user has active subscription, extend from current expiry date
     let startDate = new Date();
-    const existingSub = freshUser.subscription;
     if (
       existingSub?.expired_at &&
       new Date(existingSub.expired_at) > new Date()
@@ -69,26 +83,34 @@ export async function POST(request: NextRequest) {
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + pkg.duration_months);
 
-    // Build features array from config
-    const features: string[] = [];
-    if (pkg.features_config.unlimited_products)
-      features.push("UNLIMITED_PRODUCTS");
-    if (pkg.features_config.qr_scanning) features.push("QR_SCANNING");
-    if (pkg.features_config.advanced_analytics)
-      features.push("ADVANCED_ANALYTICS");
-    if (pkg.features_config.priority_support) features.push("PRIORITY_SUPPORT");
-
-    // Update user subscription
-    await User.findByIdAndUpdate(user!._id, {
-      $set: {
-        subscription: {
-          package_id: pkg._id,
-          started_at: startDate,
-          expired_at: endDate,
-          features,
+    // --- Bug 1 Fix: Atomic balance deduction using $inc ---
+    // Use atomic findOneAndUpdate with a balance check condition to prevent race conditions.
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        _id: user!._id,
+        tm_balance: { $gte: pkg.price }, // Atomic check: only update if balance is sufficient
+      },
+      {
+        $inc: { tm_balance: -pkg.price },
+        $set: {
+          // --- Bug 2 Fix: Store only package_id + dates. No denormalized features[].
+          // Guards read features_config directly from Package collection at runtime.
+          subscription: {
+            package_id: pkg._id,
+            started_at: startDate,
+            expired_at: endDate,
+          },
         },
       },
-    });
+      { new: true }
+    );
+
+    // If updatedUser is null, the atomic balance check failed (race condition caught)
+    if (!updatedUser) {
+      return apiResponse.error(
+        "Số dư TM không đủ hoặc đã có thao tác khác. Vui lòng thử lại."
+      );
+    }
 
     // Create transaction record for TM payment
     const transaction = await Transaction.create({
@@ -107,7 +129,7 @@ export async function POST(request: NextRequest) {
       user_id: user!._id,
       package_id: pkg._id,
       amount: pkg.price,
-      payment_gateway_id: `TM_VALLET_${transaction._id}`,
+      payment_gateway_id: `TM_WALLET_${transaction._id}`,
       status: "SUCCESS",
     });
 
@@ -117,11 +139,10 @@ export async function POST(request: NextRequest) {
           package_name: pkg.name,
           started_at: startDate,
           expired_at: endDate,
-          features,
         },
         payment_log_id: subscriptionLog._id,
       },
-      "Subscription successful"
+      "Đăng ký gói thành công!"
     );
   } catch (error) {
     console.error("Subscribe merchant error:", error);

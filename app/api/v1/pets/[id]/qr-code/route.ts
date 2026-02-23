@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Pet from "@/models/Pet";
 import { authenticate, apiResponse } from "@/lib/auth";
+import { checkFeatureAccess } from "@/lib/subscription-guard";
 import mongoose from "mongoose";
 
 interface RouteParams {
@@ -15,6 +16,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     if (error) return error;
 
     await connectDB();
+
+    // --- Bug 6 Fix: Guard qr_scanning feature ---
+    const featureCheck = await checkFeatureAccess(user!, "qr_scanning");
+    if (!featureCheck.allowed) {
+      return apiResponse.forbidden(featureCheck.reason);
+    }
 
     const { id } = await params;
 

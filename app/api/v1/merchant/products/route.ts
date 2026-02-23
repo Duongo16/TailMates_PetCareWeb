@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 import Product from "@/models/Product";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 import { UserRole } from "@/models/User";
+import { checkFeatureAccess } from "@/lib/subscription-guard";
 
 // GET /api/v1/merchant/products - Get merchant's products
 export async function GET(request: NextRequest) {
@@ -36,6 +37,21 @@ export async function POST(request: NextRequest) {
     if (authError) return authError;
 
     await connectDB();
+
+    // --- Bug 6 Fix: Guard unlimited_products feature ---
+    // Check if merchant has a subscription with the unlimited_products feature.
+    // If not subscribed, limit product creation to prevent free-tier abuse.
+    const featureCheck = await checkFeatureAccess(user!, "unlimited_products");
+    if (!featureCheck.allowed) {
+      // Without a paid plan, allow up to 5 products (free-tier limit)
+      const FREE_PRODUCT_LIMIT = 5;
+      const productCount = await Product.countDocuments({ merchant_id: user!._id });
+      if (productCount >= FREE_PRODUCT_LIMIT) {
+        return apiResponse.forbidden(
+          `Gói miễn phí chỉ cho phép tối đa ${FREE_PRODUCT_LIMIT} sản phẩm. Vui lòng đăng ký gói Merchant để đăng không giới hạn sản phẩm.`
+        );
+      }
+    }
 
     const body = await request.json();
     const {

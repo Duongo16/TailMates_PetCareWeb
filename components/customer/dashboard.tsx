@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useDashboardData } from "@/lib/hooks"
+import { useDashboardData, useCustomerPackages } from "@/lib/hooks"
 import { useAuth } from "@/lib/auth-context"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
@@ -52,6 +52,7 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
   const { user } = useAuth()
   // Parallel fetch - loads all data simultaneously for faster performance
   const { pets, bookings, orders, isLoading: petsLoading } = useDashboardData()
+  const { data: packages } = useCustomerPackages()
 
   const [magicModalOpen, setMagicModalOpen] = useState(false)
   const [checklist, setChecklist] = useState<Record<string, boolean>>({})
@@ -86,7 +87,7 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
     try {
       const response = await aiAPI.consultation(currentPet._id, symptomsText)
       if (response.success && response.data) {
-        setAiResponse(response.data.ai_advice)
+        setAiResponse((response.data as any).ai_advice)
       } else {
         setAiResponse("Không thể nhận được phản hồi từ AI. Vui lòng thử lại.")
       }
@@ -427,11 +428,32 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
                   <p className="text-lg font-bold text-green-600">{completedOrders}</p>
                   <p className="text-foreground/60 text-xs">Đơn hàng</p>
                 </div>
-                <div className="bg-primary/10 rounded-xl p-2 text-center flex flex-col justify-center">
-                  <p className="text-lg font-bold text-primary">
-                    {user?.subscription?.features?.length ? "PRO" : "FREE"}
+                 <div className="bg-primary/10 rounded-xl p-2 text-center flex flex-col justify-center">
+                  <p className="text-sm font-black text-primary truncate px-1 uppercase tracking-wider">
+                    {(() => {
+                      const activePkgId = user?.subscription?.package_id?.toString();
+                      const pkg = packages?.find(p => p._id === activePkgId);
+                      const isValid = !!(user?.subscription?.expired_at && new Date(user.subscription.expired_at) > new Date());
+                      return (isValid && pkg) ? pkg.name : "Gói Miễn Phí";
+                    })()}
                   </p>
-                  <p className="text-foreground/60 text-xs">Gói thành viên</p>
+                  <p className="text-[10px] text-foreground/60 font-bold uppercase tracking-tight">
+                    {(() => {
+                      const activePkgId = user?.subscription?.package_id?.toString();
+                      const pkg = packages?.find(p => p._id === activePkgId);
+                      const isValid = !!(user?.subscription?.expired_at && new Date(user.subscription.expired_at) > new Date());
+                      
+                      // Get the current package or the free tier package to display correct limits
+                      const currentPkg = (isValid && pkg) ? pkg : packages?.find(p => p.price === 0);
+                      
+                      if (currentPkg) {
+                        const maxPets = currentPkg.features_config?.max_pets || 1;
+                        const aiLimit = currentPkg.features_config?.ai_limit_per_day || 5;
+                        return `${maxPets} Bé • ${aiLimit} AI/ngày`;
+                      }
+                      return "1 Bé • 5 AI/ngày";
+                    })()}
+                  </p>
                 </div>
                 <div 
                   className="bg-yellow-50 rounded-xl p-2 text-center flex flex-col justify-center cursor-pointer hover:bg-yellow-100 transition-colors"

@@ -214,26 +214,27 @@ async function processSubscription(
       return;
     }
 
-    // Calculate subscription dates
-    const startDate = new Date();
-    const endDate = new Date();
+    // --- Bug 4 Fix: Extend subscription from current expiry date if still active ---
+    // Matches the behavior in subscribe-customer/subscribe-merchant routes.
+    const currentUser = await User.findById(transaction.user_id).select("subscription");
+    let startDate = new Date();
+    if (
+      currentUser?.subscription?.expired_at &&
+      new Date(currentUser.subscription.expired_at) > new Date()
+    ) {
+      startDate = new Date(currentUser.subscription.expired_at);
+    }
+    const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + pkg.duration_months);
 
-    // Build features array from config
-    const features: string[] = [];
-    if (pkg.features_config.priority_support) features.push("PRIORITY_SUPPORT");
-    if (pkg.features_config.ai_limit_per_day >= 100)
-      features.push("UNLIMITED_AI");
-    if (pkg.features_config.max_pets >= 10) features.push("UNLIMITED_PETS");
-
-    // Update user subscription
+    // --- Bug 2 Fix: No features[] denormalization.
+    // Guards (subscription-guard.ts) read features_config directly from Package at runtime.
     await User.findByIdAndUpdate(transaction.user_id, {
       $set: {
         subscription: {
           package_id: pkg._id,
           started_at: startDate,
           expired_at: endDate,
-          features,
         },
       },
     });
@@ -248,7 +249,7 @@ async function processSubscription(
     });
 
     console.log(
-      `Subscription activated for user ${transaction.user_id} with package ${pkg.name}`
+      `Subscription activated for user ${transaction.user_id} with package ${pkg.name} (expires: ${endDate.toISOString()})`
     );
   } catch (error) {
     console.error("Failed to process subscription:", error);

@@ -23,7 +23,6 @@ interface ISubscription {
   package_id?: mongoose.Types.ObjectId;
   started_at?: Date;
   expired_at?: Date;
-  features: string[];
 }
 
 interface IMerchantProfile {
@@ -79,7 +78,6 @@ const SubscriptionSchema = new Schema<ISubscription>(
     package_id: { type: Schema.Types.ObjectId, ref: "Package" },
     started_at: { type: Date },
     expired_at: { type: Date },
-    features: [{ type: String }],
   },
   { _id: false }
 );

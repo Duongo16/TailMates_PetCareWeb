@@ -6,6 +6,7 @@ import User from "@/models/User"
 import Package from "@/models/Package"
 import { authenticate, authorize, apiResponse } from "@/lib/auth"
 import { UserRole } from "@/models/User"
+import { checkFeatureAccess } from "@/lib/subscription-guard"
 import mongoose from "mongoose"
 import { startOfDay, endOfDay, subDays, format, eachDayOfInterval } from "date-fns"
 
@@ -17,6 +18,12 @@ export async function GET(req: NextRequest) {
     if (authError) return authError
 
     await connectDB()
+
+    // --- Bug 6 Fix: Guard advanced_analytics feature ---
+    const featureCheck = await checkFeatureAccess(user, "advanced_analytics")
+    if (!featureCheck.allowed) {
+        return apiResponse.forbidden(featureCheck.reason)
+    }
 
     const { searchParams } = new URL(req.url)
     const range = searchParams.get("range") || "7d"

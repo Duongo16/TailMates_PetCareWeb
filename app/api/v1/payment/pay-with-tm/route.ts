@@ -59,10 +59,40 @@ export async function POST(request: NextRequest) {
       return apiResponse.error(`Số dư TM không đủ. Cần ${amount.toLocaleString()} TM, hiện có ${user.tm_balance?.toLocaleString() || 0} TM.`);
     }
 
-    // Deduct balance and process transaction
-    // Use a transaction or session if possible, but for simplicity here we use sequential updates
-    user.tm_balance = (user.tm_balance || 0) - amount;
-    await user.save();
+    // --- Bug 3 Fix: Downgrade protection for subscription payments ---
+    if (type === TransactionType.SUBSCRIPTION && pkg) {
+      const existingSub = user.subscription;
+      if (
+        existingSub?.package_id &&
+        existingSub?.expired_at &&
+        new Date(existingSub.expired_at) > new Date()
+      ) {
+        const existingPkg = await Package.findById(existingSub.package_id).lean();
+        if (existingPkg && existingSub.package_id.toString() !== pkg._id.toString()) {
+          if (existingPkg.price > pkg.price) {
+            return apiResponse.error(
+              `Bạn đang dùng gói "${existingPkg.name}" có giá trị cao hơn. Không thể đăng ký gói thấp hơn trong khi gói cũ còn hiệu lực.`
+            );
+          }
+        }
+      }
+    }
+
+    // --- Bug 1 Fix: Atomic balance deduction using $inc ---
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        _id: user._id,
+        tm_balance: { $gte: amount }, // Atomic check
+      },
+      { $inc: { tm_balance: -amount } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return apiResponse.error(
+        "Số dư TM không đủ hoặc đã có thao tác khác. Vui lòng thử lại."
+      );
+    }
 
     // Create transaction record
     const transaction = await Transaction.create({
@@ -78,29 +108,33 @@ export async function POST(request: NextRequest) {
 
     // Process the service
     if (type === TransactionType.SUBSCRIPTION && pkg) {
-      // Logic from webhook
-      const startDate = new Date();
-      const endDate = new Date();
+      // --- Bug 2 Fix: No features[] denormalization. Extend from current expiry.
+      const existingSub = updatedUser.subscription;
+      let startDate = new Date();
+      if (
+        existingSub?.expired_at &&
+        new Date(existingSub.expired_at) > new Date()
+      ) {
+        startDate = new Date(existingSub.expired_at);
+      }
+      const endDate = new Date(startDate);
       endDate.setMonth(endDate.getMonth() + pkg.duration_months);
 
-      const features: string[] = [];
-      if (pkg.features_config.priority_support) features.push("PRIORITY_SUPPORT");
-      if (pkg.features_config.ai_limit_per_day >= 100) features.push("UNLIMITED_AI");
-      if (pkg.features_config.max_pets >= 10) features.push("UNLIMITED_PETS");
-
-      user.subscription = {
-        package_id: pkg._id as mongoose.Types.ObjectId,
-        started_at: startDate,
-        expired_at: endDate,
-        features,
-      };
-      await user.save();
+      await User.findByIdAndUpdate(user._id, {
+        $set: {
+          subscription: {
+            package_id: pkg._id,
+            started_at: startDate,
+            expired_at: endDate,
+          },
+        },
+      });
 
       await SubscriptionLog.create({
         user_id: user._id,
         package_id: pkg._id as mongoose.Types.ObjectId,
         amount: amount,
-        payment_gateway_id: `TM_VALLET_${transaction._id}`,
+        payment_gateway_id: `TM_WALLET_${transaction._id}`,
         status: "SUCCESS",
       });
     } else if (type === TransactionType.ORDER && order) {

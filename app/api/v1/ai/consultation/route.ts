@@ -4,6 +4,7 @@ import Pet from "@/models/Pet";
 import AIConsultation from "@/models/AIConsultation";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 import { UserRole } from "@/models/User";
+import { checkAIDailyLimit } from "@/lib/subscription-guard";
 import mongoose from "mongoose";
 
 // POST /api/v1/ai/consultation - AI consultation (Magic Button)
@@ -27,6 +28,18 @@ export async function POST(request: NextRequest) {
 
     if (!mongoose.Types.ObjectId.isValid(pet_id)) {
       return apiResponse.error("Invalid pet ID");
+    }
+
+    // --- Bug 5 Fix: Check ai_limit_per_day for today ---
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const todayCount = await AIConsultation.countDocuments({
+      user_id: user!._id,
+      created_at: { $gte: startOfToday },
+    });
+    const aiLimitCheck = await checkAIDailyLimit(user!, todayCount);
+    if (!aiLimitCheck.allowed) {
+      return apiResponse.forbidden(aiLimitCheck.reason);
     }
 
     // Verify pet belongs to user
