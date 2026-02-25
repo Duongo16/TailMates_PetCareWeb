@@ -1,8 +1,16 @@
 import { Home, Package, Truck, Calendar, QrCode, Sparkles, Settings, FileText, Newspaper, BarChart3, Coins, Crown } from "lucide-react"
+import { type FeatureKey } from "@/hooks/use-feature-access"
 
 export type MerchantTab = "dashboard" | "products" | "services" | "orders" | "bookings" | "medical-records" | "blog" | "scanner" | "settings" | "analytics" | "transactions" | "subscription"
 
-export const MERCHANT_TABS = [
+export interface MerchantTabItem {
+    id: MerchantTab
+    label: string
+    icon: any
+    featureKey?: FeatureKey
+}
+
+export const MERCHANT_TABS: MerchantTabItem[] = [
     { id: "dashboard", label: "Tổng quan", icon: Home },
     { id: "products", label: "Sản phẩm", icon: Package },
     { id: "services", label: "Dịch vụ", icon: Sparkles },
@@ -10,6 +18,8 @@ export const MERCHANT_TABS = [
     { id: "bookings", label: "Lịch hẹn", icon: Calendar },
     { id: "medical-records", label: "Sổ Y Tế", icon: FileText },
     { id: "blog", label: "Blog", icon: Newspaper },
+    { id: "scanner", label: "Máy Quét QR", icon: QrCode, featureKey: "qr_scanning" },
+    { id: "analytics", label: "Thống kê", icon: BarChart3, featureKey: "advanced_analytics" },
     { id: "subscription", label: "Gói Merchant", icon: Crown },
 ]
 

@@ -14,13 +14,14 @@ import {
   parseWebhookPayload,
 } from "@/lib/sepay";
 import { pusherServer } from "@/lib/pusher";
+import { createNotification, NotificationType } from "@/lib/notification-service";
 
 // POST /api/v1/payment/webhook - SePay webhook callback
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
-    const signature = 
-      request.headers.get("x-sepay-signature") || 
+    const signature =
+      request.headers.get("x-sepay-signature") ||
       request.headers.get("x-sepay-secret") ||
       request.headers.get("Authorization") ||
       "";
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
       process.env.NODE_ENV === "production" &&
       !verifyWebhookSignature(rawBody, signature)
     ) {
-      console.error("Invalid webhook signature. headers received:", 
+      console.error("Invalid webhook signature. headers received:",
         JSON.stringify(Object.fromEntries(request.headers.entries()))
       );
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
@@ -214,16 +215,9 @@ async function processSubscription(
       return;
     }
 
-    // --- Bug 4 Fix: Extend subscription from current expiry date if still active ---
-    // Matches the behavior in subscribe-customer/subscribe-merchant routes.
-    const currentUser = await User.findById(transaction.user_id).select("subscription");
-    let startDate = new Date();
-    if (
-      currentUser?.subscription?.expired_at &&
-      new Date(currentUser.subscription.expired_at) > new Date()
-    ) {
-      startDate = new Date(currentUser.subscription.expired_at);
-    }
+    // Fix: Always start from purchase time (TODAY) as requested by the user
+    const currentUser = await User.findById(transaction.user_id).select("subscription role");
+    const startDate = new Date();
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + pkg.duration_months);
 
@@ -247,6 +241,31 @@ async function processSubscription(
       payment_gateway_id: transaction.sepay_transaction_id,
       status: "SUCCESS",
     });
+
+    // Send notification
+    try {
+      // Check for downgrade for notification message
+      let isDowngrade = false;
+      if (currentUser?.subscription?.package_id) {
+        const oldPkg = await Package.findById(currentUser.subscription.package_id);
+        if (oldPkg && oldPkg.price > pkg.price) {
+          isDowngrade = true;
+        }
+      }
+
+      await createNotification({
+        userId: transaction.user_id.toString(),
+        type: NotificationType.SUBSCRIPTION,
+        title: isDowngrade ? "Thay đổi gói dịch vụ" : "Nâng cấp thành công",
+        message: isDowngrade
+          ? `Gói của bạn đã chuyển sang "${pkg.name}". Cảm ơn bạn đã đồng hành!`
+          : `Gói "${pkg.name}" đã được kích hoạt thành công. Hạn dùng đến ${endDate.toLocaleDateString("vi-VN")}.`,
+        redirectUrl: currentUser?.role === "MERCHANT" ? "/dashboard/merchant/subscription" : "/dashboard/customer?tab=subscription",
+        referenceId: pkg._id.toString(),
+      });
+    } catch (notifError) {
+      console.error("Failed to send subscription notification in webhook:", notifError);
+    }
 
     console.log(
       `Subscription activated for user ${transaction.user_id} with package ${pkg.name} (expires: ${endDate.toISOString()})`
@@ -282,10 +301,10 @@ async function processOrder(transaction: InstanceType<typeof Transaction>) {
 async function processTopUp(transaction: InstanceType<typeof Transaction>) {
   try {
     console.log(`Starting Top-up for user ${transaction.user_id} with amount ${transaction.amount}`);
-    
+
     // Use new: true to get the updated document for logging
     const user = await User.findByIdAndUpdate(
-      transaction.user_id, 
+      transaction.user_id,
       { $inc: { tm_balance: transaction.amount } },
       { new: true }
     );

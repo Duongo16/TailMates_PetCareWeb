@@ -10,6 +10,7 @@ import Transaction, {
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 import { UserRole } from "@/models/User";
 import mongoose from "mongoose";
+import { createNotification, NotificationType } from "@/lib/notification-service";
 
 // POST /api/v1/payment/subscribe-customer - Subscribe to customer package
 export async function POST(request: NextRequest) {
@@ -46,15 +47,14 @@ export async function POST(request: NextRequest) {
     // Check TM balance
     if ((freshUser.tm_balance || 0) < pkg.price) {
       return apiResponse.error(
-        `Số dư TM không đủ. Cần ${pkg.price.toLocaleString()} TM, hiện có ${
-          freshUser.tm_balance?.toLocaleString() || 0
+        `Số dư TM không đủ. Cần ${pkg.price.toLocaleString()} TM, hiện có ${freshUser.tm_balance?.toLocaleString() || 0
         } TM.`
       );
     }
 
-    // --- Bug 3 Fix: Downgrade protection ---
-    // If user already has an active subscription to a DIFFERENT package,
-    // block purchasing a cheaper package (downgrade).
+    // Check for downgrade to prepare notification message
+    let isDowngrade = false;
+    let oldPackageName = "";
     const existingSub = freshUser.subscription;
     if (
       existingSub?.package_id &&
@@ -64,22 +64,15 @@ export async function POST(request: NextRequest) {
       const existingPkg = await Package.findById(existingSub.package_id).lean();
       if (existingPkg && existingSub.package_id.toString() !== pkg._id.toString()) {
         if (existingPkg.price > pkg.price) {
-          return apiResponse.error(
-            `Bạn đang dùng gói "${existingPkg.name}" có giá trị cao hơn. Không thể đăng ký gói thấp hơn trong khi gói cũ còn hiệu lực (hết hạn: ${new Date(existingSub.expired_at).toLocaleDateString("vi-VN")}).`
-          );
+          isDowngrade = true;
+          oldPackageName = existingPkg.name;
         }
       }
     }
 
     // Calculate subscription dates
-    // If user has active subscription (same or higher tier), extend from current expiry date
-    let startDate = new Date();
-    if (
-      existingSub?.expired_at &&
-      new Date(existingSub.expired_at) > new Date()
-    ) {
-      startDate = new Date(existingSub.expired_at);
-    }
+    // Fix: Always start from purchase time (TODAY) as requested by the user
+    const startDate = new Date();
     const endDate = new Date(startDate);
     endDate.setMonth(endDate.getMonth() + pkg.duration_months);
 
@@ -133,6 +126,22 @@ export async function POST(request: NextRequest) {
       payment_gateway_id: `TM_WALLET_${transaction._id}`,
       status: "SUCCESS",
     });
+
+    // Send notification
+    try {
+      await createNotification({
+        userId: user!._id.toString(),
+        type: NotificationType.SUBSCRIPTION,
+        title: isDowngrade ? "Thay đổi gói dịch vụ" : "Nâng cấp thành công",
+        message: isDowngrade
+          ? `Bạn đã chuyển từ gói "${oldPackageName}" sang gói "${pkg.name}". Các quyền lợi mới đã được áp dụng.`
+          : `Chúc mừng! Bạn đã đăng ký thành công gói "${pkg.name}". Hạn dùng đến ${endDate.toLocaleDateString("vi-VN")}.`,
+        redirectUrl: "/dashboard/customer?tab=subscription",
+        referenceId: pkg._id.toString(),
+      });
+    } catch (notifError) {
+      console.error("Failed to send subscription notification:", notifError);
+    }
 
     return apiResponse.success(
       {

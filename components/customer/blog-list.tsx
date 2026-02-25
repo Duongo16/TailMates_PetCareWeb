@@ -33,6 +33,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { FeatureGate } from "@/components/ui/feature-gate";
 
 export default function BlogList() {
     const router = useRouter();
@@ -146,116 +147,118 @@ export default function BlogList() {
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <CardTitle>Bài viết của tôi</CardTitle>
-                    <Button onClick={handleCreate} className="bg-orange-500 hover:bg-orange-600">
-                        Tạo bài viết mới
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {loading ? (
-                    <p className="text-center py-8 text-gray-500">Đang tải...</p>
-                ) : posts.length === 0 ? (
-                    <p className="text-center py-8 text-gray-500">Chưa có bài viết nào</p>
-                ) : (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Tiêu đề</TableHead>
-                                <TableHead>Danh mục</TableHead>
-                                <TableHead>Trạng thái</TableHead>
-                                <TableHead className="text-center">Lượt xem</TableHead>
-                                <TableHead className="text-center">Like/Dislike</TableHead>
-                                <TableHead>Ngày tạo</TableHead>
-                                <TableHead className="text-right">Thao tác</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {posts.map((post) => (
-                                <TableRow key={post._id}>
-                                    <TableCell className="font-medium max-w-xs truncate">
-                                        {post.title}
-                                    </TableCell>
-                                    <TableCell>{post.category}</TableCell>
-                                    <TableCell>{getStatusBadge(post.status)}</TableCell>
-                                    <TableCell className="text-center">{post.view_count || 0}</TableCell>
-                                    <TableCell className="text-center">
-                                        {post.like_count || 0} / {post.dislike_count || 0}
-                                    </TableCell>
-                                    <TableCell>{formatDate(post.created_at)}</TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="sm">
-                                                    <MoreVertical className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                {post.status === "PUBLISHED" && (
-                                                    <DropdownMenuItem onClick={() => router.push(`/blog/${post._id}`)}>
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        Xem
-                                                    </DropdownMenuItem>
-                                                )}
-                                                {post.status === "DRAFT" && (
-                                                    <DropdownMenuItem onClick={() => handleSubmit(post._id)}>
-                                                        <Send className="mr-2 h-4 w-4" />
-                                                        Gửi duyệt
-                                                    </DropdownMenuItem>
-                                                )}
-                                                <DropdownMenuItem onClick={() => handleEdit(post)}>
-                                                    <Pencil className="mr-2 h-4 w-4" />
-                                                    Chỉnh sửa
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    onClick={() => {
-                                                        setPostToDelete(post._id);
-                                                        setDeleteDialogOpen(true);
-                                                    }}
-                                                    className="text-red-600"
-                                                >
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Xóa
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
+        <FeatureGate featureKey="blog_posting" fullScreen>
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <CardTitle>Bài viết của tôi</CardTitle>
+                        <Button onClick={handleCreate} className="bg-orange-500 hover:bg-orange-600">
+                            Tạo bài viết mới
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    {loading ? (
+                        <p className="text-center py-8 text-gray-500">Đang tải...</p>
+                    ) : posts.length === 0 ? (
+                        <p className="text-center py-8 text-gray-500">Chưa có bài viết nào</p>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Tiêu đề</TableHead>
+                                    <TableHead>Danh mục</TableHead>
+                                    <TableHead>Trạng thái</TableHead>
+                                    <TableHead className="text-center">Lượt xem</TableHead>
+                                    <TableHead className="text-center">Like/Dislike</TableHead>
+                                    <TableHead>Ngày tạo</TableHead>
+                                    <TableHead className="text-right">Thao tác</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                )}
+                            </TableHeader>
+                            <TableBody>
+                                {posts.map((post) => (
+                                    <TableRow key={post._id}>
+                                        <TableCell className="font-medium max-w-xs truncate">
+                                            {post.title}
+                                        </TableCell>
+                                        <TableCell>{post.category}</TableCell>
+                                        <TableCell>{getStatusBadge(post.status)}</TableCell>
+                                        <TableCell className="text-center">{post.view_count || 0}</TableCell>
+                                        <TableCell className="text-center">
+                                            {post.like_count || 0} / {post.dislike_count || 0}
+                                        </TableCell>
+                                        <TableCell>{formatDate(post.created_at)}</TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="sm">
+                                                        <MoreVertical className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    {post.status === "PUBLISHED" && (
+                                                        <DropdownMenuItem onClick={() => router.push(`/blog/${post._id}`)}>
+                                                            <Eye className="mr-2 h-4 w-4" />
+                                                            Xem
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    {post.status === "DRAFT" && (
+                                                        <DropdownMenuItem onClick={() => handleSubmit(post._id)}>
+                                                            <Send className="mr-2 h-4 w-4" />
+                                                            Gửi duyệt
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuItem onClick={() => handleEdit(post)}>
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        Chỉnh sửa
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={() => {
+                                                            setPostToDelete(post._id);
+                                                            setDeleteDialogOpen(true);
+                                                        }}
+                                                        className="text-red-600"
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Xóa
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
 
-                <BlogCreateModal
-                    open={modalOpen}
-                    onClose={() => {
-                        setModalOpen(false);
-                        setSelectedPost(null);
-                    }}
-                    onSuccess={fetchPosts}
-                    post={selectedPost}
-                />
+                    <BlogCreateModal
+                        open={modalOpen}
+                        onClose={() => {
+                            setModalOpen(false);
+                            setSelectedPost(null);
+                        }}
+                        onSuccess={fetchPosts}
+                        post={selectedPost}
+                    />
 
-                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Bạn có chắc chắn muốn xóa bài viết này? Hành động này không thể hoàn tác.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Hủy</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-                                Xóa
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </CardContent>
-        </Card>
+                    <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Xác nhận xóa</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Bạn có chắc chắn muốn xóa bài viết này? Hành động này không thể hoàn tác.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                                    Xóa
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </CardContent>
+            </Card>
+        </FeatureGate>
     );
 }

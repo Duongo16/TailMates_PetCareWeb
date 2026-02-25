@@ -36,6 +36,8 @@ import {
 import Image from "next/image"
 import { AISuggestions } from "@/components/customer/ai-suggestions"
 import { PetPersonalityAnalysis } from "@/components/customer/pet-personality-analysis"
+import { useFeatureAccess } from "@/hooks/use-feature-access"
+import { useToast } from "@/components/ui/use-toast"
 
 interface PetProfileProps {
   selectedPetId: string | null
@@ -143,6 +145,21 @@ export function PetProfile({
   onEditDialogClose
 }: PetProfileProps) {
   const { data: pets, isLoading, refetch } = usePets()
+  const { getLimit } = useFeatureAccess()
+  const { toast } = useToast()
+
+  const checkPetLimit = (): boolean => {
+    const maxPets = getLimit('max_pets')
+    if ((pets?.length || 0) >= maxPets) {
+      toast({
+        title: "Giới hạn thú cưng",
+        description: `Gói của bạn chỉ cho phép tối đa ${maxPets} thú cưng. Vui lòng nâng cấp gói để thêm.`,
+        variant: "destructive"
+      })
+      return false
+    }
+    return true
+  }
   const [isMounted, setIsMounted] = useState(false)
   const [showQR, setShowQR] = useState(false)
   const [qrCodeData, setQrCodeData] = useState<any>(null)
@@ -189,11 +206,13 @@ export function PetProfile({
   // Auto-open add dialog when triggered from dashboard
   useEffect(() => {
     if (shouldOpenAddDialog) {
-      resetForm()
-      setShowAddDialog(true)
+      if (checkPetLimit()) {
+        resetForm()
+        setShowAddDialog(true)
+      }
       onAddDialogClose?.()
     }
-  }, [shouldOpenAddDialog, onAddDialogClose])
+  }, [shouldOpenAddDialog, onAddDialogClose, pets])
 
   // Auto-open edit dialog when triggered from PawMatch or elsewhere
   useEffect(() => {
@@ -745,7 +764,7 @@ export function PetProfile({
         <p className="text-foreground/60 mb-4">Bạn chưa có thú cưng nào</p>
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
           <DialogTrigger asChild>
-            <Button onClick={() => { resetForm(); setShowAddDialog(true) }}>
+            <Button onClick={() => { if (checkPetLimit()) { resetForm(); setShowAddDialog(true) } }}>
               <Plus className="w-4 h-4 mr-2" />
               Thêm thú cưng ngay
             </Button>
@@ -889,7 +908,7 @@ export function PetProfile({
                           variant="outline"
                           size="icon"
                           className="rounded-xl bg-card/80 hover:bg-card flex-shrink-0"
-                          onClick={() => resetForm()}
+                          onClick={(e) => { if (!checkPetLimit()) { e.preventDefault(); return; } resetForm(); }}
                           title="Thêm mới"
                         >
                           <Plus className="w-4 h-4" />

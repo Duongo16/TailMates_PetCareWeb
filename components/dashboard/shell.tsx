@@ -4,10 +4,13 @@ import type React from "react"
 
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
+import { useFeatureAccess, type FeatureKey } from "@/hooks/use-feature-access"
+import { Lock } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -29,6 +32,7 @@ interface Tab {
   id: string
   label: string
   icon: LucideIcon
+  featureKey?: FeatureKey
 }
 
 interface DashboardShellProps {
@@ -40,11 +44,27 @@ interface DashboardShellProps {
 
 export function DashboardShell({ children, tabs, activeTab, onTabChange }: DashboardShellProps) {
   const { user, logout } = useAuth()
+  const { canAccess } = useFeatureAccess()
   const { totalItems } = useCart()
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
   const router = useRouter()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [cartOpen, setCartOpen] = useState(false)
+
+  // Listen for custom switch-tab event (e.g. from FeatureGate)
+  useEffect(() => {
+    const handleSwitchTab = (e: any) => {
+      if (e.detail && typeof e.detail === 'string') {
+        const tabExists = tabs.some(t => t.id === e.detail)
+        if (tabExists) {
+          onTabChange(e.detail)
+        }
+      }
+    }
+
+    window.addEventListener('switch-tab', handleSwitchTab)
+    return () => window.removeEventListener('switch-tab', handleSwitchTab)
+  }, [tabs, onTabChange])
 
   // Notification helper functions
   const getNotificationIcon = (type: Notification['type']) => {
@@ -149,8 +169,13 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
-                  <Icon className="w-4 h-4 relative z-10" />
-                  <span className="relative z-10">{tab.label}</span>
+                  <div className="relative z-10 flex items-center gap-2">
+                    <Icon className="w-4 h-4" />
+                    <span>{tab.label}</span>
+                    {tab.featureKey && !canAccess(tab.featureKey) && (
+                      <Lock className="w-3 h-3 text-amber-500 opacity-80" />
+                    )}
+                  </div>
                 </button>
               )
             })}
@@ -348,6 +373,9 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
                       )}
                       <Icon className="w-5 h-5 relative z-10" />
                       <span className="relative z-10">{tab.label}</span>
+                      {tab.featureKey && !canAccess(tab.featureKey) && (
+                        <Lock className="w-3 h-3 text-amber-500 opacity-80 ml-auto relative z-10" />
+                      )}
                     </motion.button>
                   )
                 })}
@@ -382,7 +410,12 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}
-                <Icon className="w-5 h-5 relative z-10" />
+                <div className="relative">
+                  <Icon className="w-5 h-5 relative z-10" />
+                  {tab.featureKey && !canAccess(tab.featureKey) && (
+                    <Lock className="w-2.5 h-2.5 text-amber-500 absolute -top-1 -right-1 z-20" />
+                  )}
+                </div>
                 <span className="text-xs font-medium relative z-10">{tab.label}</span>
               </button>
             )

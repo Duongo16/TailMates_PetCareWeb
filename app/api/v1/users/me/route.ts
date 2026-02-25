@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
+import Package from "@/models/Package";
 import { authenticate, apiResponse } from "@/lib/auth";
 import { deleteFromCloudinary } from "@/lib/cloudinary";
 
@@ -12,6 +13,18 @@ export async function GET(request: NextRequest) {
     const { user, error } = await authenticate(request);
     if (error) return error;
 
+    await connectDB();
+
+    // Populate active features from package if subscription is valid
+    let activeFeatures = null;
+    const sub = user!.subscription;
+    if (sub?.package_id && sub?.expired_at && new Date(sub.expired_at) > new Date()) {
+      const pkg = await Package.findById(sub.package_id).lean();
+      if (pkg) {
+        activeFeatures = pkg.features_config;
+      }
+    }
+
     return apiResponse.success({
       id: user!._id,
       email: user!.email,
@@ -20,6 +33,7 @@ export async function GET(request: NextRequest) {
       role: user!.role,
       avatar: user!.avatar,
       subscription: user!.subscription,
+      active_features_config: activeFeatures,
       merchant_profile: user!.merchant_profile,
       tm_balance: user!.tm_balance || 0,
       is_active: user!.is_active,
@@ -119,6 +133,16 @@ export async function PUT(request: NextRequest) {
       { new: true }
     ).select("-password");
 
+    // Populate active features from package if subscription is valid
+    let activeFeatures = null;
+    const sub = updatedUser!.subscription;
+    if (sub?.package_id && sub?.expired_at && new Date(sub.expired_at) > new Date()) {
+      const pkg = await Package.findById(sub.package_id).lean();
+      if (pkg) {
+        activeFeatures = pkg.features_config;
+      }
+    }
+
     return apiResponse.success(
       {
         id: updatedUser!._id,
@@ -128,6 +152,7 @@ export async function PUT(request: NextRequest) {
         role: updatedUser!.role,
         avatar: updatedUser!.avatar,
         subscription: updatedUser!.subscription,
+        active_features_config: activeFeatures,
         merchant_profile: updatedUser!.merchant_profile,
         tm_balance: updatedUser!.tm_balance || 0,
       },

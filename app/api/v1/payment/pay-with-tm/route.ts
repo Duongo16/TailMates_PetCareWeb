@@ -10,6 +10,7 @@ import Order, { OrderStatus } from "@/models/Order";
 import SubscriptionLog from "@/models/SubscriptionLog";
 import { authenticate, apiResponse } from "@/lib/auth";
 import mongoose from "mongoose";
+import { createNotification, NotificationType } from "@/lib/notification-service";
 
 // POST /api/v1/payment/pay-with-tm - Pay for service using TM balance
 export async function POST(request: NextRequest) {
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
     } else if (type === TransactionType.ORDER) {
       order = await Order.findById(reference_id);
       if (!order) return apiResponse.notFound("Order not found");
-      
+
       if (order.status !== OrderStatus.PENDING) {
         return apiResponse.error("Order is already processed");
       }
@@ -59,7 +60,9 @@ export async function POST(request: NextRequest) {
       return apiResponse.error(`Số dư TM không đủ. Cần ${amount.toLocaleString()} TM, hiện có ${user.tm_balance?.toLocaleString() || 0} TM.`);
     }
 
-    // --- Bug 3 Fix: Downgrade protection for subscription payments ---
+    // Check for downgrade to prepare notification message
+    let isDowngrade = false;
+    let oldPackageName = "";
     if (type === TransactionType.SUBSCRIPTION && pkg) {
       const existingSub = user.subscription;
       if (
@@ -70,9 +73,8 @@ export async function POST(request: NextRequest) {
         const existingPkg = await Package.findById(existingSub.package_id).lean();
         if (existingPkg && existingSub.package_id.toString() !== pkg._id.toString()) {
           if (existingPkg.price > pkg.price) {
-            return apiResponse.error(
-              `Bạn đang dùng gói "${existingPkg.name}" có giá trị cao hơn. Không thể đăng ký gói thấp hơn trong khi gói cũ còn hiệu lực.`
-            );
+            isDowngrade = true;
+            oldPackageName = existingPkg.name;
           }
         }
       }
@@ -108,15 +110,8 @@ export async function POST(request: NextRequest) {
 
     // Process the service
     if (type === TransactionType.SUBSCRIPTION && pkg) {
-      // --- Bug 2 Fix: No features[] denormalization. Extend from current expiry.
-      const existingSub = updatedUser.subscription;
-      let startDate = new Date();
-      if (
-        existingSub?.expired_at &&
-        new Date(existingSub.expired_at) > new Date()
-      ) {
-        startDate = new Date(existingSub.expired_at);
-      }
+      // Fix: Always start from purchase time (TODAY) as requested by the user
+      const startDate = new Date();
       const endDate = new Date(startDate);
       endDate.setMonth(endDate.getMonth() + pkg.duration_months);
 
@@ -137,6 +132,22 @@ export async function POST(request: NextRequest) {
         payment_gateway_id: `TM_WALLET_${transaction._id}`,
         status: "SUCCESS",
       });
+
+      // Send notification
+      try {
+        await createNotification({
+          userId: user._id.toString(),
+          type: NotificationType.SUBSCRIPTION,
+          title: isDowngrade ? "Thay đổi gói dịch vụ" : "Nâng cấp thành công",
+          message: isDowngrade
+            ? `Tài khoản của bạn đã chuyển sang gói "${pkg.name}". Các quyền lợi mới đã được áp dụng.`
+            : `Chúc mừng! Bạn đã đăng ký thành công gói "${pkg.name}". Hạn dùng đến ${endDate.toLocaleDateString("vi-VN")}.`,
+          redirectUrl: user.role === "MERCHANT" ? "/dashboard/merchant/subscription" : "/dashboard/customer?tab=subscription",
+          referenceId: pkg._id.toString(),
+        });
+      } catch (notifError) {
+        console.error("Failed to send subscription notification:", notifError);
+      }
     } else if (type === TransactionType.ORDER && order) {
       await Order.findByIdAndUpdate(reference_id, {
         $set: { status: OrderStatus.CONFIRMED },

@@ -27,6 +27,7 @@ export interface User {
     expired_at?: string
     features?: string[]
   }
+  active_features_config?: any
   merchant_profile?: {
     shop_name: string
     address: string
@@ -115,6 +116,7 @@ function mapApiUserToUser(apiUser: any): User {
     is_email_verified: apiUser.is_email_verified,
     auth_provider: apiUser.auth_provider,
     subscription: apiUser.subscription,
+    active_features_config: apiUser.active_features_config,
     merchant_profile: apiUser.merchant_profile,
     tm_balance: apiUser.tm_balance,
   }
@@ -276,7 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else if (token) {
           localStorage.setItem(ACCESS_TOKEN_KEY, token)
         }
-        
+
         localStorage.setItem(USER_KEY, JSON.stringify(mappedUser))
         setUser(mappedUser)
 
@@ -324,10 +326,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: true, waitSeconds: response.data?.waitSeconds || 60 }
       }
 
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: response.message || "Không thể gửi OTP",
-        waitSeconds: response.retryAfter 
+        waitSeconds: response.retryAfter
       }
     } catch (error) {
       console.error("Send OTP error:", error)
@@ -373,10 +375,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: true, waitSeconds: response.data?.waitSeconds || 60 }
       }
 
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: response.message || "Không thể gửi lại OTP",
-        waitSeconds: response.retryAfter 
+        waitSeconds: response.retryAfter
       }
     } catch (error) {
       console.error("Resend OTP error:", error)
@@ -421,7 +423,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else if (token) {
           localStorage.setItem(ACCESS_TOKEN_KEY, token)
         }
-        
+
         localStorage.setItem(USER_KEY, JSON.stringify(mappedUser))
         setUser(mappedUser)
 
@@ -479,7 +481,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Logout API error:", error)
       // Continue with local logout even if API fails
     }
-    
+
     setUser(null)
     clearTokens()
   }

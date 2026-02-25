@@ -14,6 +14,7 @@ import { useAuth } from "@/lib/auth-context"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { CUSTOMER_TABS, type CustomerTab } from "@/lib/customer-constants"
+import { FeatureGate } from "@/components/ui/feature-gate"
 import BlogList from "@/components/customer/blog-list"
 import { PawMatchUI } from "@/components/pawmatch/pawmatch-ui"
 import { TransactionHistory } from "@/components/dashboard/transaction-history"
@@ -102,13 +103,17 @@ export default function CustomerDashboardPage() {
           />
         )
       case "pawmatch":
-        return <PawMatchUI 
-          onEditPet={handlePetEdit} 
-          onAddPet={() => {
-            setShouldOpenAddPet(true)
-            setActiveTab("pets")
-          }}
-        />
+        return (
+          <FeatureGate featureKey="pawmate_connect" fullScreen>
+            <PawMatchUI
+              onEditPet={handlePetEdit}
+              onAddPet={() => {
+                setShouldOpenAddPet(true)
+                setActiveTab("pets")
+              }}
+            />
+          </FeatureGate>
+        )
       case "medical":
         return (
           <MedicalRecords selectedPetId={selectedPetId} onSelectPet={setSelectedPetId} onBack={handleBackFromMedical} />

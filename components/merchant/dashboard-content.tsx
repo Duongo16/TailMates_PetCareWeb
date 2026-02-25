@@ -59,6 +59,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import { TransactionHistory } from "@/components/dashboard/transaction-history"
+import { FeatureGate } from "@/components/ui/feature-gate"
 
 const MerchantSettings = dynamic(() => import("./merchant-settings").then((mod) => mod.MerchantSettings), {
   loading: () => <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
@@ -72,6 +73,7 @@ const MerchantAnalyticsComponent = dynamic(() => import("./merchant-analytics").
 const MerchantSubscriptionComponent = dynamic(() => import("./subscription").then((mod) => mod.MerchantSubscription), {
   loading: () => <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
 })
+import { useFeatureAccess } from "@/hooks/use-feature-access"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Area, AreaChart, CartesianGrid } from "recharts"
 import Image from "next/image"
 import { useToast } from "@/components/ui/use-toast"
@@ -92,6 +94,7 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
   const { toast } = useToast()
   const { user } = useAuth()
   const router = useRouter()
+  const { canAccess } = useFeatureAccess()
 
   const [scanResult, setScanResult] = useState<string | null>(null)
   const [showAddProduct, setShowAddProduct] = useState(false)
@@ -1057,276 +1060,290 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
               <h1 className="text-2xl font-bold text-foreground">Quản lý sản phẩm</h1>
               <p className="text-foreground/60">{filteredProducts?.length || 0} / {products?.length || 0} sản phẩm</p>
             </div>
-            <Dialog open={showAddProduct} onOpenChange={setShowAddProduct}>
-              <DialogTrigger asChild>
-                <Button className="rounded-xl">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Thêm sản phẩm
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="rounded-3xl max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Thêm sản phẩm mới</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
-                  <div>
-                    <Label>Tên sản phẩm *</Label>
-                    <Input
-                      value={newProduct.name}
-                      onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                      placeholder="Nhập tên sản phẩm"
-                      className="rounded-xl mt-1"
-                    />
-                  </div>
-                  <div>
-                    <Label>Danh mục</Label>
-                    <Select
-                      value={newProduct.category}
-                      onValueChange={(val) => setNewProduct({ ...newProduct, category: val })}
-                    >
-                      <SelectTrigger className="rounded-xl mt-1">
-                        <SelectValue placeholder="Chọn danh mục" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="FOOD">Thức ăn</SelectItem>
-                        <SelectItem value="TOY">Đồ chơi</SelectItem>
-                        <SelectItem value="ACCESSORY">Phụ kiện</SelectItem>
-                        <SelectItem value="MEDICINE">Thuốc & Y tế</SelectItem>
-                        <SelectItem value="HYGIENE">Vệ sinh</SelectItem>
-                        <SelectItem value="OTHER">Khác</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Giá (VND) *</Label>
-                      <Input
-                        type="number"
-                        value={newProduct.price}
-                        onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                        placeholder="0"
-                        className="rounded-xl mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label>Giá khuyến mãi (VND)</Label>
-                      <Input
-                        type="number"
-                        value={newProduct.sale_price}
-                        onChange={(e) => setNewProduct({ ...newProduct, sale_price: e.target.value })}
-                        placeholder="0 (Tuỳ chọn)"
-                        className="rounded-xl mt-1"
-                      />
-                    </div>
-                    <div>
-                      <Label>Số lượng kho</Label>
-                      <Input
-                        type="number"
-                        value={newProduct.stock}
-                        onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
-                        placeholder="0"
-                        className="rounded-xl mt-1"
-                      />
-                    </div>
-                  </div>
-                  <ImageUpload
-                    label="Hình ảnh sản phẩm"
-                    value={newProduct.image_url ? { url: newProduct.image_url, public_id: newProduct.image_public_id } : null}
-                    onChange={(image) => {
-                      setNewProduct({
-                        ...newProduct,
-                        image_url: image?.url || "",
-                        image_public_id: image?.public_id || ""
-                      })
-                    }}
+            <Button
+              className="rounded-xl"
+              onClick={() => {
+                const hasUnlimited = canAccess("unlimited_products")
+                const FREE_LIMIT = 5
+                if (!hasUnlimited && (products?.length || 0) >= FREE_LIMIT) {
+                  toast({
+                    title: "Giới hạn sản phẩm",
+                    description: `Gói của bạn chỉ cho phép tối đa ${FREE_LIMIT} sản phẩm. Vui lòng nâng cấp để đăng không giới hạn.`,
+                    variant: "destructive"
+                  })
+                  return
+                }
+                setShowAddProduct(true)
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Thêm sản phẩm
+            </Button>
+          </div>
+
+          <Dialog open={showAddProduct} onOpenChange={setShowAddProduct}>
+            <DialogContent className="rounded-3xl max-w-md">
+              <DialogHeader>
+                <DialogTitle>Thêm sản phẩm mới</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                <div>
+                  <Label>Tên sản phẩm *</Label>
+                  <Input
+                    value={newProduct.name}
+                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                    placeholder="Nhập tên sản phẩm"
+                    className="rounded-xl mt-1"
                   />
+                </div>
+                <div>
+                  <Label>Danh mục</Label>
+                  <Select
+                    value={newProduct.category}
+                    onValueChange={(val) => setNewProduct({ ...newProduct, category: val })}
+                  >
+                    <SelectTrigger className="rounded-xl mt-1">
+                      <SelectValue placeholder="Chọn danh mục" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FOOD">Thức ăn</SelectItem>
+                      <SelectItem value="TOY">Đồ chơi</SelectItem>
+                      <SelectItem value="ACCESSORY">Phụ kiện</SelectItem>
+                      <SelectItem value="MEDICINE">Thuốc & Y tế</SelectItem>
+                      <SelectItem value="HYGIENE">Vệ sinh</SelectItem>
+                      <SelectItem value="OTHER">Khác</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Mô tả</Label>
-                    <Textarea
-                      value={newProduct.description}
-                      onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                      placeholder="Mô tả sản phẩm..."
+                    <Label>Giá (VND) *</Label>
+                    <Input
+                      type="number"
+                      value={newProduct.price}
+                      onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                      placeholder="0"
                       className="rounded-xl mt-1"
-                      rows={3}
                     />
                   </div>
-                  {/* Specifications Section for FOOD */}
-                  {newProduct.category === "FOOD" && (
-                    <div className="border-t pt-4 mt-4 space-y-4">
-                      <h4 className="font-semibold text-sm text-foreground/80">📋 Thông tin chi tiết & Dinh dưỡng</h4>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div>
-                          <Label className="text-xs">Loài</Label>
-                          <Select value={newProduct.targetSpecies} onValueChange={(val) => setNewProduct({ ...newProduct, targetSpecies: val })}>
-                            <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="DOG">🐕 Chó</SelectItem>
-                              <SelectItem value="CAT">🐱 Mèo</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs">Độ tuổi</Label>
-                          <Select value={newProduct.lifeStage} onValueChange={(val) => setNewProduct({ ...newProduct, lifeStage: val })}>
-                            <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="KITTEN_PUPPY">Con nhỏ</SelectItem>
-                              <SelectItem value="ADULT">Trưởng thành</SelectItem>
-                              <SelectItem value="SENIOR">Lớn tuổi</SelectItem>
-                              <SelectItem value="ALL_STAGES">Mọi độ tuổi</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs">Kích cỡ</Label>
-                          <Select value={newProduct.breedSize} onValueChange={(val) => setNewProduct({ ...newProduct, breedSize: val })}>
-                            <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="SMALL">Nhỏ</SelectItem>
-                              <SelectItem value="MEDIUM">Vừa</SelectItem>
-                              <SelectItem value="LARGE">Lớn</SelectItem>
-                              <SelectItem value="GIANT">Khổng lồ</SelectItem>
-                              <SelectItem value="ALL_SIZES">Mọi kích cỡ</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs">Kết cấu (Texture)</Label>
-                          <Select value={newProduct.texture} onValueChange={(val) => setNewProduct({ ...newProduct, texture: val })}>
-                            <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn kết cấu" /></SelectTrigger>
-                            <SelectContent>
-                              {Object.values(Texture).map((t) => (
-                                <SelectItem key={t} value={t}>{t}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label className="text-xs">Nguồn Protein chính</Label>
-                          <Select value={newProduct.primary_protein_source} onValueChange={(val) => setNewProduct({ ...newProduct, primary_protein_source: val })}>
-                            <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn nguồn protein" /></SelectTrigger>
-                            <SelectContent>
-                              {Object.values(PrimaryProteinSource).map((p) => (
-                                <SelectItem key={p} value={p}>{p}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <Label className="text-xs">Mật độ năng lượng (Amount)</Label>
-                          <Input
-                            type="number"
-                            value={newProduct.caloric_density_amount}
-                            onChange={(e) => setNewProduct({ ...newProduct, caloric_density_amount: e.target.value })}
-                            placeholder="3500"
-                            className="rounded-lg mt-1 h-9"
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Đơn vị (Unit)</Label>
-                          <Select value={newProduct.caloric_density_unit} onValueChange={(val) => setNewProduct({ ...newProduct, caloric_density_unit: val })}>
-                            <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Đơn vị" /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="kcal/kg">kcal/kg</SelectItem>
-                              <SelectItem value="kcal/cup">kcal/cup</SelectItem>
-                              <SelectItem value="kcal/100g">kcal/100g</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                  <div>
+                    <Label>Giá khuyến mãi (VND)</Label>
+                    <Input
+                      type="number"
+                      value={newProduct.sale_price}
+                      onChange={(e) => setNewProduct({ ...newProduct, sale_price: e.target.value })}
+                      placeholder="0 (Tuỳ chọn)"
+                      className="rounded-xl mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label>Số lượng kho</Label>
+                    <Input
+                      type="number"
+                      value={newProduct.stock}
+                      onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })}
+                      placeholder="0"
+                      className="rounded-xl mt-1"
+                    />
+                  </div>
+                </div>
+                <ImageUpload
+                  label="Hình ảnh sản phẩm"
+                  value={newProduct.image_url ? { url: newProduct.image_url, public_id: newProduct.image_public_id } : null}
+                  onChange={(image) => {
+                    setNewProduct({
+                      ...newProduct,
+                      image_url: image?.url || "",
+                      image_public_id: image?.public_id || ""
+                    })
+                  }}
+                />
+                <div>
+                  <Label>Mô tả</Label>
+                  <Textarea
+                    value={newProduct.description}
+                    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                    placeholder="Mô tả sản phẩm..."
+                    className="rounded-xl mt-1"
+                    rows={3}
+                  />
+                </div>
+                {/* Specifications Section for FOOD */}
+                {newProduct.category === "FOOD" && (
+                  <div className="border-t pt-4 mt-4 space-y-4">
+                    <h4 className="font-semibold text-sm text-foreground/80">📋 Thông tin chi tiết & Dinh dưỡng</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-xs">Loài</Label>
+                        <Select value={newProduct.targetSpecies} onValueChange={(val) => setNewProduct({ ...newProduct, targetSpecies: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="DOG">🐕 Chó</SelectItem>
+                            <SelectItem value="CAT">🐱 Mèo</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
-                        <Label className="text-xs">Lợi ích sức khỏe</Label>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {HEALTH_TAGS.map((tag) => (
-                            <Badge
-                              key={tag}
-                              variant={newProduct.healthTags.includes(tag) ? "default" : "outline"}
-                              className="cursor-pointer text-xs"
-                              onClick={() => {
-                                if (newProduct.healthTags.includes(tag)) {
-                                  setNewProduct({ ...newProduct, healthTags: newProduct.healthTags.filter((t: string) => t !== tag) })
-                                } else {
-                                  setNewProduct({ ...newProduct, healthTags: [...newProduct.healthTags, tag] })
-                                }
-                              }}
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
+                        <Label className="text-xs">Độ tuổi</Label>
+                        <Select value={newProduct.lifeStage} onValueChange={(val) => setNewProduct({ ...newProduct, lifeStage: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="KITTEN_PUPPY">Con nhỏ</SelectItem>
+                            <SelectItem value="ADULT">Trưởng thành</SelectItem>
+                            <SelectItem value="SENIOR">Lớn tuổi</SelectItem>
+                            <SelectItem value="ALL_STAGES">Mọi độ tuổi</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
-                        <Label className="text-xs">Thành phần (cách nhau bằng dấu phẩy)</Label>
+                        <Label className="text-xs">Kích cỡ</Label>
+                        <Select value={newProduct.breedSize} onValueChange={(val) => setNewProduct({ ...newProduct, breedSize: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="SMALL">Nhỏ</SelectItem>
+                            <SelectItem value="MEDIUM">Vừa</SelectItem>
+                            <SelectItem value="LARGE">Lớn</SelectItem>
+                            <SelectItem value="GIANT">Khổng lồ</SelectItem>
+                            <SelectItem value="ALL_SIZES">Mọi kích cỡ</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Kết cấu (Texture)</Label>
+                        <Select value={newProduct.texture} onValueChange={(val) => setNewProduct({ ...newProduct, texture: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn kết cấu" /></SelectTrigger>
+                          <SelectContent>
+                            {Object.values(Texture).map((t) => (
+                              <SelectItem key={t} value={t}>{t}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Nguồn Protein chính</Label>
+                        <Select value={newProduct.primary_protein_source} onValueChange={(val) => setNewProduct({ ...newProduct, primary_protein_source: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Chọn nguồn protein" /></SelectTrigger>
+                          <SelectContent>
+                            {Object.values(PrimaryProteinSource).map((p) => (
+                              <SelectItem key={p} value={p}>{p}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Mật độ năng lượng (Amount)</Label>
                         <Input
-                          value={newProduct.ingredients}
-                          onChange={(e) => setNewProduct({ ...newProduct, ingredients: e.target.value })}
-                          placeholder="Gà, gạo, cá hồi..."
+                          type="number"
+                          value={newProduct.caloric_density_amount}
+                          onChange={(e) => setNewProduct({ ...newProduct, caloric_density_amount: e.target.value })}
+                          placeholder="3500"
                           className="rounded-lg mt-1 h-9"
                         />
                       </div>
-                      <div className="grid grid-cols-4 gap-2">
-                        <div>
-                          <Label className="text-xs">Protein %</Label>
-                          <Input type="number" value={newProduct.protein} onChange={(e) => setNewProduct({ ...newProduct, protein: e.target.value })} className="rounded-lg mt-1 h-9" />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Fat %</Label>
-                          <Input type="number" value={newProduct.fat} onChange={(e) => setNewProduct({ ...newProduct, fat: e.target.value })} className="rounded-lg mt-1 h-9" />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Fiber %</Label>
-                          <Input type="number" value={newProduct.fiber} onChange={(e) => setNewProduct({ ...newProduct, fiber: e.target.value })} className="rounded-lg mt-1 h-9" />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Moisture %</Label>
-                          <Input type="number" value={newProduct.moisture} onChange={(e) => setNewProduct({ ...newProduct, moisture: e.target.value })} className="rounded-lg mt-1 h-9" />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Calories (Legacy)</Label>
-                          <Input type="number" value={newProduct.calories} onChange={(e) => setNewProduct({ ...newProduct, calories: e.target.value })} className="rounded-lg mt-1 h-9" />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Calcium %</Label>
-                          <Input type="number" value={newProduct.calcium} onChange={(e) => setNewProduct({ ...newProduct, calcium: e.target.value })} className="rounded-lg mt-1 h-9" />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Phosphorus %</Label>
-                          <Input type="number" value={newProduct.phosphorus} onChange={(e) => setNewProduct({ ...newProduct, phosphorus: e.target.value })} className="rounded-lg mt-1 h-9" />
-                        </div>
-                        <div>
-                          <Label className="text-xs">Taurine %</Label>
-                          <Input type="number" value={newProduct.taurine} onChange={(e) => setNewProduct({ ...newProduct, taurine: e.target.value })} className="rounded-lg mt-1 h-9" />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="newIsSterilized"
-                          checked={newProduct.isSterilized}
-                          onChange={(e) => setNewProduct({ ...newProduct, isSterilized: e.target.checked })}
-                          className="rounded"
-                        />
-                        <Label htmlFor="newIsSterilized" className="text-xs">Dành cho thú đã triệt sản</Label>
+                      <div>
+                        <Label className="text-xs">Đơn vị (Unit)</Label>
+                        <Select value={newProduct.caloric_density_unit} onValueChange={(val) => setNewProduct({ ...newProduct, caloric_density_unit: val })}>
+                          <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Đơn vị" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="kcal/kg">kcal/kg</SelectItem>
+                            <SelectItem value="kcal/cup">kcal/cup</SelectItem>
+                            <SelectItem value="kcal/100g">kcal/100g</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
-                  )}
-                  <Button
-                    className="w-full rounded-xl"
-                    onClick={handleAddProduct}
-                    disabled={isSubmitting || !newProduct.name || !newProduct.price}
-                  >
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : "Lưu sản phẩm"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+                    <div>
+                      <Label className="text-xs">Lợi ích sức khỏe</Label>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {HEALTH_TAGS.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant={newProduct.healthTags.includes(tag) ? "default" : "outline"}
+                            className="cursor-pointer text-xs"
+                            onClick={() => {
+                              if (newProduct.healthTags.includes(tag)) {
+                                setNewProduct({ ...newProduct, healthTags: newProduct.healthTags.filter((t: string) => t !== tag) })
+                              } else {
+                                setNewProduct({ ...newProduct, healthTags: [...newProduct.healthTags, tag] })
+                              }
+                            }}
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Thành phần (cách nhau bằng dấu phẩy)</Label>
+                      <Input
+                        value={newProduct.ingredients}
+                        onChange={(e) => setNewProduct({ ...newProduct, ingredients: e.target.value })}
+                        placeholder="Gà, gạo, cá hồi..."
+                        className="rounded-lg mt-1 h-9"
+                      />
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      <div>
+                        <Label className="text-xs">Protein %</Label>
+                        <Input type="number" value={newProduct.protein} onChange={(e) => setNewProduct({ ...newProduct, protein: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Fat %</Label>
+                        <Input type="number" value={newProduct.fat} onChange={(e) => setNewProduct({ ...newProduct, fat: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Fiber %</Label>
+                        <Input type="number" value={newProduct.fiber} onChange={(e) => setNewProduct({ ...newProduct, fiber: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Moisture %</Label>
+                        <Input type="number" value={newProduct.moisture} onChange={(e) => setNewProduct({ ...newProduct, moisture: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Calories (Legacy)</Label>
+                        <Input type="number" value={newProduct.calories} onChange={(e) => setNewProduct({ ...newProduct, calories: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Calcium %</Label>
+                        <Input type="number" value={newProduct.calcium} onChange={(e) => setNewProduct({ ...newProduct, calcium: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Phosphorus %</Label>
+                        <Input type="number" value={newProduct.phosphorus} onChange={(e) => setNewProduct({ ...newProduct, phosphorus: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Taurine %</Label>
+                        <Input type="number" value={newProduct.taurine} onChange={(e) => setNewProduct({ ...newProduct, taurine: e.target.value })} className="rounded-lg mt-1 h-9" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="newIsSterilized"
+                        checked={newProduct.isSterilized}
+                        onChange={(e) => setNewProduct({ ...newProduct, isSterilized: e.target.checked })}
+                        className="rounded"
+                      />
+                      <Label htmlFor="newIsSterilized" className="text-xs">Dành cho thú đã triệt sản</Label>
+                    </div>
+                  </div>
+                )}
+                <Button
+                  className="w-full rounded-xl"
+                  onClick={handleAddProduct}
+                  disabled={isSubmitting || !newProduct.name || !newProduct.price}
+                >
+                  {isSubmitting ? <Loader2 className="animate-spin" /> : "Lưu sản phẩm"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Edit Product Dialog */}
           <Dialog open={showEditProduct} onOpenChange={setShowEditProduct}>
@@ -1484,13 +1501,13 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
                             type="number"
                             value={editingProduct.caloric_density_amount || ""}
                             onChange={(e) => setEditingProduct({ ...editingProduct, caloric_density_amount: e.target.value })}
-                            placeholder="3500"
+                            placeholder="3200"
                             className="rounded-lg mt-1 h-9"
                           />
                         </div>
                         <div>
                           <Label className="text-xs">Đơn vị (Unit)</Label>
-                          <Select value={editingProduct.caloric_density_unit || "kcal/kg"} onValueChange={(val) => setEditingProduct({ ...editingProduct, caloric_density_unit: val })}>
+                          <Select value={editingProduct.caloric_density_unit || ""} onValueChange={(val) => setEditingProduct({ ...editingProduct, caloric_density_unit: val })}>
                             <SelectTrigger className="rounded-lg mt-1 h-9"><SelectValue placeholder="Đơn vị" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="kcal/kg">kcal/kg</SelectItem>
@@ -1582,7 +1599,7 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
                     onClick={handleEditProduct}
                     disabled={isSubmitting || !editingProduct.name || !editingProduct.price}
                   >
-                    {isSubmitting ? <Loader2 className="animate-spin" /> : "Cập nhật"}
+                    {isSubmitting ? <Loader2 className="animate-spin" /> : "Cập nhật sản phẩm"}
                   </Button>
                 </div>
               )}
@@ -1741,7 +1758,7 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
                   )}
                 </TableBody>
               </Table>
-              {/* Pagination Controls ... */}
+              {/* Pagination Controls */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-end p-4 gap-2 border-t">
                   <Button
@@ -2658,39 +2675,41 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
 
     if (activeTab === "scanner") {
       return (
-        <div className="space-y-4 p-1">
-          <h1 className="text-2xl font-bold text-foreground">Quét QR Khách hàng</h1>
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <div className="aspect-video bg-secondary rounded-2xl flex items-center justify-center border-2 border-dashed border-foreground/20">
-                <div className="text-center">
-                  <QrCode className="w-16 h-16 text-foreground/30 mx-auto mb-4" />
-                  <p className="text-foreground/60">Quét mã QR để xem hồ sơ y tế</p>
+        <FeatureGate featureKey="qr_scanning" fullScreen>
+          <div className="space-y-4 p-1">
+            <h1 className="text-2xl font-bold text-foreground">Quét QR Khách hàng</h1>
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <div className="aspect-video bg-secondary rounded-2xl flex items-center justify-center border-2 border-dashed border-foreground/20">
+                  <div className="text-center">
+                    <QrCode className="w-16 h-16 text-foreground/30 mx-auto mb-4" />
+                    <p className="text-foreground/60">Quét mã QR để xem hồ sơ y tế</p>
+                  </div>
                 </div>
-              </div>
-              <Button onClick={() => setScanResult("Mochi - Mèo Anh lông ngắn (Mô phỏng)")} className="w-full rounded-xl py-6">
-                <ScanLine className="w-5 h-5 mr-2" />
-                Mô phỏng quét QR
-              </Button>
+                <Button onClick={() => setScanResult("Mochi - Mèo Anh lông ngắn (Mô phỏng)")} className="w-full rounded-xl py-6">
+                  <ScanLine className="w-5 h-5 mr-2" />
+                  Mô phỏng quét QR
+                </Button>
 
-              {scanResult && (
-                <Card className="bg-secondary">
-                  <CardContent className="p-4">
-                    <h3 className="font-bold text-foreground mb-2">Kết quả quét:</h3>
-                    <p className="text-foreground/80">{scanResult}</p>
-                    <Button
-                      variant="outline"
-                      className="mt-3 rounded-xl bg-transparent"
-                      onClick={() => setScanResult(null)}
-                    >
-                      Xem hồ sơ y tế đầy đủ
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                {scanResult && (
+                  <Card className="bg-secondary">
+                    <CardContent className="p-4">
+                      <h3 className="font-bold text-foreground mb-2">Kết quả quét:</h3>
+                      <p className="text-foreground/80">{scanResult}</p>
+                      <Button
+                        variant="outline"
+                        className="mt-3 rounded-xl bg-transparent"
+                        onClick={() => setScanResult(null)}
+                      >
+                        Xem hồ sơ y tế đầy đủ
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </FeatureGate>
       )
     }
 
@@ -2703,7 +2722,11 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
     }
 
     if (activeTab === "analytics") {
-      return <MerchantAnalyticsComponent onBack={() => setActiveTab("dashboard")} />
+      return (
+        <FeatureGate featureKey="advanced_analytics" fullScreen>
+          <MerchantAnalyticsComponent onBack={() => setActiveTab("dashboard")} />
+        </FeatureGate>
+      )
     }
 
     if (activeTab === "subscription") {
