@@ -3,22 +3,14 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-    TooltipProvider
-} from "@/components/ui/tooltip"
 import {
     Sparkles,
     ShoppingCart,
     Calendar,
     AlertTriangle,
-    TrendingUp,
     Heart,
     Bone,
     Dumbbell,
@@ -26,17 +18,13 @@ import {
     Stethoscope,
     Zap,
     Scissors,
-    ChevronRight,
     Star,
     Clock,
-    Shield,
-    Flame,
-    Leaf,
+    RefreshCw,
     Activity,
-    Check,
-    X
+    X,
 } from "lucide-react"
-import { AISuggestionResponse, PetHealthIndex, FoodRecommendation, ServiceRecommendation } from "@/lib/types/ai-suggestions"
+import { AISuggestionResponse } from "@/lib/types/ai-suggestions"
 import { aiAPI } from "@/lib/api"
 import { FeatureGate } from "@/components/ui/feature-gate"
 
@@ -57,17 +45,16 @@ const iconMap: Record<string, React.ReactNode> = {
 }
 
 const iconColorMap: Record<string, string> = {
-    protein: "text-orange-500 bg-orange-100",
-    heart: "text-red-500 bg-red-100",
-    bone: "text-amber-600 bg-amber-100",
-    stomach: "text-green-500 bg-green-100",
-    vitamin: "text-purple-500 bg-purple-100",
-    checkup: "text-blue-500 bg-blue-100",
-    energy: "text-yellow-500 bg-yellow-100",
-    fur: "text-pink-500 bg-pink-100",
+    protein: "text-orange-500 bg-orange-100 dark:bg-orange-900/30",
+    heart: "text-red-500 bg-red-100 dark:bg-red-900/30",
+    bone: "text-amber-600 bg-amber-100 dark:bg-amber-900/30",
+    stomach: "text-green-500 bg-green-100 dark:bg-green-900/30",
+    vitamin: "text-purple-500 bg-purple-100 dark:bg-purple-900/30",
+    checkup: "text-blue-500 bg-blue-100 dark:bg-blue-900/30",
+    energy: "text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30",
+    fur: "text-pink-500 bg-pink-100 dark:bg-pink-900/30",
 }
 
-// Cute loading messages
 const loadingMessages = [
     { emoji: "🐕", text: "Đang phân tích hồ sơ sức khỏe..." },
     { emoji: "🔬", text: "AI đang đọc dữ liệu dinh dưỡng..." },
@@ -77,6 +64,32 @@ const loadingMessages = [
     { emoji: "✨", text: "Hoàn tất phân tích AI..." },
 ]
 
+function scoreColor(score: number) {
+    if (score >= 80) return { bar: "bg-green-500", text: "text-green-700 dark:text-green-400", label: "Tốt" }
+    if (score >= 60) return { bar: "bg-amber-500", text: "text-amber-700 dark:text-amber-400", label: "Khá" }
+    if (score >= 40) return { bar: "bg-orange-500", text: "text-orange-700 dark:text-orange-400", label: "Cần cải thiện" }
+    return { bar: "bg-red-500", text: "text-red-700 dark:text-red-400", label: "Nguy hiểm" }
+}
+
+function urgencyBadge(urgency: string) {
+    switch (urgency) {
+        case "CRITICAL": return "bg-red-100 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400"
+        case "HIGH": return "bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-950/30 dark:text-orange-400"
+        case "MEDIUM": return "bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400"
+        default: return "bg-green-100 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400"
+    }
+}
+
+function urgencyLabel(urgency: string) {
+    const map: Record<string, string> = { CRITICAL: "Khẩn cấp", HIGH: "Ưu tiên cao", MEDIUM: "Trung bình", LOW: "Thấp" }
+    return map[urgency] ?? urgency
+}
+
+function statusLabel(status: string) {
+    const map: Record<string, string> = { low: "Thấp", medium: "Trung bình", high: "Cao" }
+    return map[status] ?? status
+}
+
 export function AISuggestions({ petId, petName }: AISuggestionsProps) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
@@ -84,17 +97,12 @@ export function AISuggestions({ petId, petName }: AISuggestionsProps) {
     const [error, setError] = useState<string | null>(null)
     const [loadingStep, setLoadingStep] = useState(0)
     const [isMounted, setIsMounted] = useState(false)
-
-    useEffect(() => {
-        setIsMounted(true)
-    }, [])
-
-    // Caching states
     const [isCached, setIsCached] = useState(false)
     const [isOutdated, setIsOutdated] = useState(false)
     const [daysSince, setDaysSince] = useState<number | undefined>()
 
-    // Animate loading messages
+    useEffect(() => { setIsMounted(true) }, [])
+
     useEffect(() => {
         if (!loading) return
         const interval = setInterval(() => {
@@ -103,16 +111,12 @@ export function AISuggestions({ petId, petName }: AISuggestionsProps) {
         return () => clearInterval(interval)
     }, [loading])
 
-    // Load cached analysis on mount
-    useEffect(() => {
-        fetchCachedAnalysis()
-    }, [petId])
+    useEffect(() => { fetchCachedAnalysis() }, [petId])
 
     const fetchCachedAnalysis = async () => {
         try {
             const result = await aiAPI.getCachedHealthAnalysis(petId)
             if (result.success && result.data?.analysis) {
-                // Transform cached data to match AISuggestionResponse format
                 setData({
                     pet_id: petId,
                     pet_name: petName,
@@ -133,13 +137,12 @@ export function AISuggestions({ petId, petName }: AISuggestionsProps) {
     const fetchSuggestions = async () => {
         setLoading(true)
         setError(null)
+        setData(null)
         setLoadingStep(0)
-
         try {
             const result = await aiAPI.suggestions(petId)
             if (result.success && result.data) {
                 setData(result.data as AISuggestionResponse)
-                // Reset cache state on new analysis
                 setIsCached(false)
                 setIsOutdated(false)
                 setDaysSince(0)
@@ -147,605 +150,422 @@ export function AISuggestions({ petId, petName }: AISuggestionsProps) {
                 setError(result.message || "Không thể tải gợi ý. Vui lòng thử lại.")
             }
         } catch (err) {
-            console.error("Failed to fetch suggestions:", err)
+            console.error(err)
             setError("Không thể tải gợi ý. Vui lòng thử lại.")
         } finally {
             setLoading(false)
         }
     }
 
-    const getUrgencyStyle = (urgency: string) => {
-        switch (urgency) {
-            case "CRITICAL": return { bg: "bg-red-500", text: "text-white", border: "border-red-500", label: "Khẩn cấp" }
-            case "HIGH": return { bg: "bg-orange-500", text: "text-white", border: "border-orange-500", label: "Cao" }
-            case "MEDIUM": return { bg: "bg-yellow-500", text: "text-black", border: "border-yellow-500", label: "Trung bình" }
-            default: return { bg: "bg-green-500", text: "text-white", border: "border-green-500", label: "Thấp" }
-        }
-    }
-
-    const handleBuyProduct = (productId: string) => {
-        router.push(`/products/${productId}`)
-    }
-
-    const handleBookService = (serviceId: string) => {
-        router.push(`/dashboard/customer?tab=booking&serviceId=${serviceId}`)
-    }
-
-    // Calculate average health score
     const avgHealthScore = data?.analysis?.health_indices?.length
-        ? Math.round(data.analysis.health_indices.reduce((sum, idx) => sum + (idx?.value || 0), 0) / data.analysis.health_indices.length)
+        ? Math.round(data.analysis.health_indices.reduce((s, i) => s + (i?.value || 0), 0) / data.analysis.health_indices.length)
         : 0
 
-    return (
-        <FeatureGate featureKey="ai_recommendations" fullScreen>
-            <TooltipProvider>
-                <div className="space-y-4">
-                    {/* Compact Header with Analyze Button */}
-                    {!data && !loading && (
-                        <Card className="relative overflow-hidden border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 dark:from-primary/10 dark:via-accent/10 dark:to-primary/10">
-                            <CardContent className="p-6 text-center">
-                                <div className="mb-4">
-                                    <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-3 animate-pulse">
-                                        <Sparkles className="w-10 h-10 text-white" />
-                                    </div>
-                                    <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                                        Phân tích AI cho {petName}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        Nhận gợi ý thức ăn và dịch vụ phù hợp nhất dựa trên dữ liệu sức khỏe
-                                    </p>
-                                </div>
-                                <Button
-                                    onClick={fetchSuggestions}
-                                    size="lg"
-                                    className="bg-gradient-to-r from-primary via-primary/90 to-accent text-white hover:opacity-90 shadow-lg hover:shadow-xl transition-all"
-                                >
-                                    <Sparkles className="w-5 h-5 mr-2" />
-                                    Bắt đầu phân tích
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    )}
+    if (!isMounted) return null
 
-                    {/* Cute Loading Animation */}
-                    {loading && (
-                        <Card className="relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 animate-gradient-x" />
-                            <CardContent className="p-8 text-center relative">
-                                {/* Animated Pet */}
-                                <div className="relative w-32 h-32 mx-auto mb-6">
-                                    {/* Outer ring */}
-                                    <div className="absolute inset-0 rounded-full border-4 border-purple-200 dark:border-purple-800" />
-                                    {/* Spinning ring */}
-                                    <svg className="absolute inset-0 w-32 h-32 animate-spin-slow" viewBox="0 0 128 128">
-                                        <circle
-                                            cx="64" cy="64" r="60"
-                                            fill="none"
-                                            stroke="url(#gradient)"
-                                            strokeWidth="4"
-                                            strokeDasharray="100 280"
-                                            strokeLinecap="round"
-                                        />
-                                        <defs>
-                                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                                <stop offset="0%" stopColor="#f15a29" />
-                                                <stop offset="100%" stopColor="#3b6db3" />
-                                            </linearGradient>
-                                        </defs>
-                                    </svg>
-                                    {/* Center emoji */}
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                        <span className="text-5xl animate-bounce-slow">
-                                            {loadingMessages[loadingStep].emoji}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {/* Loading text */}
-                                <div className="h-8">
-                                    <p className="text-lg font-medium text-foreground animate-fade-in">
-                                        {loadingMessages[loadingStep].text}
-                                    </p>
-                                </div>
-
-                                {/* Progress dots */}
-                                <div className="flex justify-center gap-2 mt-4">
-                                    {loadingMessages.map((_, idx) => (
-                                        <div
-                                            key={idx}
-                                            className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === loadingStep
-                                                ? "w-6 bg-gradient-to-r from-primary to-accent"
-                                                : idx < loadingStep
-                                                    ? "bg-primary/30"
-                                                    : "bg-gray-200 dark:bg-gray-700"
-                                                }`}
-                                        />
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Error State */}
-                    {error && (
-                        <Card className="border-red-200 bg-red-50 dark:bg-red-950/20">
-                            <CardContent className="p-4 flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                                    <X className="w-5 h-5 text-red-500" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="font-medium text-red-700 dark:text-red-400">{error}</p>
-                                </div>
-                                <Button variant="outline" size="sm" onClick={fetchSuggestions}>
-                                    Thử lại
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Fallback Notice */}
-                    {data?.is_fallback && (
-                        <Card className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20">
-                            <CardContent className="p-3 flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
-                                <AlertTriangle className="w-4 h-4" />
-                                <span className="text-sm">Đang sử dụng gợi ý cơ bản. {data.fallback_reason}</span>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Outdated Analysis Warning Banner */}
-                    {data && isOutdated && (
-                        <Card className="border-yellow-300 bg-yellow-50 dark:bg-yellow-950/20">
-                            <CardContent className="p-3 flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
-                                    <Clock className="w-5 h-5 text-yellow-600" />
-                                </div>
-                                <div className="flex-1">
-                                    <p className="font-medium text-yellow-700 dark:text-red-400">
-                                        ⚠️ Phân tích đã được thực hiện cách đây {daysSince} ngày
-                                    </p>
-                                    <p className="text-sm text-yellow-600 dark:text-yellow-500">
-                                        Bạn nên cập nhật để có thông tin chính xác hơn về sức khỏe của {petName}!
-                                    </p>
-                                </div>
-                                <Button size="sm" onClick={fetchSuggestions} className="flex-shrink-0">
-                                    <Sparkles className="w-4 h-4 mr-1" />
-                                    Cập nhật
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {/* Cached Analysis Header */}
-                    {data && isCached && !isOutdated && (
-                        <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                <Badge variant="outline" className="border-primary/30">
-                                    <Activity className="w-3 h-3 mr-1" />
-                                    Cached
-                                </Badge>
-                                <span>
-                                    Phân tích {daysSince === 0 ? "hôm nay" : `${daysSince} ngày trước`}
-                                </span>
-                            </div>
-                            <Button variant="ghost" size="sm" onClick={fetchSuggestions}>
-                                <Sparkles className="w-4 h-4 mr-1" />
-                                Phân tích lại
-                            </Button>
+    // ─── Empty state ───────────────────────────────────────────────────────────
+    if (!data && !loading && !error) {
+        return (
+            <FeatureGate featureKey="ai_recommendations" fullScreen>
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                    <div className="relative mb-6">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 flex items-center justify-center shadow-xl shadow-teal-200 dark:shadow-teal-900/40">
+                            <Activity className="w-11 h-11 text-white" />
                         </div>
-                    )}
-
-                    {/* Main Results */}
-                    {isMounted && data && (
-                        <>
-                            {/* Health Summary + Score Overview */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                                {/* Left: Health Score Radial */}
-                                <Card className="lg:col-span-1">
-                                    <CardContent className="p-4 flex flex-col items-center">
-                                        <RadialScoreChart score={avgHealthScore} size={140} />
-                                        <h4 className="font-bold text-lg mt-2">Điểm sức khỏe</h4>
-                                        <p className="text-xs text-muted-foreground text-center">
-                                            Trung bình từ {(data?.analysis?.health_indices || []).length} chỉ số
-                                        </p>
-
-                                        {/* Quick Stats Pills */}
-                                        <div className="flex flex-wrap justify-center gap-1.5 mt-3">
-                                            <Badge variant="outline" className="text-xs">
-                                                {data.analysis.weight_status === "NORMAL" ? "✓ Cân nặng chuẩn" :
-                                                    data.analysis.weight_status === "UNDERWEIGHT" ? "↓ Thiếu cân" : "↑ Thừa cân"}
-                                            </Badge>
-                                            <Badge variant="outline" className="text-xs">
-                                                {data.analysis.activity_level === "HIGH" ? "⚡ Năng động" :
-                                                    data.analysis.activity_level === "MODERATE" ? "🚶 Trung bình" : "😴 Ít vận động"}
-                                            </Badge>
-                                        </div>
-
-                                        {/* Special Diet */}
-                                        {data.analysis.nutritional_needs.specialDiet && (
-                                            <Badge className="mt-2 bg-primary/10 text-primary hover:bg-primary/20">
-                                                <Leaf className="w-3 h-3 mr-1" />
-                                                {data.analysis.nutritional_needs.specialDiet}
-                                            </Badge>
-                                        )}
-                                    </CardContent>
-                                </Card>
-
-                                {/* Right: Health Summary + Indices */}
-                                <Card className="lg:col-span-2">
-                                    <CardHeader className="pb-2">
-                                        <CardTitle className="flex items-center gap-2 text-base">
-                                            <TrendingUp className="w-4 h-4 text-green-500" />
-                                            Tổng quan sức khỏe
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="ml-auto"
-                                                onClick={fetchSuggestions}
-                                            >
-                                                <Sparkles className="w-4 h-4 mr-1" />
-                                                Phân tích lại
-                                            </Button>
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="pt-0">
-                                        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                                            {data.analysis.health_summary}
-                                        </p>
-
-                                        {/* Health Indices Grid */}
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                            {(data?.analysis?.health_indices || []).map((idx, i) => (
-                                                <HealthIndexMini key={i} index={idx} />
-                                            ))}
-                                        </div>
-
-                                        {/* Avoid Ingredients Warning */}
-                                        {(data?.analysis?.nutritional_needs?.avoidIngredients || []).length > 0 && (
-                                            <div className="mt-3 p-2 bg-red-50 dark:bg-red-950/20 rounded-lg flex items-center gap-2">
-                                                <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                                                <span className="text-xs text-red-600 dark:text-red-400">
-                                                    Cần tránh: {(data?.analysis?.nutritional_needs?.avoidIngredients || []).join(", ")}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </div>
-
-                            {/* Tabbed Recommendations */}
-                            <Tabs defaultValue="food" className="w-full">
-                                <TabsList className="w-full grid grid-cols-2 h-12">
-                                    <TabsTrigger value="food" className="gap-2">
-                                        <span className="text-lg">🍖</span>
-                                        Thức ăn
-                                        <Badge variant="secondary" className="ml-1 h-5 px-1.5">
-                                            {(data?.food_recommendations || []).filter(f => (f?.match_point || 0) > 0).length}
-                                        </Badge>
-                                    </TabsTrigger>
-                                    <TabsTrigger value="service" className="gap-2">
-                                        <span className="text-lg">🏥</span>
-                                        Dịch vụ
-                                        <Badge variant="secondary" className="ml-1 h-5 px-1.5">
-                                            {(data?.service_recommendations || []).length}
-                                        </Badge>
-                                    </TabsTrigger>
-                                </TabsList>
-
-                                <TabsContent value="food" className="mt-3">
-                                    {((data?.food_recommendations || []).filter(f => (f?.match_point || 0) > 0)).length > 0 ? (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            {(data?.food_recommendations || [])
-                                                .filter(f => (f?.match_point || 0) > 0)
-                                                .map((food) => (
-                                                    <FoodCardCompact
-                                                        key={food?.product_id || food?.product_name || Math.random()}
-                                                        food={food}
-                                                        onBuy={handleBuyProduct}
-                                                    />
-                                                ))}
-                                        </div>
-                                    ) : (
-                                        <EmptyState
-                                            emoji="🍽️"
-                                            title="Không tìm thấy sản phẩm phù hợp"
-                                            description="Hiện chưa có thức ăn nào phù hợp với thú cưng của bạn trong hệ thống"
-                                        />
-                                    )}
-                                </TabsContent>
-
-                                <TabsContent value="service" className="mt-3">
-                                    {(data?.service_recommendations || []).length > 0 ? (
-                                        <div className="space-y-3">
-                                            {(data?.service_recommendations || []).map((service) => (
-                                                <ServiceCardCompact
-                                                    key={service?.service_id || service?.service_name || Math.random()}
-                                                    service={service}
-                                                    onBook={handleBookService}
-                                                    urgencyStyle={getUrgencyStyle(service?.urgency || 'MEDIUM')}
-                                                />
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <EmptyState
-                                            emoji="🏥"
-                                            title="Không có dịch vụ được gợi ý"
-                                            description="Thú cưng của bạn đang rất khỏe mạnh!"
-                                        />
-                                    )}
-                                </TabsContent>
-                            </Tabs>
-                        </>
-                    )}
+                        <div className="absolute -top-1 -right-1 w-7 h-7 bg-amber-400 rounded-full flex items-center justify-center text-sm shadow">💊</div>
+                    </div>
+                    <h3 className="text-2xl font-bold text-foreground mb-2">Phân tích Sức khỏe AI</h3>
+                    <p className="text-muted-foreground max-w-sm mb-6 text-sm leading-relaxed">
+                        Nhận báo cáo sức khỏe, gợi ý thức ăn và dịch vụ phù hợp nhất dựa trên dữ liệu của <span className="font-semibold text-foreground">{petName}</span>
+                    </p>
+                    <Button
+                        onClick={fetchSuggestions}
+                        size="lg"
+                        className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white hover:opacity-90 shadow-lg hover:shadow-xl transition-all px-8"
+                    >
+                        <Sparkles className="w-5 h-5 mr-2" />
+                        Phân tích ngay
+                    </Button>
                 </div>
-            </TooltipProvider>
-        </FeatureGate>
-    )
-}
-
-// ============ Sub Components ============
-
-function RadialScoreChart({ score, size = 120 }: { score: number; size?: number }) {
-    const strokeWidth = 8
-    const radius = (size - strokeWidth) / 2
-    const circumference = 2 * Math.PI * radius
-    const offset = circumference - (score / 100) * circumference
-
-    const getScoreColor = (s: number) => {
-        if (s >= 80) return "#22c55e"
-        if (s >= 60) return "#3b82f6"
-        if (s >= 40) return "#eab308"
-        return "#ef4444"
+            </FeatureGate>
+        )
     }
 
-    const getScoreLabel = (s: number) => {
-        if (s >= 80) return "Tuyệt vời"
-        if (s >= 60) return "Tốt"
-        if (s >= 40) return "Khá"
-        return "Cần chú ý"
-    }
-
-    return (
-        <div className="relative" style={{ width: size, height: size }}>
-            <svg className="transform -rotate-90" width={size} height={size}>
-                {/* Background circle */}
-                <circle
-                    cx={size / 2}
-                    cy={size / 2}
-                    r={radius}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={strokeWidth}
-                    className="text-gray-200 dark:text-gray-700"
-                />
-                {/* Progress circle */}
-                <circle
-                    cx={size / 2}
-                    cy={size / 2}
-                    r={radius}
-                    fill="none"
-                    stroke={getScoreColor(score)}
-                    strokeWidth={strokeWidth}
-                    strokeLinecap="round"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={offset}
-                    className="transition-all duration-1000 ease-out"
-                />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-bold" style={{ color: getScoreColor(score) }}>
-                    {score}
-                </span>
-                <span className="text-xs text-muted-foreground">{getScoreLabel(score)}</span>
-            </div>
-        </div>
-    )
-}
-
-function HealthIndexMini({ index }: { index: PetHealthIndex }) {
-    const colorClass = iconColorMap[index.icon || "heart"] || "text-gray-500 bg-gray-100"
-    const [iconColor, bgColor] = colorClass.split(" ")
-
-    const getBarColor = (value: number) => {
-        if (value >= 80) return "bg-green-500"
-        if (value >= 60) return "bg-blue-500"
-        if (value >= 40) return "bg-yellow-500"
-        return "bg-red-500"
-    }
-
-    return (
-        <div className="p-3 rounded-xl border bg-card hover:shadow-md transition-all">
-            {/* Header: Icon + Label + Score */}
-            <div className="flex items-center gap-2 mb-2">
-                <span className={`p-1.5 rounded-lg ${bgColor}`}>
-                    <span className={iconColor}>
-                        {iconMap[index.icon || "heart"]}
-                    </span>
-                </span>
-                <span className="text-sm font-semibold flex-1">{index.label}</span>
-                <span className={`text-lg font-bold ${index.value >= 80 ? "text-green-600" :
-                    index.value >= 60 ? "text-blue-600" :
-                        index.value >= 40 ? "text-yellow-600" :
-                            "text-red-600"
-                    }`}>{index.value}</span>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-2">
-                <div
-                    className={`h-full ${getBarColor(index.value)} transition-all duration-500`}
-                    style={{ width: `${index.value}%` }}
-                />
-            </div>
-
-            {/* Reason Text */}
-            <p className="text-xs text-muted-foreground leading-relaxed">
-                {index.reason}
-            </p>
-        </div>
-    )
-}
-
-function FoodCardCompact({ food, onBuy }: { food: FoodRecommendation; onBuy: (id: string) => void }) {
-    const getMatchBadgeStyle = (score: number) => {
-        if (score >= 80) return "bg-green-100 text-green-700 border-green-200"
-        if (score >= 60) return "bg-blue-100 text-blue-700 border-blue-200"
-        return "bg-yellow-100 text-yellow-700 border-yellow-200"
-    }
-
-    return (
-        <Card className="overflow-hidden hover:shadow-md transition-shadow">
-            <CardContent className="p-0">
-                <div className="flex">
-                    {/* Image */}
-                    <div className="relative w-24 h-24 flex-shrink-0 bg-secondary">
-                        {food.product_image ? (
-                            <Image
-                                src={food.product_image}
-                                alt={food.product_name}
-                                fill
-                                className="object-cover"
-                            />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center text-3xl">🍖</div>
-                        )}
-                        {/* Match Score Badge */}
-                        <div className={`absolute top-1 left-1 px-1.5 py-0.5 rounded text-xs font-bold ${getMatchBadgeStyle(food.match_point)}`}>
-                            {food.match_point}%
+    // ─── Loading state ─────────────────────────────────────────────────────────
+    if (loading) {
+        return (
+            <FeatureGate featureKey="ai_recommendations" fullScreen>
+                <div className="flex flex-col items-center justify-center py-14 px-4">
+                    <div className="relative w-28 h-28 mb-6">
+                        <div className="absolute inset-0 rounded-full border-4 border-teal-100 dark:border-teal-900" />
+                        <svg className="absolute inset-0 w-28 h-28 animate-spin" style={{ animationDuration: "2s" }} viewBox="0 0 112 112">
+                            <circle cx="56" cy="56" r="52" fill="none" stroke="url(#hg)" strokeWidth="4" strokeDasharray="90 240" strokeLinecap="round" />
+                            <defs>
+                                <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stopColor="#10b981" />
+                                    <stop offset="50%" stopColor="#06b6d4" />
+                                    <stop offset="100%" stopColor="#3b82f6" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-4xl">{loadingMessages[loadingStep].emoji}</span>
                         </div>
                     </div>
-
-                    {/* Content */}
-                    <div className="flex-1 p-3 flex flex-col min-w-0">
-                        <h4 className="font-semibold text-sm line-clamp-1">{food.product_name}</h4>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5 flex-1">
-                            {food.reasoning}
-                        </p>
-
-                        <div className="flex items-center justify-between mt-2">
-                            <div>
-                                {food.sale_price && food.sale_price < food.price ? (
-                                    <div className="flex items-center gap-1">
-                                        <span className="font-bold text-sm text-red-600">
-                                            {food.sale_price.toLocaleString("vi-VN")}đ
-                                        </span>
-                                        <span className="text-xs text-muted-foreground line-through">
-                                            {food.price.toLocaleString("vi-VN")}đ
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <span className="font-bold text-sm">
-                                        {food.price.toLocaleString("vi-VN")}đ
-                                    </span>
-                                )}
-                            </div>
-                            <Button size="sm" className="h-7 px-2 text-xs" onClick={() => onBuy(food.product_id)}>
-                                <ShoppingCart className="w-3 h-3 mr-1" />
-                                Mua
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Metrics Bar */}
-                <div className="px-3 pb-2">
-                    <div className="flex gap-1">
-                        {Object.entries(food.metrics).map(([key, value]) => (
-                            <Tooltip key={key}>
-                                <TooltipTrigger asChild>
-                                    <div className="flex-1 h-1 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden cursor-help">
-                                        <div
-                                            className={`h-full ${value >= 80 ? "bg-green-500" : value >= 50 ? "bg-blue-500" : "bg-red-500"
-                                                }`}
-                                            style={{ width: `${value}%` }}
-                                        />
-                                    </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p className="text-xs">{formatMetricLabel(key)}: {value}%</p>
-                                </TooltipContent>
-                            </Tooltip>
+                    <p className="text-base font-medium text-foreground mb-4">{loadingMessages[loadingStep].text}</p>
+                    <div className="flex gap-1.5">
+                        {loadingMessages.map((_, idx) => (
+                            <div key={idx} className={`h-1.5 rounded-full transition-all duration-500 ${idx === loadingStep ? "w-6 bg-teal-500" : idx < loadingStep ? "w-1.5 bg-teal-200" : "w-1.5 bg-gray-200 dark:bg-gray-700"}`} />
                         ))}
                     </div>
                 </div>
-            </CardContent>
-        </Card>
-    )
-}
+            </FeatureGate>
+        )
+    }
 
-function ServiceCardCompact({
-    service,
-    onBook,
-    urgencyStyle
-}: {
-    service: ServiceRecommendation
-    onBook: (id: string) => void
-    urgencyStyle: { bg: string; text: string; label: string }
-}) {
+    // ─── Error state ───────────────────────────────────────────────────────────
+    if (error) {
+        return (
+            <FeatureGate featureKey="ai_recommendations" fullScreen>
+                <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                    <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-3">
+                        <X className="w-7 h-7 text-red-500" />
+                    </div>
+                    <p className="font-medium text-red-600 dark:text-red-400 mb-4">{error}</p>
+                    <Button variant="outline" onClick={fetchSuggestions}>
+                        <RefreshCw className="w-4 h-4 mr-2" />Thử lại
+                    </Button>
+                </div>
+            </FeatureGate>
+        )
+    }
+
+    if (!data) return null
+
+    // ─── Main result ───────────────────────────────────────────────────────────
     return (
-        <Card className="overflow-hidden hover:shadow-md transition-shadow">
-            <CardContent className="p-3">
-                <div className="flex items-start gap-3">
-                    {/* Left: Urgency + Score */}
-                    <div className="flex flex-col items-center gap-1">
-                        <Badge className={`${urgencyStyle.bg} ${urgencyStyle.text} text-xs px-1.5`}>
-                            {urgencyStyle.label}
-                        </Badge>
-                        <RadialScoreChart score={service.match_point} size={50} />
-                    </div>
+        <FeatureGate featureKey="ai_recommendations" fullScreen>
+            <div className="space-y-4">
 
-                    {/* Middle: Info */}
-                    <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-sm">{service.service_name}</h4>
-                        <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                            {service.reasoning}
+                {/* ── Outdated banner ── */}
+                {isOutdated && (
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                        <Clock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <p className="text-sm text-amber-700 dark:text-amber-400 flex-1">
+                            Phân tích thực hiện cách đây <strong>{daysSince} ngày</strong>. Nên cập nhật để chính xác hơn.
                         </p>
-                        {service.urgency_reason && (
-                            <p className="text-xs text-orange-600 dark:text-orange-400 mt-1 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {service.urgency_reason}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Right: Price + CTA */}
-                    <div className="flex flex-col items-end gap-2">
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {service.price_range.min.toLocaleString("vi-VN")}đ
-                        </span>
-                        <Button
-                            size="sm"
-                            variant={service.urgency === "CRITICAL" ? "destructive" : "default"}
-                            className="h-7 px-2 text-xs"
-                            onClick={() => onBook(service.service_id)}
-                        >
-                            <Calendar className="w-3 h-3 mr-1" />
-                            Đặt lịch
+                        <Button size="sm" variant="outline" onClick={fetchSuggestions} className="flex-shrink-0 h-7 px-2 text-xs border-amber-300 text-amber-700">
+                            <RefreshCw className="w-3 h-3 mr-1" />Cập nhật
                         </Button>
                     </div>
-                </div>
-            </CardContent>
-        </Card>
-    )
-}
+                )}
 
-function EmptyState({ emoji, title, description }: { emoji: string; title: string; description: string }) {
-    return (
-        <div className="text-center py-8">
-            <span className="text-4xl mb-3 block">{emoji}</span>
-            <h4 className="font-semibold text-foreground">{title}</h4>
-            <p className="text-sm text-muted-foreground mt-1">{description}</p>
-        </div>
-    )
-}
+                {/* ── Fallback notice ── */}
+                {data?.is_fallback && (
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800">
+                        <AlertTriangle className="w-4 h-4 text-yellow-600 flex-shrink-0" />
+                        <p className="text-xs text-yellow-700 dark:text-yellow-400">Đang dùng gợi ý cơ bản · {data.fallback_reason}</p>
+                    </div>
+                )}
 
-function formatMetricLabel(key: string): string {
-    const labels: Record<string, string> = {
-        species_match: "Phù hợp loài",
-        life_stage_fit: "Giai đoạn",
-        allergy_safety: "An toàn dị ứng",
-        health_tag_match: "Sức khỏe",
-        nutritional_balance: "Dinh dưỡng"
-    }
-    return labels[key] || key
+                {/* ── Hero: Health Summary ── */}
+                <Card className="overflow-hidden border-0 shadow-sm">
+                    <div className="relative bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-600 p-5 text-white">
+                        <div className="flex items-center justify-between mb-4">
+                            <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm text-xs">
+                                <Activity className="w-3 h-3 mr-1" />
+                                Sức khỏe AI
+                                {isCached && daysSince !== undefined && (
+                                    <span className="ml-1 opacity-80">· {daysSince === 0 ? "hôm nay" : `${daysSince} ngày trước`}</span>
+                                )}
+                            </Badge>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={fetchSuggestions}
+                                className="h-7 px-2 text-xs text-white/80 hover:text-white hover:bg-white/15"
+                            >
+                                <RefreshCw className="w-3 h-3 mr-1" />Phân tích lại
+                            </Button>
+                        </div>
+
+                        {/* Summary + Score row */}
+                        <div className="flex items-start gap-4">
+                            <div className="flex-1">
+                                <p className="text-white/70 text-xs font-medium uppercase tracking-widest mb-1">Tóm tắt sức khỏe</p>
+                                <p className="text-sm leading-relaxed text-white/90">
+                                    {data.analysis?.health_summary || "—"}
+                                </p>
+                            </div>
+                            {/* Circular score */}
+                            <div className="flex-shrink-0 text-center">
+                                <div className="relative w-16 h-16">
+                                    <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                                        <circle cx="32" cy="32" r="28" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="6" />
+                                        <circle
+                                            cx="32" cy="32" r="28"
+                                            fill="none" stroke="white" strokeWidth="6"
+                                            strokeDasharray={`${(avgHealthScore / 100) * 175.9} 175.9`}
+                                            strokeLinecap="round"
+                                        />
+                                    </svg>
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                        <span className="text-lg font-bold text-white leading-none">{avgHealthScore}</span>
+                                        <span className="text-[9px] text-white/70">/100</span>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-white/70 mt-1">Điểm TB</p>
+                            </div>
+                        </div>
+
+                        {/* Status pills */}
+                        <div className="flex flex-wrap gap-2 mt-4">
+                            {data.analysis?.weight_status && (
+                                <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-xs font-medium">⚖️ {data.analysis.weight_status}</span>
+                            )}
+                            {data.analysis?.activity_level && (
+                                <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-xs font-medium">🏃 {data.analysis.activity_level}</span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Nutritional needs */}
+                    {data.analysis?.nutritional_needs && (
+                        <CardContent className="p-4 bg-emerald-50/50 dark:bg-emerald-950/20">
+                            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-2">Nhu cầu dinh dưỡng</p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {data.analysis.nutritional_needs.protein && (
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs border border-emerald-200 dark:border-emerald-800">
+                                        🥩 Protein: {data.analysis.nutritional_needs.protein}
+                                    </span>
+                                )}
+                                {data.analysis.nutritional_needs.fat && (
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs border border-emerald-200 dark:border-emerald-800">
+                                        🧈 Chất béo: {data.analysis.nutritional_needs.fat}
+                                    </span>
+                                )}
+                                {data.analysis.nutritional_needs.fiber && (
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-xs border border-emerald-200 dark:border-emerald-800">
+                                        🌿 Chất xơ: {data.analysis.nutritional_needs.fiber}
+                                    </span>
+                                )}
+                                {data.analysis.nutritional_needs.specialDiet && (
+                                    <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 text-xs border border-blue-200 dark:border-blue-800">
+                                        🍽️ {data.analysis.nutritional_needs.specialDiet}
+                                    </span>
+                                )}
+                                {(data.analysis.nutritional_needs.avoidIngredients?.length ?? 0) > 0 && (
+                                    <span className="px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 text-xs border border-red-200 dark:border-red-800">
+                                        ⚠️ Tránh: {data.analysis.nutritional_needs.avoidIngredients.join(", ")}
+                                    </span>
+                                )}
+                            </div>
+                        </CardContent>
+                    )}
+                </Card>
+
+                {/* ── Health Indices — detailed per-index analysis ── */}
+                {(data.analysis?.health_indices?.length ?? 0) > 0 && (
+                    <Card className="overflow-hidden shadow-sm">
+                        <div className="flex items-center gap-2.5 px-4 pt-4 pb-3 border-b">
+                            <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
+                                <span className="text-sm">📊</span>
+                            </div>
+                            <h3 className="font-semibold text-sm">Phân tích chi tiết từng chỉ số</h3>
+                        </div>
+                        <CardContent className="p-4 space-y-4">
+                            {data.analysis!.health_indices!.map((index, i) => {
+                                const cfg = scoreColor(index.value)
+                                const iconKey = index.icon || "checkup"
+                                return (
+                                    <div key={i} className="space-y-2 pb-4 border-b last:border-0 last:pb-0">
+                                        {/* Index header */}
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconColorMap[iconKey] ?? "text-gray-500 bg-gray-100"}`}>
+                                                {iconMap[iconKey] ?? <Activity className="w-4 h-4" />}
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="text-sm font-semibold text-foreground">{index.label}</span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className={`text-xs font-bold ${cfg.text}`}>{index.value}/100</span>
+                                                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${cfg.text} border-current`}>
+                                                            {cfg.label}
+                                                        </Badge>
+                                                    </div>
+                                                </div>
+                                                <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`h-full ${cfg.bar} rounded-full transition-all duration-700`}
+                                                        style={{ width: `${index.value}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Mức độ + lý do */}
+                                        <div className="ml-10 space-y-1">
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-xs text-muted-foreground">Mức độ:</span>
+                                                <Badge variant="secondary" className="text-[10px] px-1.5 h-4">{statusLabel(index.status)}</Badge>
+                                            </div>
+                                            {index.reason && (
+                                                <p className="text-xs text-foreground/70 leading-relaxed">{index.reason}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* ── Food recommendations ── */}
+                {(data.food_recommendations?.length ?? 0) > 0 && (
+                    <div className="space-y-3">
+                        <h3 className="font-semibold text-base flex items-center gap-2">
+                            <span className="text-xl">🍗</span> Thức ăn phù hợp
+                            <Badge variant="secondary" className="ml-auto text-xs">{data.food_recommendations!.length} sản phẩm</Badge>
+                        </h3>
+                        {data.food_recommendations!.map((food, i) => (
+                            <Card key={i} className="overflow-hidden shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5">
+                                <CardContent className="p-0">
+                                    <div className="flex">
+                                        {/* Large product image */}
+                                        <div className="w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30">
+                                            {food.product_image ? (
+                                                <Image
+                                                    src={food.product_image}
+                                                    alt={food.product_name}
+                                                    width={128}
+                                                    height={128}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-4xl">🍖</div>
+                                            )}
+                                        </div>
+
+                                        {/* Content */}
+                                        <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+                                            <div>
+                                                <div className="flex items-start justify-between gap-2 mb-1">
+                                                    <p className="font-bold text-sm text-foreground leading-tight">{food.product_name}</p>
+                                                    {food.match_point !== undefined && (
+                                                        <div className="flex items-center gap-1 flex-shrink-0 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded-full">
+                                                            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                                                            <span className="text-xs font-bold text-amber-700 dark:text-amber-400">{food.match_point}%</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {food.reasoning && (
+                                                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{food.reasoning}</p>
+                                                )}
+                                            </div>
+
+                                            <div className="flex items-center justify-between mt-2 gap-2">
+                                                <div>
+                                                    {food.sale_price ? (
+                                                        <div className="flex items-baseline gap-1.5">
+                                                            <span className="font-bold text-emerald-600 text-sm">{food.sale_price.toLocaleString("vi-VN")}đ</span>
+                                                            <span className="text-xs text-muted-foreground line-through">{food.price.toLocaleString("vi-VN")}đ</span>
+                                                        </div>
+                                                    ) : food.price ? (
+                                                        <span className="font-bold text-foreground text-sm">{food.price.toLocaleString("vi-VN")}đ</span>
+                                                    ) : null}
+                                                </div>
+                                                <Button
+                                                    size="sm"
+                                                    className="h-7 px-3 text-xs bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-lg shadow-sm"
+                                                    onClick={() => router.push(`/dashboard/customer?tab=marketplace`)}
+                                                >
+                                                    <ShoppingCart className="w-3 h-3 mr-1.5" />Mua ngay
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                )}
+
+                {/* ── Service recommendations ── */}
+                {(data.service_recommendations?.length ?? 0) > 0 && (
+                    <div className="space-y-3">
+                        <h3 className="font-semibold text-base flex items-center gap-2">
+                            <span className="text-xl">🩺</span> Dịch vụ gợi ý
+                            <Badge variant="secondary" className="ml-auto text-xs">{data.service_recommendations!.length} dịch vụ</Badge>
+                        </h3>
+                        {data.service_recommendations!.map((svc, i) => {
+                            const urgencyStyle = {
+                                CRITICAL: "border-l-red-500 bg-red-50/50 dark:bg-red-950/10",
+                                HIGH: "border-l-orange-500 bg-orange-50/50 dark:bg-orange-950/10",
+                                MEDIUM: "border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/10",
+                                LOW: "border-l-green-500 bg-green-50/50 dark:bg-green-950/10",
+                            }[svc.urgency] ?? "border-l-gray-300"
+
+                            return (
+                                <Card key={i} className={`overflow-hidden shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 border-l-4 ${urgencyStyle}`}>
+                                    <CardContent className="p-0">
+                                        <div className="flex">
+                                            {/* Large service image */}
+                                            <div className="w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0 bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30">
+                                                {svc.service_image ? (
+                                                    <Image
+                                                        src={svc.service_image}
+                                                        alt={svc.service_name}
+                                                        width={128}
+                                                        height={128}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-4xl">🩺</div>
+                                                )}
+                                            </div>
+
+                                            {/* Content */}
+                                            <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+                                                <div>
+                                                    <div className="flex items-start justify-between gap-2 mb-1">
+                                                        <p className="font-bold text-sm text-foreground leading-tight">{svc.service_name}</p>
+                                                        <Badge className={`text-[10px] flex-shrink-0 ${urgencyBadge(svc.urgency)}`} variant="outline">
+                                                            {urgencyLabel(svc.urgency)}
+                                                        </Badge>
+                                                    </div>
+                                                    {svc.urgency_reason && (
+                                                        <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{svc.urgency_reason}</p>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex items-center justify-between mt-2 gap-2">
+                                                    <div className="space-y-0.5">
+                                                        {svc.price_range && (
+                                                            <p className="text-xs font-semibold text-foreground">
+                                                                {svc.price_range.min.toLocaleString("vi-VN")} – {svc.price_range.max.toLocaleString("vi-VN")}đ
+                                                            </p>
+                                                        )}
+                                                        {svc.recommended_date && (
+                                                            <p className="text-[10px] text-teal-600">📅 {new Date(svc.recommended_date).toLocaleDateString("vi-VN")}</p>
+                                                        )}
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        className="h-7 px-3 text-xs bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white rounded-lg shadow-sm"
+                                                        onClick={() => router.push(`/dashboard/customer?tab=booking&serviceId=${svc.service_id}`)}
+                                                    >
+                                                        <Calendar className="w-3 h-3 mr-1.5" />Đặt lịch
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )
+                        })}
+                    </div>
+                )}
+            </div>
+        </FeatureGate>
+    )
 }

@@ -11,7 +11,9 @@ interface OpenRouterResponse {
 }
 
 const FREE_MODEL_CHAIN = [
-    "liquid/lfm-2.5-1.2b-thinking:free",
+    "arcee-ai/trinity-large-preview:free",
+    "stepfun/step-3.5-flash:free",
+    "z-ai/glm-4.5-air:free",
 ];
 
 // Helper for fetch with timeout
@@ -306,31 +308,43 @@ export async function generateAISuggestions(data: AISuggestionInput): Promise<Op
 
 /**
  * Robustly extract JSON from AI response that might contain preamble/postamble.
+ * Handles markdown code blocks like ```json ... ```
  */
 function tryExtractJSON(text: string): any {
+    // Step 1: Quick path - directly parse if clean
     try {
-        // Quick path: directly parse if clean
         return JSON.parse(text);
-    } catch {
-        // Find first { and last }
-        const start = text.indexOf('{');
-        const end = text.lastIndexOf('}');
+    } catch { /* continue */ }
 
-        if (start === -1 || end === -1 || end < start) {
-            throw new Error("No JSON structure found in response");
-        }
-
-        const jsonStr = text.substring(start, end + 1);
+    // Step 2: Strip markdown code blocks (```json ... ``` or ``` ... ```)
+    const mdMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (mdMatch && mdMatch[1]) {
+        const stripped = mdMatch[1].trim();
         try {
-            return JSON.parse(jsonStr);
-        } catch (innerError) {
-            // Last ditch: try cleaning up common issues like trailing commas or non-standard characters
-            const cleaned = jsonStr.replace(/[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, " ");
-            try {
-                return JSON.parse(cleaned);
-            } catch {
-                throw new Error(`Failed to parse extracted JSON content: ${innerError}`);
-            }
+            return JSON.parse(stripped);
+        } catch { /* continue to broader search */ }
+    }
+
+    // Step 3: Find first { and last } in the full text
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+
+    if (start === -1 || end === -1 || end < start) {
+        throw new Error("No JSON structure found in response");
+    }
+
+    const jsonStr = text.substring(start, end + 1);
+    try {
+        return JSON.parse(jsonStr);
+    } catch (innerError) {
+        // Step 4: Clean up invisible/non-standard unicode characters
+        const cleaned = jsonStr
+            .replace(/[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, " ")
+            .replace(/,\s*([}\]])/g, '$1'); // Remove trailing commas
+        try {
+            return JSON.parse(cleaned);
+        } catch {
+            throw new Error(`Failed to parse extracted JSON: ${innerError}`);
         }
     }
 }
@@ -343,19 +357,22 @@ function sanitizeScore(value: any): number {
 
     const strValue = String(value).trim();
 
-    // Handle range like "0-100"
-    if (strValue.includes('-')) {
-        const parts = strValue.split('-');
-        const low = parseInt(parts[0]);
-        const high = parseInt(parts[1]);
-        if (!isNaN(low) && !isNaN(high)) return Math.max(0, Math.min(100, Math.round((low + high) / 2)));
-        if (!isNaN(low)) return Math.max(0, Math.min(100, low));
+    // Handle range like "60-80" (two numbers separated by dash) — NOT negative numbers
+    const rangeMatch = strValue.match(/^(\d+)-(\d+)$/);
+    if (rangeMatch) {
+        const low = parseInt(rangeMatch[1]);
+        const high = parseInt(rangeMatch[2]);
+        return Math.max(0, Math.min(100, Math.round((low + high) / 2)));
     }
 
-    // Handle string numbers
-    const num = parseInt(strValue.replace(/[^0-9]/g, ''));
-    if (!isNaN(num)) return Math.max(0, Math.min(100, num));
+    // Handle plain string numbers (possibly with non-numeric chars like "%")
+    const digits = strValue.replace(/[^0-9]/g, '');
+    if (digits.length > 0) {
+        const num = parseInt(digits);
+        if (!isNaN(num)) return Math.max(0, Math.min(100, num));
+    }
 
+    console.warn(`[sanitizeScore] Unexpected value: ${JSON.stringify(value)}, defaulting to 50`);
     return 50; // Default fallback
 }
 
@@ -584,34 +601,46 @@ function buildPersonalitySystemPrompt(): string {
     return `# VAI TRÒ (ROLE)
 Bạn là một chuyên gia thú y và nhà hành vi học động vật (Animal Behaviorist) với 20 năm kinh nghiệm. Nhiệm vụ của bạn là phân tích dữ liệu của thú cưng, từ đó đưa ra bản báo cáo chi tiết về tính cách, hướng dẫn chăm sóc và các cảnh báo sức khỏe quan trọng.
 
-## YÊU CẦU ĐẦU RA
-Hãy phân tích và trả về JSON theo cấu trúc 4 phần sau đây. Giọng văn thân thiện, chuyên nghiệp, dễ hiểu.
-
-### Phần 1: Phân tích Tính cách & Hành vi (type, traits, behavior_explanation)
-- type: Tên kiểu tính cách ngắn gọn (ví dụ: "Kẻ tinh nghịch năng động", "Người bảo vệ trung thành")
-- traits: Mảng 3-5 tính cách đặc trưng
-- behavior_explanation: Giải thích tại sao bé có hành vi đó (do gen của giống hay do độ tuổi?)
-
-### Phần 2: Kiến thức & Đặc điểm Giống loài (breed_specs)
-- appearance: 3 điểm đặc trưng về ngoại hình
-- temperament: 3 điểm đặc trưng về tính cách giống
-- exercise_minutes_per_day: Số phút vận động cần thiết mỗi ngày
-- shedding_level: Mức độ rụng lông ("LOW", "MEDIUM", "HIGH")
-- grooming_needs: Mô tả nhu cầu chải chuốt
-
-### Phần 3: Hướng dẫn Chăm sóc theo Độ tuổi (care_guide)
-- nutrition: { meals_per_day, food_type, tips[] } - Chế độ ăn phù hợp độ tuổi
-- medical: { vaccines[], notes[] } - Mũi tiêm cần thiết, lưu ý y tế
-- training: { command, tips[] } - 1 bài tập/mệnh lệnh nên dạy ngay
-
-### Phần 4: Cảnh báo & Lưu ý đặc biệt (warnings)
-- genetic_diseases: Các bệnh di truyền thường gặp ở giống
-- dangerous_foods: Thực phẩm nguy hiểm cho giống này
-- environment_hazards: Môi trường gây nguy hiểm
+## OUTPUT FORMAT
+Trả về JSON với cấu trúc chính xác sau:
+{
+  "type": "Tên kiểu tính cách ngắn gọn, sáng tạo, bằng tiếng Việt",
+  "traits": ["Trait 1", "Trait 2", "Trait 3", "Trait 4"],
+  "behavior_explanation": "Giải thích 2-3 câu về hành vi và nguồn gốc tính cách",
+  "breed_specs": {
+    "appearance": ["Đặc điểm ngoại hình 1", "Đặc điểm 2", "Đặc điểm 3"],
+    "temperament": ["Tính cách giống 1", "Tính cách 2", "Tính cách 3"],
+    "exercise_minutes_per_day": 30,
+    "shedding_level": "LOW" | "MEDIUM" | "HIGH",
+    "grooming_needs": "Mô tả nhu cầu chăm sóc lông"
+  },
+  "care_guide": {
+    "nutrition": {
+      "meals_per_day": 2,
+      "food_type": "Loại thức ăn phù hợp",
+      "tips": ["Tip dinh dưỡng 1", "Tip 2"]
+    },
+    "medical": {
+      "vaccines": ["Tên vaccine 1", "Tên vaccine 2"],
+      "notes": ["Lưu ý y tế 1", "Lưu ý 2"]
+    },
+    "training": {
+      "command": "Tên lệnh nên dạy",
+      "tips": ["Tip huấn luyện 1", "Tip 2"]
+    }
+  },
+  "warnings": {
+    "genetic_diseases": ["Bệnh di truyền 1", "Bệnh 2"],
+    "dangerous_foods": ["Thực phẩm nguy hiểm 1", "Thực phẩm 2"],
+    "environment_hazards": ["Nguy hiểm môi trường 1", "Nguy hiểm 2"]
+  }
+}
 
 ## QUY TẮC QUAN TRỌNG
-- Trả về JSON thuần túy, không markdown code block
+- Trả về JSON THUẦN TÚY, KHÔNG bọc trong markdown code block (không dùng \`\`\`json)
 - Tất cả text phải bằng tiếng Việt
+- exercise_minutes_per_day phải là SỐ NGUYÊN, không phải chuỗi hay khoảng
+- meals_per_day phải là SỐ NGUYÊN (ví dụ: 2 hoặc 3)
 - Thông tin phải chính xác theo khoa học thú y
 - Tư vấn sát với độ tuổi hiện tại của bé`;
 }

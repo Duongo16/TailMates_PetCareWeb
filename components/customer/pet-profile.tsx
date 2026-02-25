@@ -986,24 +986,24 @@ export function PetProfile({
 
           {/* Detailed Information Tabs */}
           <Tabs defaultValue="info" className="w-full">
-            <TabsList className="w-full bg-card rounded-xl p-1 h-auto flex-wrap">
+            <TabsList className="w-full bg-card rounded-xl p-1 h-auto grid grid-cols-3">
               <TabsTrigger
                 value="info"
-                className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2"
+                className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 text-sm"
               >
                 Thông tin
               </TabsTrigger>
               <TabsTrigger
                 value="personality"
-                className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2"
+                className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 text-sm"
               >
-                Tính cách
+                🧠 Tính cách
               </TabsTrigger>
               <TabsTrigger
                 value="health"
-                className="flex-1 rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2"
+                className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 text-sm"
               >
-                Sức khỏe
+                💊 Sức khỏe
               </TabsTrigger>
             </TabsList>
 

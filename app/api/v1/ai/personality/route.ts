@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken, extractToken } from "@/lib/auth";
-import { connectDB } from "@/lib/db";
+import connectDB from "@/lib/db";
 import Pet from "@/models/Pet";
 import User from "@/models/User";
 import MedicalRecord from "@/models/MedicalRecord";

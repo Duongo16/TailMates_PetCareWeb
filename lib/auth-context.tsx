@@ -270,13 +270,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.success && response.data) {
         const { user: apiUser, accessToken, refreshToken, token } = response.data
-        const mappedUser = mapApiUserToUser(apiUser)
+        let mappedUser = mapApiUserToUser(apiUser)
 
         // Support both new (accessToken/refreshToken) and legacy (token) response
         if (accessToken && refreshToken) {
           saveTokens(accessToken, refreshToken)
         } else if (token) {
           localStorage.setItem(ACCESS_TOKEN_KEY, token)
+        }
+
+        // Fetch fresh user data (includes up-to-date subscription, tm_balance, etc.)
+        try {
+          const meResponse = await authAPI.getMe()
+          if (meResponse.success && meResponse.data) {
+            mappedUser = mapApiUserToUser(meResponse.data)
+          }
+        } catch {
+          // ignore — use login-response user as fallback
         }
 
         localStorage.setItem(USER_KEY, JSON.stringify(mappedUser))
@@ -344,9 +354,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.success && response.data) {
         const { user: apiUser, accessToken, refreshToken } = response.data
-        const mappedUser = mapApiUserToUser(apiUser)
+        let mappedUser = mapApiUserToUser(apiUser)
 
         saveTokens(accessToken, refreshToken)
+
+        // Fetch fresh user data (includes up-to-date subscription, tm_balance, etc.)
+        try {
+          const meResponse = await authAPI.getMe()
+          if (meResponse.success && meResponse.data) {
+            mappedUser = mapApiUserToUser(meResponse.data)
+          }
+        } catch {
+          // ignore — use register-response user as fallback
+        }
+
         localStorage.setItem(USER_KEY, JSON.stringify(mappedUser))
         setUser(mappedUser)
 
@@ -450,9 +471,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.success && response.data) {
         const { user: apiUser, accessToken, refreshToken, isNewUser, accountLinked } = response.data
-        const mappedUser = mapApiUserToUser(apiUser)
+        let mappedUser = mapApiUserToUser(apiUser)
 
         saveTokens(accessToken, refreshToken)
+
+        // Fetch fresh user data (includes up-to-date subscription, tm_balance, etc.)
+        try {
+          const meResponse = await authAPI.getMe()
+          if (meResponse.success && meResponse.data) {
+            mappedUser = mapApiUserToUser(meResponse.data)
+          }
+        } catch {
+          // ignore — use google-response user as fallback
+        }
+
         localStorage.setItem(USER_KEY, JSON.stringify(mappedUser))
         setUser(mappedUser)
 
