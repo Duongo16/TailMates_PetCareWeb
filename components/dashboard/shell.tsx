@@ -132,22 +132,23 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
     <div className="min-h-screen bg-background">
       {/* Top Header */}
       <header className="sticky top-0 z-50 bg-card border-b border-border">
-        <div className="flex items-center justify-between h-16 px-4 lg:px-8">
-          {/* Logo & Mobile Menu */}
-          <div className="flex items-center gap-4">
+        {/* Main header row: Logo + (md: empty center) + Icons */}
+        <div className="flex items-center justify-between h-14 px-4 lg:px-6 xl:px-8">
+          {/* Logo & Mobile Menu toggle (shown only below md) */}
+          <div className="flex items-center gap-2">
             <button
-              className="lg:hidden p-2 rounded-xl hover:bg-secondary"
+              className="md:hidden p-2 rounded-xl hover:bg-secondary"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/images/logo-ngang.png" alt="TailMates" width={100} height={40} className="h-8 w-auto sm:h-16" />
+              <Image src="/images/logo-ngang.png" alt="TailMates" width={100} height={40} className="h-8 w-auto" />
             </Link>
           </div>
 
-          {/* Desktop Tabs */}
-          <nav className="hidden lg:flex items-center gap-1 bg-secondary/50 p-1 rounded-xl">
+          {/* Desktop Tabs — inline on lg+ */}
+          <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 bg-secondary/50 p-1 rounded-xl overflow-x-auto">
             {tabs.map((tab) => {
               const Icon = tab.icon
               const isActive = activeTab === tab.id
@@ -156,7 +157,7 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
                   key={tab.id}
                   onClick={() => onTabChange(tab.id)}
                   className={cn(
-                    "relative flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors z-10",
+                    "relative flex items-center gap-1.5 px-2.5 xl:px-4 py-2 rounded-lg text-sm font-medium transition-colors z-10 whitespace-nowrap",
                     isActive
                       ? "text-primary-foreground"
                       : "text-foreground/70 hover:text-foreground",
@@ -169,11 +170,12 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
-                  <div className="relative z-10 flex items-center gap-2">
-                    <Icon className="w-4 h-4" />
-                    <span>{tab.label}</span>
+                  <div className="relative z-10 flex items-center gap-1.5">
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    <span className="hidden xl:inline">{tab.label}</span>
+                    <span className="inline xl:hidden text-xs">{tab.label}</span>
                     {tab.featureKey && !canAccess(tab.featureKey) && (
-                      <Lock className="w-3 h-3 text-amber-500 opacity-80" />
+                      <Lock className="w-3 h-3 text-amber-500 opacity-80 flex-shrink-0" />
                     )}
                   </div>
                 </button>
@@ -181,7 +183,7 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
             })}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 sm:gap-2">
             {/* Shopping Cart */}
             {user?.role === "customer" && (
               <Button
@@ -211,7 +213,7 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-screen sm:w-80 max-h-[420px] overflow-y-auto">
+              <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-80 max-h-[420px] overflow-y-auto">
                 {/* Header */}
                 <div className="flex items-center justify-between px-3 py-2 border-b border-border">
                   <span className="font-semibold text-foreground">Thông báo</span>
@@ -333,11 +335,39 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mid-size Tabs Row (md to lg) — scrollable horizontal bar */}
+        <div className="hidden md:flex lg:hidden border-t border-border overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-0.5 px-3 py-1.5 min-w-max">
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              const isActive = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onTabChange(tab.id)}
+                  className={cn(
+                    "relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-foreground/70 hover:text-foreground hover:bg-secondary",
+                  )}
+                >
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span>{tab.label}</span>
+                  {tab.featureKey && !canAccess(tab.featureKey) && (
+                    <Lock className="w-3 h-3 text-amber-500 opacity-80 flex-shrink-0" />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Mobile Menu (below md) */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.nav
-              className="lg:hidden border-t border-border bg-card overflow-hidden"
+              className="md:hidden border-t border-border bg-card overflow-hidden"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -386,10 +416,10 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
       </header>
 
       {/* Main Content */}
-      <main className="p-4 lg:p-8 pb-24 lg:pb-8 max-w-7xl mx-auto">{children}</main>
+      <main className="p-4 lg:p-8 pb-24 md:pb-4 lg:pb-8 max-w-7xl mx-auto">{children}</main>
 
       {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border safe-area-inset-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border safe-area-inset-bottom">
         <div className="flex justify-around py-2">
           {tabs.slice(0, 4).map((tab) => {
             const Icon = tab.icon

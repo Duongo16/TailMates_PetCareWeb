@@ -135,7 +135,7 @@ export function Subscription() {
   const highlightIndex = packages && packages.length > 0 ? Math.floor(packages.length / 2) : -1
 
   return (
-    <div className="h-[calc(100vh-190px)] md:h-[calc(100vh-130px)] flex flex-col pt-1 sm:pt-2 pb-1 px-0 sm:px-6 max-w-7xl mx-auto overflow-hidden">
+    <div className="flex flex-col pt-2 sm:pt-4 pb-4 px-0 sm:px-4 max-w-6xl mx-auto">
       {/* Header section */}
       <div className="text-center space-y-0.5 mb-1 sm:mb-2 flex-shrink-0 px-3">
         <motion.div
@@ -182,11 +182,12 @@ export function Subscription() {
         )}
       </div>
 
+      {/* Cards area */}
       <div
         ref={scrollContainerRef}
-        className="flex-grow flex overflow-x-auto snap-x snap-mandatory scrollbar-none md:flex md:items-center md:justify-center py-1 md:py-2 px-6 md:px-0 no-scrollbar"
+        className="w-full overflow-x-auto md:overflow-x-visible snap-x snap-mandatory md:snap-none scrollbar-none no-scrollbar py-6 px-6 md:px-0"
       >
-        <div className="flex md:grid md:grid-cols-3 gap-3 md:gap-2 lg:gap-8 items-center w-max md:w-full max-w-7xl mx-auto md:px-2 py-4 md:py-0">
+        <div className="flex md:grid md:grid-cols-3 gap-4 md:gap-4 lg:gap-8 items-stretch w-max md:w-full max-w-6xl mx-auto">
           {packages?.map((pkg, index) => {
             const isHighlighted = index === highlightIndex
             const isCurrent = isCurrentPackage(pkg._id)
@@ -199,9 +200,9 @@ export function Subscription() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
-                className={`relative group flex flex-col h-fit snap-center flex-shrink-0 w-[85vw] md:w-full ${isHighlighted
-                  ? "z-20 scale-[1.02] md:scale-[1.05] ring-2 ring-primary/20 rounded-[2.8rem] shadow-[0_20px_50px_rgba(241,90,41,0.15)]"
-                  : "z-10 scale-[0.95] opacity-95 md:opacity-90"
+                className={`relative group flex flex-col snap-center flex-shrink-0 w-[82vw] sm:w-[60vw] md:w-full h-full ${isHighlighted
+                  ? "z-20 md:scale-[1.05] ring-2 ring-primary/20 rounded-[2.8rem] shadow-[0_20px_50px_rgba(241,90,41,0.15)]"
+                  : "z-10 opacity-95 md:opacity-90"
                   }`}
               >
                 {/* Pet Decor */}
@@ -372,7 +373,6 @@ export function Subscription() {
           })}
         </div>
       </div>
-
       {/* Mobile Swipe Indicators */}
       <div className="flex md:hidden justify-center gap-2 mb-2 px-3">
         {packages?.map((_, i) => (
@@ -384,8 +384,8 @@ export function Subscription() {
       </div>
 
       {/* Footer info */}
-      <div className="text-center mt-2 flex-shrink-0 py-1.5 border-t border-navy/5 bg-card/10">
-        <p className="text-[8px] sm:text-xs text-foreground/30 font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 text-navy dark:text-white/40">
+      <div className="text-center mt-4 py-2 border-t border-navy/5 bg-card/10">
+        <p className="text-[9px] sm:text-xs text-foreground/30 font-bold uppercase tracking-widest flex items-center justify-center gap-1.5 text-navy dark:text-white/40">
           <Sparkles className="w-3 h-3 text-primary animate-pulse" />
           VIP Experience • An toàn • Bảo mật
           <Sparkles className="w-3 h-3 text-primary animate-pulse" />

@@ -1,7 +1,7 @@
-import { Home, Heart, Sparkles, ShoppingBag, Calendar, FileText, Newspaper, Crown, Settings, Coins } from "lucide-react"
+import { Home, Heart, Sparkles, ShoppingBag, Calendar, FileText, Newspaper, Crown, Settings } from "lucide-react"
 import { type FeatureKey } from "@/hooks/use-feature-access"
 
-export type CustomerTab = "dashboard" | "pets" | "pawmatch" | "medical" | "marketplace" | "booking" | "orders" | "blog" | "subscription" | "settings" | "transactions"
+export type CustomerTab = "dashboard" | "pets" | "pawmatch" | "medical" | "marketplace" | "booking" | "orders" | "blog" | "subscription" | "settings"
 
 export interface CustomerTabItem {
   id: CustomerTab
@@ -18,7 +18,6 @@ export const CUSTOMER_TABS: CustomerTabItem[] = [
   { id: "booking", label: "Đặt lịch", icon: Calendar },
   { id: "medical", label: "Sổ y tế", icon: FileText },
   { id: "blog", label: "Blog", icon: Newspaper, featureKey: "blog_posting" },
-  { id: "subscription", label: "Gói cước", icon: Crown },
+  { id: "subscription", label: "Nâng cấp", icon: Crown },
   { id: "settings", label: "Cài đặt", icon: Settings },
-  { id: "transactions", label: "Giao dịch", icon: Coins },
 ]

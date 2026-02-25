@@ -17,9 +17,6 @@ import { CUSTOMER_TABS, type CustomerTab } from "@/lib/customer-constants"
 import { FeatureGate } from "@/components/ui/feature-gate"
 import BlogList from "@/components/customer/blog-list"
 import { PawMatchUI } from "@/components/pawmatch/pawmatch-ui"
-import { TransactionHistory } from "@/components/dashboard/transaction-history"
-
-
 export default function CustomerDashboardPage() {
   const { user, isLoading, refreshUser } = useAuth()
   const router = useRouter()
@@ -126,8 +123,6 @@ export default function CustomerDashboardPage() {
         return <OrderTracking />
       case "blog":
         return <BlogList />
-      case "subscription":
-        return <Subscription />
       case "subscription":
         return <Subscription />
       case "settings":
