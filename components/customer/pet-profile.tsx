@@ -37,7 +37,7 @@ import Image from "next/image"
 import { AISuggestions } from "@/components/customer/ai-suggestions"
 import { PetPersonalityAnalysis } from "@/components/customer/pet-personality-analysis"
 import { useFeatureAccess } from "@/hooks/use-feature-access"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 
 interface PetProfileProps {
   selectedPetId: string | null
@@ -203,16 +203,19 @@ export function PetProfile({
     }
   }, [showQR, selectedPet])
 
-  // Auto-open add dialog when triggered from dashboard
+  // Auto-open add dialog when triggered from dashboard or external props
   useEffect(() => {
     if (shouldOpenAddDialog) {
-      if (checkPetLimit()) {
-        resetForm()
-        setShowAddDialog(true)
+      // Only check limit and open dialog if we have finished loading pets list
+      if (!isLoading) {
+        if (checkPetLimit()) {
+          resetForm()
+          setShowAddDialog(true)
+        }
+        onAddDialogClose?.()
       }
-      onAddDialogClose?.()
     }
-  }, [shouldOpenAddDialog, onAddDialogClose, pets])
+  }, [shouldOpenAddDialog, isLoading, pets, onAddDialogClose])
 
   // Auto-open edit dialog when triggered from PawMatch or elsewhere
   useEffect(() => {
@@ -762,13 +765,11 @@ export function PetProfile({
     return (
       <div className="text-center py-12">
         <p className="text-foreground/60 mb-4">Bạn chưa có thú cưng nào</p>
+        <Button onClick={() => { if (checkPetLimit()) { resetForm(); setShowAddDialog(true) } }}>
+          <Plus className="w-4 h-4 mr-2" />
+          Thêm thú cưng ngay
+        </Button>
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button onClick={() => { if (checkPetLimit()) { resetForm(); setShowAddDialog(true) } }}>
-              <Plus className="w-4 h-4 mr-2" />
-              Thêm thú cưng ngay
-            </Button>
-          </DialogTrigger>
           <DialogContent className="rounded-3xl w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto lg:overflow-y-hidden">
             <DialogHeader>
               <DialogTitle>Thêm thú cưng mới</DialogTitle>
@@ -902,25 +903,25 @@ export function PetProfile({
                     >
                       <QrCode className="w-4 h-4" />
                     </Button>
-                    <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="rounded-xl bg-card/80 hover:bg-card flex-shrink-0"
-                          onClick={(e) => { if (!checkPetLimit()) { e.preventDefault(); return; } resetForm(); }}
-                          title="Thêm mới"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="rounded-3xl w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto lg:overflow-y-hidden">
-                        <DialogHeader>
-                          <DialogTitle>Thêm thú cưng mới</DialogTitle>
-                        </DialogHeader>
-                        {renderPetFormFields(false)}
-                      </DialogContent>
-                    </Dialog>
+                    <>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="rounded-xl bg-card/80 hover:bg-card flex-shrink-0"
+                        onClick={(e) => { if (!checkPetLimit()) { e.preventDefault(); return; } resetForm(); setShowAddDialog(true); }}
+                        title="Thêm mới"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                        <DialogContent className="rounded-3xl w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto lg:overflow-y-hidden">
+                          <DialogHeader>
+                            <DialogTitle>Thêm thú cưng mới</DialogTitle>
+                          </DialogHeader>
+                          {renderPetFormFields(false)}
+                        </DialogContent>
+                      </Dialog>
+                    </>
                     <Button
                       variant="outline"
                       size="icon"

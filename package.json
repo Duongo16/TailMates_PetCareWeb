@@ -63,7 +63,7 @@
     "framer-motion": "^12.27.3",
     "google-auth-library": "^10.5.0",
     "input-otp": "1.4.1",
-    "ioredis": "^5.9.2",
+    "ioredis": "^5.9.3",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.454.0",
     "mongoose": "^9.1.3",

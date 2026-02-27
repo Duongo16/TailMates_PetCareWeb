@@ -76,7 +76,7 @@ const MerchantSubscriptionComponent = dynamic(() => import("./subscription").the
 import { useFeatureAccess } from "@/hooks/use-feature-access"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Area, AreaChart, CartesianGrid } from "recharts"
 import Image from "next/image"
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 
 interface MerchantDashboardContentProps {
   activeTab: string

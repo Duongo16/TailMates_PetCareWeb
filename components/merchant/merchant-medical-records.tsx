@@ -61,7 +61,7 @@ const CONFIRMATION_STATUS = {
     NEEDS_REVISION: { label: "Cần sửa", color: "bg-orange-100 text-orange-700", icon: AlertCircle },
 }
 
-import { useToast } from "@/components/ui/use-toast"
+import { useToast } from "@/hooks/use-toast"
 
 export function MerchantMedicalRecords() {
     const { data: recordsData, isLoading: recordsLoading, refetch: refetchRecords } = useMerchantMedicalRecords()

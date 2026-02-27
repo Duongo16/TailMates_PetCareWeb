@@ -14,6 +14,9 @@ const FREE_MODEL_CHAIN = [
     "arcee-ai/trinity-large-preview:free",
     "stepfun/step-3.5-flash:free",
     "z-ai/glm-4.5-air:free",
+    "google/gemini-2.5-flash:free",
+    "google/gemini-2.0-flash-lite-preview-02-05:free",
+    "mistralai/mistral-7b-instruct:free",
 ];
 
 // Helper for fetch with timeout
