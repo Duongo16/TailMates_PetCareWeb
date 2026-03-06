@@ -276,6 +276,13 @@ export function usePackages() {
   return useFetch<any[]>(() => import("@/lib/api").then(m => m.packagesAPI.listAll()))
 }
 
+export function useManagerSubscriptions(params?: { page?: number; limit?: number }) {
+  return useFetch<{ subscriptions: any[]; pagination: any }>(
+    () => import("@/lib/api").then(m => m.managerAPI.listSubscriptions(params)),
+    [params?.page, params?.limit]
+  )
+}
+
 // ==================== Admin Hooks ====================
 export function useAdminUsers(params?: { role?: string; status?: string; search?: string; page?: number; limit?: number }) {
   return useFetch<{ users: any[]; stats: any; pagination: any }>(

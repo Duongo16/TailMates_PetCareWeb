@@ -48,7 +48,7 @@ export default function ManagerDashboardPage() {
 
   return (
     <DashboardShell tabs={tabs} activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as ManagerTab)}>
-      {activeTab === "blog" ? <BlogApproval /> : <ManagerDashboardContent activeTab={activeTab} />}
+      {activeTab === "blog" ? <BlogApproval /> : <ManagerDashboardContent activeTab={activeTab} setActiveTab={setActiveTab} />}
     </DashboardShell>
   )
 }

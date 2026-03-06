@@ -3,6 +3,7 @@ import connectDB from "@/lib/db";
 import User from "@/models/User";
 import Order from "@/models/Order";
 import Booking from "@/models/Booking";
+import SubscriptionLog from "@/models/SubscriptionLog";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 import { UserRole } from "@/models/User";
 
@@ -44,6 +45,23 @@ export async function GET(request: NextRequest) {
       },
     ]);
 
+    // Packages statistics (New)
+    const packageSubscriptions = await SubscriptionLog.aggregate([
+      {
+        $match: {
+          status: "SUCCESS",
+          created_at: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total_revenue: { $sum: "$amount" },
+          subscription_count: { $sum: 1 },
+        },
+      },
+    ]);
+
     // Bookings statistics
     const completedBookings = await Booking.aggregate([
       {
@@ -79,8 +97,8 @@ export async function GET(request: NextRequest) {
       .sort({ "merchant_profile.revenue_stats": -1 })
       .limit(5);
 
-    // Daily revenue for chart
-    const dailyRevenue = await Order.aggregate([
+    // Daily revenue for chart (Combine Order and Package revenue)
+    const dailyOrderRevenue = await Order.aggregate([
       {
         $match: {
           status: "COMPLETED",
@@ -89,15 +107,60 @@ export async function GET(request: NextRequest) {
       },
       {
         $group: {
-          _id: {
-            $dateToString: { format: "%Y-%m-%d", date: "$created_at" },
-          },
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$created_at" } },
           revenue: { $sum: "$total_amount" },
           orders: { $sum: 1 },
         },
       },
-      { $sort: { _id: 1 } },
     ]);
+
+    const dailyPackageRevenue = await SubscriptionLog.aggregate([
+      {
+        $match: {
+          status: "SUCCESS",
+          created_at: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$created_at" } },
+          revenue: { $sum: "$amount" },
+          subscriptions: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Merge daily revenue
+    const dailyMap = new Map();
+
+    dailyOrderRevenue.forEach(item => {
+      dailyMap.set(item._id, {
+        date: item._id,
+        order_revenue: item.revenue,
+        package_revenue: 0,
+        total_revenue: item.revenue
+      });
+    });
+
+    dailyPackageRevenue.forEach(item => {
+      const existing = dailyMap.get(item._id);
+      if (existing) {
+        existing.package_revenue = item.revenue;
+        existing.total_revenue += item.revenue;
+      } else {
+        dailyMap.set(item._id, {
+          date: item._id,
+          order_revenue: 0,
+          package_revenue: item.revenue,
+          total_revenue: item.revenue
+        });
+      }
+    });
+
+    const dailyRevenue = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+
+    const totalPackageRevenue = packageSubscriptions[0]?.total_revenue || 0;
+    const totalOrderRevenue = completedOrders[0]?.total_revenue || 0;
 
     return apiResponse.success({
       period: {
@@ -105,9 +168,14 @@ export async function GET(request: NextRequest) {
         end_date: endDate,
       },
       orders: {
-        total_revenue: completedOrders[0]?.total_revenue || 0,
+        total_revenue: totalOrderRevenue,
         order_count: completedOrders[0]?.order_count || 0,
       },
+      packages: {
+        total_revenue: totalPackageRevenue,
+        subscription_count: packageSubscriptions[0]?.subscription_count || 0,
+      },
+      total_platform_revenue: totalOrderRevenue + totalPackageRevenue,
       bookings: {
         booking_count: completedBookings[0]?.booking_count || 0,
       },

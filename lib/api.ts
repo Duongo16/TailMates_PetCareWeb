@@ -6,13 +6,13 @@
 // Helper to determine the base URL
 const getBaseUrl = () => {
   if (typeof window !== "undefined") return ""; // Browser uses relative URL
-  
+
   // Server environment needs absolute URL
   if (process.env.NEXT_PUBLIC_APP_URL) {
     const url = process.env.NEXT_PUBLIC_APP_URL;
     return url.startsWith("http") ? url : `https://${url}`;
   }
-  
+
   return "http://localhost:3000"; // Fallback for local development
 };
 
@@ -53,7 +53,7 @@ async function fetchWithAuth<T>(
       // Automatic token refresh logic
       if (data.code === "TOKEN_EXPIRED") {
         const refreshToken = typeof window !== "undefined" ? localStorage.getItem("tailmates_refresh_token") : null;
-        
+
         if (refreshToken) {
           console.log("Token expired, attempting refresh...");
           try {
@@ -62,32 +62,32 @@ async function fetchWithAuth<T>(
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ refreshToken }),
             });
-            
+
             const refreshData = await refreshResponse.json();
-            
+
             if (refreshResponse.ok && refreshData.success && refreshData.data) {
               const { accessToken, refreshToken: newRefreshToken } = refreshData.data;
-              
+
               // Save new tokens
               localStorage.setItem("tailmates_token", accessToken);
               localStorage.setItem("tailmates_refresh_token", newRefreshToken);
               localStorage.setItem("tailmates_user", JSON.stringify(refreshData.data.user || {}));
-              
+
               console.log("Token refreshed successfully, retrying request...");
-              
+
               // Retry the original request with new token
               const retryHeaders = {
                 ...headers,
                 "Authorization": `Bearer ${accessToken}`
               };
-              
+
               const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
                 ...options,
                 headers: retryHeaders,
               });
-              
+
               const retryData = await retryResponse.json();
-              
+
               if (retryResponse.ok) {
                 return {
                   success: true,
@@ -360,7 +360,7 @@ export const paymentAPI = {
       method: "POST",
       body: JSON.stringify(data),
     }),
-  
+
   getStatus: (id: string) => fetchWithAuth<any>(`/payment/status/${id}`),
 };
 
@@ -639,6 +639,13 @@ export const managerAPI = {
       method: "PATCH",
       body: JSON.stringify({ is_active: isActive }),
     }),
+
+  listSubscriptions: (params?: { page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    return fetchWithAuth<any>(`/manager/subscriptions?${searchParams.toString()}`);
+  },
 };
 
 // ==================== Admin API ====================

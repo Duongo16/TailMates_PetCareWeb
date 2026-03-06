@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useManagerStats, useManagerMerchants, usePackages, useManagerBanners } from "@/lib/hooks"
+import { useManagerStats, useManagerMerchants, usePackages, useManagerBanners, useManagerSubscriptions } from "@/lib/hooks"
 import { useAuth } from "@/lib/auth-context"
 import { managerAPI, packagesAPI, bannersAPI } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -63,6 +63,11 @@ import {
   X,
 } from "lucide-react"
 import Image from "next/image"
+import dynamic from "next/dynamic"
+
+const ManagerOverview = dynamic(() => import("./manager-overview").then(m => m.ManagerOverview), {
+  loading: () => <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
+})
 import {
   Bar,
   BarChart,
@@ -81,6 +86,7 @@ import {
 
 interface ManagerDashboardContentProps {
   activeTab: string
+  setActiveTab: (tab: any) => void
 }
 
 const COLORS = ["#F15A29", "#3B6DB3", "#2D3561", "#FAD5C8", "#00C49F", "#FFBB28", "#FF8042"]
@@ -174,7 +180,7 @@ const BenefitsEditor = ({ benefits, onChange }: { benefits: any[], onChange: (be
                 <span className="text-xs">In đậm</span>
               </label>
               <label className="flex items-center gap-1.5 cursor-pointer">
-                 <input
+                <input
                   type="checkbox"
                   checked={benefit.color === "orange"}
                   onChange={(e) => updateBenefit(index, "color", e.target.checked ? "orange" : "")}
@@ -182,10 +188,10 @@ const BenefitsEditor = ({ benefits, onChange }: { benefits: any[], onChange: (be
                 />
                 <span className="text-xs text-orange-600">Màu cam</span>
               </label>
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => removeBenefit(index)}
                 className="h-6 w-6 ml-auto text-destructive hover:bg-destructive/10"
               >
@@ -200,10 +206,11 @@ const BenefitsEditor = ({ benefits, onChange }: { benefits: any[], onChange: (be
   )
 }
 
-export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentProps) {
+export function ManagerDashboardContent({ activeTab, setActiveTab }: ManagerDashboardContentProps) {
   const { data: statsData, isLoading: statsLoading } = useManagerStats()
   const { data: merchantsData, isLoading: merchantsLoading, refetch: refetchMerchants } = useManagerMerchants()
   const { data: packages, isLoading: packagesLoading, refetch: refetchPackages } = usePackages()
+  const { data: subsData, isLoading: subsLoading } = useManagerSubscriptions()
   const { data: bannersData, isLoading: bannersLoading, refetch: refetchBanners } = useManagerBanners()
   const { user, refreshUser } = useAuth()
 
@@ -282,10 +289,10 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
         refetchPackages()
         // Reset
         setNewPackage({
-          name: "", 
-          target_role: packageFilter, 
-          price: "", 
-          duration_months: "", 
+          name: "",
+          target_role: packageFilter,
+          price: "",
+          duration_months: "",
           description: "",
           order: 0,
           benefits: [],
@@ -354,157 +361,7 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
 
   // Dashboard Overview
   if (activeTab === "dashboard") {
-    if (statsLoading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
-
-    const totalRevenue = statsData?.orders?.total_revenue || 0
-    const totalOrders = statsData?.orders?.order_count || 0
-    const totalCustomers = statsData?.users?.customer || 0
-    const totalMerchants = statsData?.users?.merchant || 0
-    const dailyRevenue = statsData?.daily_revenue || []
-
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Tổng quan nền tảng</h1>
-            <p className="text-foreground/60">Giám sát hoạt động TailMates</p>
-          </div>
-        </div>
-
-        {/* Main Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-foreground/60">Tổng doanh thu</p>
-                  <p className="text-2xl font-bold text-foreground">{formatPrice(totalRevenue)}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-accent/10 to-accent/5">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-foreground/60">Người dùng</p>
-                  <p className="text-2xl font-bold text-foreground">{totalCustomers.toLocaleString()}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-accent" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-foreground/60">Merchant</p>
-                  <p className="text-2xl font-bold text-foreground">{totalMerchants}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
-                  <Store className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-gradient-to-br from-orange-500/10 to-orange-500/5">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-foreground/60">Đơn hàng đã xong</p>
-                  <p className="text-2xl font-bold text-foreground">{totalOrders.toLocaleString()}</p>
-                </div>
-                <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center">
-                  <ShoppingCart className="w-6 h-6 text-orange-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Charts Row */}
-        <div className="grid lg:grid-cols-2 gap-4">
-          {/* Revenue Trend */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="w-5 h-5 text-primary" />
-                Doanh thu 30 ngày qua
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={dailyRevenue}>
-                    <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#F15A29" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#F15A29" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="_id" stroke="#64748b" fontSize={12} tickFormatter={(val) => val.slice(5)} />
-                    <YAxis stroke="#64748b" fontSize={12} tickFormatter={(value) => `${value / 1000}k`} />
-                    <Tooltip
-                      formatter={(value: number) => formatPrice(value)}
-                      contentStyle={{ background: "white", borderRadius: "0.75rem" }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke="#F15A29"
-                      fillOpacity={1}
-                      fill="url(#colorRevenue)"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Top Merchants */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-primary" />
-                Top Merchant (Doanh thu)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {statsData?.top_merchants?.map((merchant: any, index: number) => (
-                  <div key={merchant._id} className="flex items-center gap-4 p-4 rounded-xl bg-secondary/50">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-card ${index === 0 ? "bg-primary" : index === 1 ? "bg-accent" : "bg-foreground"
-                        }`}
-                    >
-                      {index + 1}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-foreground">{merchant.merchant_profile?.shop_name || merchant.full_name}</p>
-                      <p className="text-sm text-foreground/60">{merchant.merchant_profile?.description?.slice(0, 30)}...</p>
-                    </div>
-                    <div className="text-right">
-                      {/* Stats API for Top Merchants returns merchant docs, we assume revenue is stored or calculated. 
-                           Currently stats logic sorts by 'merchant_profile.revenue_stats' but schema calls it something else?
-                           Actually Schema has merchant_profile.
-                           For now, let's just show dummy revenue or 0 if not populated */}
-                      <p className="font-bold text-primary">High Revenue</p>
-                    </div>
-                  </div>
-                ))}
-                {!statsData?.top_merchants?.length && <p className="text-center text-foreground/50">Chưa có dữ liệu</p>}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    )
+    return <ManagerOverview setActiveTab={setActiveTab} />
   }
 
   // Revenue Tab
@@ -716,15 +573,15 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
                   <Label>Giá (VND) *</Label>
                   <Input type="number" value={newPackage.price} onChange={(e) => setNewPackage({ ...newPackage, price: e.target.value })} placeholder="99000" className="rounded-xl" />
                 </div>
-                
+
                 <FeaturesConfigEditor
                   config={newPackage.features_config}
                   onChange={(features_config) => setNewPackage({ ...newPackage, features_config })}
                 />
 
-                <BenefitsEditor 
-                  benefits={newPackage.benefits} 
-                  onChange={(benefits) => setNewPackage({ ...newPackage, benefits })} 
+                <BenefitsEditor
+                  benefits={newPackage.benefits}
+                  onChange={(benefits) => setNewPackage({ ...newPackage, benefits })}
                 />
 
                 <Button className="w-full rounded-xl h-11 text-lg" onClick={handleCreatePackage} disabled={isSubmitting || !newPackage.name || !newPackage.price}>
@@ -788,9 +645,9 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
                   onChange={(features_config) => setEditingPackage({ ...editingPackage, features_config })}
                 />
 
-                <BenefitsEditor 
-                  benefits={editingPackage.benefits || []} 
-                  onChange={(benefits) => setEditingPackage({ ...editingPackage, benefits })} 
+                <BenefitsEditor
+                  benefits={editingPackage.benefits || []}
+                  onChange={(benefits) => setEditingPackage({ ...editingPackage, benefits })}
                 />
 
                 <div className="flex items-center gap-2 p-2 bg-secondary/20 rounded-xl">
@@ -812,103 +669,168 @@ export function ManagerDashboardContent({ activeTab }: ManagerDashboardContentPr
           </DialogContent>
         </Dialog>
 
-        {/* Package Type Tabs */}
-        <div className="bg-card/50 p-1.5 rounded-2xl inline-flex border">
-          <button 
-            onClick={() => setPackageFilter("CUSTOMER")}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-              packageFilter === "CUSTOMER" ? "bg-primary text-white shadow-md" : "text-foreground/60 hover:text-foreground"
-            }`}
-          >
-            Dành cho Khách hàng
-          </button>
-          <button 
-            onClick={() => setPackageFilter("MERCHANT")}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-              packageFilter === "MERCHANT" ? "bg-primary text-white shadow-md" : "text-foreground/60 hover:text-foreground"
-            }`}
-          >
-            Dành cho Merchant
-          </button>
-        </div>
+        <Tabs defaultValue="list" className="w-full">
+          <TabsList className="bg-card/50 p-1 rounded-2xl border mb-6">
+            <TabsTrigger value="list" className="rounded-xl px-6 font-bold data-[state=active]:bg-primary data-[state=active]:text-white">
+              Cài đặt gói
+            </TabsTrigger>
+            <TabsTrigger value="history" className="rounded-xl px-6 font-bold data-[state=active]:bg-primary data-[state=active]:text-white">
+              Lượt đăng ký
+            </TabsTrigger>
+          </TabsList>
 
-        {packagesLoading ? (
-          <div className="flex flex-col items-center justify-center p-20 gap-4">
-            <Loader2 className="animate-spin w-10 h-10 text-primary" />
-            <p className="text-foreground/50">Đang tải danh sách gói...</p>
-          </div>
-        ) : (
-          <Card className="rounded-2xl overflow-hidden border-none shadow-sm">
-            <Table>
-              <TableHeader className="bg-secondary/30">
-                <TableRow>
-                  <TableHead className="w-[80px] font-bold">Thứ tự</TableHead>
-                  <TableHead className="font-bold">Tên gói</TableHead>
-                  <TableHead className="font-bold">Giá & Thời hạn</TableHead>
-                  <TableHead className="font-bold">Trạng thái</TableHead>
-                  <TableHead className="text-right font-bold pr-6">Thao tác</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPackages.map((pkg: any) => (
-                  <TableRow key={pkg._id} className="hover:bg-secondary/10 transition-colors">
-                    <TableCell className="font-medium text-center">
-                      <Badge variant="outline" className="rounded-lg">{pkg.order}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <p className="font-bold text-foreground">{pkg.name}</p>
-                      <p className="text-xs text-foreground/50">{pkg.target_role === "CUSTOMER" ? "Khách hàng" : "Merchant"}</p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="font-bold text-primary">{formatPrice(pkg.price)}</p>
-                      <p className="text-xs text-foreground/50">{pkg.duration_months} tháng</p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={`rounded-full px-3 ${pkg.is_active ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
-                        {pkg.is_active ? "Đang hoạt động" : "Tạm ngưng"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right pr-6">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary"
-                          onClick={() => openEditPackage(pkg)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className={`h-8 w-8 p-0 rounded-lg ${pkg.is_active ? "hover:bg-destructive/10 hover:text-destructive" : "hover:bg-green-100 hover:text-green-600"}`}
-                          onClick={() => {
-                            if (pkg.is_active) {
-                              if (confirm("Vô hiệu hóa gói này? Phải chỉnh sửa để kích hoạt lại.")) {
-                                handleUpdatePackageFields(pkg._id, { is_active: false })
-                              }
-                            } else {
-                               handleUpdatePackageFields(pkg._id, { is_active: true })
-                            }
-                          }}
-                        >
-                          {pkg.is_active ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {!filteredPackages.length && (
-                  <TableRow>
-                     <TableCell colSpan={5} className="h-40 text-center text-foreground/40 italic">
-                       Chưa có gói nào cho {packageFilter === "CUSTOMER" ? "Khách hàng" : "Merchant"}
-                     </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </Card>
-        )}
+          <TabsContent value="list" className="space-y-6 mt-0">
+            {/* Package Type Tabs */}
+            <div className="bg-card/50 p-1.5 rounded-2xl inline-flex border">
+              <button
+                onClick={() => setPackageFilter("CUSTOMER")}
+                className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${packageFilter === "CUSTOMER" ? "bg-primary text-white shadow-md" : "text-foreground/60 hover:text-foreground"
+                  }`}
+              >
+                Dành cho Khách hàng
+              </button>
+              <button
+                onClick={() => setPackageFilter("MERCHANT")}
+                className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${packageFilter === "MERCHANT" ? "bg-primary text-white shadow-md" : "text-foreground/60 hover:text-foreground"
+                  }`}
+              >
+                Dành cho Merchant
+              </button>
+            </div>
+
+            {packagesLoading ? (
+              <div className="flex flex-col items-center justify-center p-20 gap-4">
+                <Loader2 className="animate-spin w-10 h-10 text-primary" />
+                <p className="text-foreground/50">Đang tải danh sách gói...</p>
+              </div>
+            ) : (
+              <Card className="rounded-2xl overflow-hidden border-none shadow-sm">
+                <Table>
+                  <TableHeader className="bg-secondary/30">
+                    <TableRow>
+                      <TableHead className="w-[80px] font-bold">Thứ tự</TableHead>
+                      <TableHead className="font-bold">Tên gói</TableHead>
+                      <TableHead className="font-bold">Giá & Thời hạn</TableHead>
+                      <TableHead className="font-bold">Trạng thái</TableHead>
+                      <TableHead className="text-right font-bold pr-6">Thao tác</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPackages.map((pkg: any) => (
+                      <TableRow key={pkg._id} className="hover:bg-secondary/10 transition-colors">
+                        <TableCell className="font-medium text-center">
+                          <Badge variant="outline" className="rounded-lg">{pkg.order}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <p className="font-bold text-foreground">{pkg.name}</p>
+                          <p className="text-xs text-foreground/50">{pkg.target_role === "CUSTOMER" ? "Khách hàng" : "Merchant"}</p>
+                        </TableCell>
+                        <TableCell>
+                          <p className="font-bold text-primary">{formatPrice(pkg.price)}</p>
+                          <p className="text-xs text-foreground/50">{pkg.duration_months} tháng</p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`rounded-full px-3 ${pkg.is_active ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+                            {pkg.is_active ? "Đang hoạt động" : "Tạm ngưng"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary"
+                              onClick={() => openEditPackage(pkg)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className={`h-8 w-8 p-0 rounded-lg ${pkg.is_active ? "hover:bg-destructive/10 hover:text-destructive" : "hover:bg-green-100 hover:text-green-600"}`}
+                              onClick={() => {
+                                if (pkg.is_active) {
+                                  if (confirm("Vô hiệu hóa gói này? Phải chỉnh sửa để kích hoạt lại.")) {
+                                    handleUpdatePackageFields(pkg._id, { is_active: false })
+                                  }
+                                } else {
+                                  handleUpdatePackageFields(pkg._id, { is_active: true })
+                                }
+                              }}
+                            >
+                              {pkg.is_active ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {!filteredPackages.length && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-40 text-center text-foreground/40 italic">
+                          Chưa có gói nào cho {packageFilter === "CUSTOMER" ? "Khách hàng" : "Merchant"}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="history" className="mt-0">
+            {subsLoading ? (
+              <div className="flex flex-col items-center justify-center p-20 gap-4">
+                <Loader2 className="animate-spin w-10 h-10 text-primary" />
+                <p className="text-foreground/50">Đang tải lịch sử đăng ký...</p>
+              </div>
+            ) : (
+              <Card className="rounded-2xl overflow-hidden border-none shadow-sm">
+                <Table>
+                  <TableHeader className="bg-secondary/30">
+                    <TableRow>
+                      <TableHead className="font-bold">Khách hàng</TableHead>
+                      <TableHead className="font-bold">Gói dịch vụ</TableHead>
+                      <TableHead className="font-bold">Số tiền</TableHead>
+                      <TableHead className="font-bold">Thời gian</TableHead>
+                      <TableHead className="font-bold">Trạng thái</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {subsData?.subscriptions?.map((sub: any) => (
+                      <TableRow key={sub._id} className="hover:bg-secondary/10 transition-colors">
+                        <TableCell>
+                          <p className="font-bold text-foreground">{sub.user_id?.full_name || "N/A"}</p>
+                          <p className="text-xs text-foreground/50">{sub.user_id?.email}</p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="rounded-lg">{sub.package_id?.name || "N/A"}</Badge>
+                        </TableCell>
+                        <TableCell className="font-bold text-primary">
+                          {formatPrice(sub.amount)}
+                        </TableCell>
+                        <TableCell className="text-sm text-foreground/60">
+                          {new Date(sub.created_at).toLocaleString("vi-VN")}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`rounded-full px-3 ${sub.status === "SUCCESS" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                            {sub.status === "SUCCESS" ? "Thành công" : sub.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {!subsData?.subscriptions?.length && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-40 text-center text-foreground/40 italic">
+                          Chưa có lượt đăng ký nào
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     )
   }
