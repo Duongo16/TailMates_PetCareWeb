@@ -9,10 +9,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { socialAPI } from "@/lib/api"
 import { toast } from "sonner"
 import Link from "next/link"
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 
-export default function FriendsPage() {
+function FriendsContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const activeTab = searchParams.get("tab") || "all"
@@ -153,6 +153,18 @@ export default function FriendsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  )
+}
+
+export default function FriendsPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-4xl mx-auto py-8 px-4 flex justify-center items-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    }>
+      <FriendsContent />
+    </Suspense>
   )
 }
 

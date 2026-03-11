@@ -2,13 +2,13 @@
 
 import { DashboardShell } from "@/components/dashboard/shell"
 import { MerchantDashboardContent } from "@/components/merchant/dashboard-content"
-import { useState, useEffect } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter, useSearchParams } from "next/navigation"
 import { MERCHANT_TABS, type MerchantTab } from "@/lib/merchant-constants"
 import { Loader2 } from "lucide-react"
 
-export default function MerchantDashboardPage() {
+function MerchantDashboardContentWrapper() {
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -47,6 +47,18 @@ export default function MerchantDashboardPage() {
     <DashboardShell tabs={MERCHANT_TABS} activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as MerchantTab)}>
       <MerchantDashboardContent activeTab={activeTab} setActiveTab={setActiveTab} />
     </DashboardShell>
+  )
+}
+
+export default function MerchantDashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen flex items-center justify-center bg-secondary">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    }>
+      <MerchantDashboardContentWrapper />
+    </Suspense>
   )
 }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useParams, useSearchParams, useRouter } from "next/navigation"
 import { usePets } from "@/lib/hooks"
 import { ChatWindow } from "@/components/pawmatch/chat-window"
@@ -8,7 +8,7 @@ import { Loader2, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { pawmatchAPI, petsAPI } from "@/lib/api"
 
-export default function ChatRoomPage() {
+function ChatRoomContent() {
     const params = useParams()
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -81,5 +81,17 @@ export default function ChatRoomPage() {
                 otherPet={otherPet}
             />
         </div>
+    )
+}
+
+export default function ChatRoomPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            </div>
+        }>
+            <ChatRoomContent />
+        </Suspense>
     )
 }

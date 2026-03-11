@@ -11,13 +11,13 @@ import { Loader2, UserPlus, UserMinus, UserCheck, MessageCircle, PawPrint, Users
 import { PostCard } from "@/components/social/post-card"
 import { socialAPI } from "@/lib/api"
 import { toast } from "sonner"
-import { useState, useEffect } from "react"
+import { Suspense, useState, useEffect } from "react"
 import Link from "next/link"
 import { ProfileSettings } from "@/components/customer/profile-settings"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import BlogList from "@/components/customer/blog-list"
 
-export default function UserProfilePage() {
+function UserProfileContent() {
   const { userId } = useParams() as { userId: string }
   const searchParams = useSearchParams()
   const { user: currentUser } = useAuth()
@@ -303,5 +303,17 @@ export default function UserProfilePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function UserProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <UserProfileContent />
+    </Suspense>
   )
 }

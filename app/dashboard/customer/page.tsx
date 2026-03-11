@@ -8,14 +8,14 @@ import { Marketplace } from "@/components/customer/marketplace"
 import { ServiceBooking } from "@/components/customer/service-booking"
 import { Subscription } from "@/components/customer/subscription"
 import { OrderTracking } from "@/components/customer/order-tracking"
-import { useState, useEffect } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { CUSTOMER_TABS, type CustomerTab } from "@/lib/customer-constants"
 import { FeatureGate } from "@/components/ui/feature-gate"
 import { PawMatchUI } from "@/components/pawmatch/pawmatch-ui"
-export default function CustomerDashboardPage() {
+function CustomerDashboardContent() {
   const { user, isLoading, refreshUser } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -130,5 +130,17 @@ export default function CustomerDashboardPage() {
     <DashboardShell tabs={CUSTOMER_TABS} activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as CustomerTab)}>
       {renderContent()}
     </DashboardShell>
+  )
+}
+
+export default function CustomerDashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen flex items-center justify-center bg-secondary">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    }>
+      <CustomerDashboardContent />
+    </Suspense>
   )
 }
