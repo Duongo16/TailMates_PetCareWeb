@@ -889,3 +889,149 @@ export const pawmatchAPI = {
 };
 
 
+// ==================== Social Network API ====================
+export const socialAPI = {
+  // ── Posts ──────────────────────────────────────────────
+  /** Lấy feed bài viết (cursor-based pagination) */
+  getFeed: (params?: { cursor?: string; limit?: number; user_id?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.cursor) searchParams.append("cursor", params.cursor);
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.user_id) searchParams.append("user_id", params.user_id);
+    return fetchWithAuth<any>(`/social/posts?${searchParams.toString()}`);
+  },
+
+  /** Tạo bài viết mới */
+  createPost: (data: {
+    content?: string;
+    images?: { url: string; public_id: string }[];
+    privacy?: "PUBLIC" | "FRIENDS" | "PRIVATE";
+    pet_tags?: string[];
+    user_tags?: string[];
+  }) =>
+    fetchWithAuth("/social/posts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  /** Lấy chi tiết 1 bài viết */
+  getPost: (id: string) => fetchWithAuth<any>(`/social/posts/${id}`),
+
+  /** Sửa bài viết */
+  updatePost: (id: string, data: Record<string, unknown>) =>
+    fetchWithAuth(`/social/posts/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  /** Xóa bài viết */
+  deletePost: (id: string) =>
+    fetchWithAuth(`/social/posts/${id}`, { method: "DELETE" }),
+
+  // ── Reactions ──────────────────────────────────────────
+  /** Lấy reactions của 1 post */
+  getPostReactions: (postId: string) =>
+    fetchWithAuth<any>(`/social/posts/${postId}/reactions`),
+
+  /** React hoặc un-react bài viết */
+  reactPost: (postId: string, reactionType: string) =>
+    fetchWithAuth(`/social/posts/${postId}/reactions`, {
+      method: "POST",
+      body: JSON.stringify({ reaction_type: reactionType }),
+    }),
+
+  /** React hoặc un-react comment */
+  reactComment: (commentId: string, reactionType: string) =>
+    fetchWithAuth(`/social/comments/${commentId}/reactions`, {
+      method: "POST",
+      body: JSON.stringify({ reaction_type: reactionType }),
+    }),
+
+  // ── Comments ───────────────────────────────────────────
+  /** Lấy top-level comments của 1 post */
+  getComments: (postId: string, params?: { cursor?: string; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.cursor) searchParams.append("cursor", params.cursor);
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    return fetchWithAuth<any>(`/social/posts/${postId}/comments?${searchParams.toString()}`);
+  },
+
+  /** Tạo comment cho 1 post */
+  createComment: (postId: string, data: { content?: string; image?: { url: string; public_id: string } }) =>
+    fetchWithAuth(`/social/posts/${postId}/comments`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  /** Lấy replies của 1 comment */
+  getReplies: (commentId: string, params?: { cursor?: string; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.cursor) searchParams.append("cursor", params.cursor);
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    return fetchWithAuth<any>(`/social/comments/${commentId}/replies?${searchParams.toString()}`);
+  },
+
+  /** Tạo reply cho 1 comment */
+  createReply: (commentId: string, data: { content?: string; image?: { url: string; public_id: string } }) =>
+    fetchWithAuth(`/social/comments/${commentId}/replies`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  /** Sửa comment */
+  updateComment: (commentId: string, data: { content?: string; image?: Record<string, unknown> }) =>
+    fetchWithAuth(`/social/comments/${commentId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  /** Xóa comment */
+  deleteComment: (commentId: string) =>
+    fetchWithAuth(`/social/comments/${commentId}`, { method: "DELETE" }),
+
+  // ── Friends ────────────────────────────────────────────
+  /** Lấy danh sách bạn bè */
+  getFriends: (params?: { user_id?: string; page?: number; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.user_id) searchParams.append("user_id", params.user_id);
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    return fetchWithAuth<any>(`/social/friends?${searchParams.toString()}`);
+  },
+
+  /** Gửi lời mời kết bạn */
+  sendFriendRequest: (recipientId: string) =>
+    fetchWithAuth("/social/friends/request", {
+      method: "POST",
+      body: JSON.stringify({ recipient_id: recipientId }),
+    }),
+
+  /** Chấp nhận / từ chối lời mời kết bạn */
+  respondFriendRequest: (friendshipId: string, action: "accept" | "reject") =>
+    fetchWithAuth("/social/friends/respond", {
+      method: "POST",
+      body: JSON.stringify({ friendship_id: friendshipId, action }),
+    }),
+
+  /** Hủy kết bạn hoặc hủy lời mời */
+  unfriend: (friendshipId: string) =>
+    fetchWithAuth(`/social/friends/${friendshipId}`, { method: "DELETE" }),
+
+  /** Lấy lời mời kết bạn (received / sent) */
+  getFriendRequests: (type: "received" | "sent" = "received", page?: number) => {
+    const params = new URLSearchParams({ type });
+    if (page) params.append("page", page.toString());
+    return fetchWithAuth<any>(`/social/friends/requests?${params.toString()}`);
+  },
+
+  /** Gợi ý kết bạn */
+  getFriendSuggestions: (limit?: number) => {
+    const params = limit ? `?limit=${limit}` : "";
+    return fetchWithAuth<any>(`/social/friends/suggestions${params}`);
+  },
+
+  // ── Profile ────────────────────────────────────────────
+  /** Lấy thông tin trang cá nhân */
+  getProfile: (userId: string) =>
+    fetchWithAuth<any>(`/social/profile/${userId}`),
+};

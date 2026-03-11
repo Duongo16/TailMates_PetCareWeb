@@ -108,7 +108,7 @@ export default function BlogPage() {
     return (
         <div className="min-h-screen bg-background text-foreground">
             {/* Site Header */}
-            <SiteHeader showBlogLink={false} />
+            <SiteHeader showBlogLink={true} />
 
             {/* Hero Section */}
             {/* 3D Carousel Hero Section */}

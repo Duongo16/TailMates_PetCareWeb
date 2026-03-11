@@ -60,3 +60,16 @@ export {
   PaymentMethodType,
 } from "./Transaction";
 export type { ITransaction } from "./Transaction";
+
+// ==================== Social Network Models ====================
+export { default as SocialPost, PostPrivacy } from "./SocialPost";
+export type { ISocialPost } from "./SocialPost";
+
+export { default as SocialComment } from "./SocialComment";
+export type { ISocialComment } from "./SocialComment";
+
+export { default as Reaction, ReactionType, ReactionTarget } from "./Reaction";
+export type { IReaction } from "./Reaction";
+
+export { default as Friendship, FriendshipStatus } from "./Friendship";
+export type { IFriendship } from "./Friendship";

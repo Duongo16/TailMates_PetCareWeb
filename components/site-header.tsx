@@ -14,10 +14,12 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { Menu, X, LogOut, Settings, LayoutDashboard, ShoppingCart, Bell, Coins, Clock } from "lucide-react"
+import { Menu, X, LogOut, Settings, LayoutDashboard, ShoppingCart, Bell, Coins, Clock, Users, PawPrint } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useCart } from "@/lib/cart-context"
+import { useNotifications } from "@/lib/hooks"
 import { UserBalance } from "@/components/user-balance"
+import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 
 interface SiteHeaderProps {
     showBlogLink?: boolean
@@ -26,6 +28,7 @@ interface SiteHeaderProps {
 export function SiteHeader({ showBlogLink = true }: SiteHeaderProps) {
     const { user, logout } = useAuth()
     const { totalItems } = useCart()
+    const { unreadCount } = useNotifications()
     const router = useRouter()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -47,6 +50,10 @@ export function SiteHeader({ showBlogLink = true }: SiteHeaderProps) {
             default:
                 return role
         }
+    }
+
+    if (user) {
+        return <DashboardHeader isExternal />
     }
 
     return (
@@ -92,101 +99,24 @@ export function SiteHeader({ showBlogLink = true }: SiteHeaderProps) {
                         )}
                     </nav>
 
-                    {/* Right Section - Conditional based on Auth */}
                     <div className="hidden md:flex items-center gap-3">
-                        {user ? (
-                            <>
-                                {/* Shopping Cart - Only for customers */}
-                                {user.role === "customer" && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="relative"
-                                        onClick={() => router.push("/dashboard/customer")}
-                                    >
-                                        <ShoppingCart className="w-5 h-5" />
-                                        {totalItems > 0 && (
-                                            <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                                                {totalItems}
-                                            </span>
-                                        )}
-                                    </Button>
-                                )}
-
-                                {/* User Menu */}
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <button className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-secondary transition-colors">
-                                            <Avatar className="w-8 h-8">
-                                                <AvatarImage src={user?.avatar || "/placeholder.svg"} />
-                                                <AvatarFallback className="bg-primary text-primary-foreground">
-                                                    {user?.name?.charAt(0) || "U"}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="hidden sm:block text-left">
-                                                <p className="text-sm font-medium text-foreground">{user?.name}</p>
-                                                <p className="text-xs text-foreground/60">{getRoleLabel(user?.role || "")}</p>
-                                            </div>
-                                        </button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-56">
-                                        <div className="px-3 py-2">
-                                            <p className="font-medium">{user?.name}</p>
-                                            <p className="text-sm text-foreground/60">{user?.email}</p>
-                                            {["customer", "merchant"].includes(user.role) && (
-                                                <div className="mt-2 sm:hidden">
-                                                    <UserBalance showAdd={false} />
-                                                </div>
-                                            )}
-                                        </div>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => router.push(`/dashboard/${user.role}`)}>
-                                            <LayoutDashboard className="w-4 h-4 mr-2" />
-                                            Dashboard
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => router.push(`/dashboard/${user.role}?tab=settings`)}>
-                                            <Settings className="w-4 h-4 mr-2" />
-                                            Cài đặt
-                                        </DropdownMenuItem>
-                                        {["customer", "merchant"].includes(user.role) && (
-                                            <>
-                                                <DropdownMenuItem onClick={() => router.push("/top-up")}>
-                                                    <Coins className="w-4 h-4 mr-2 text-yellow-500" />
-                                                    Nạp tiền TM
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => router.push("/dashboard/transactions")}>
-                                                    <Clock className="w-4 h-4 mr-2 text-blue-500" />
-                                                    Lịch sử giao dịch
-                                                </DropdownMenuItem>
-                                            </>
-                                        )}
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                                            <LogOut className="w-4 h-4 mr-2" />
-                                            Đăng xuất
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </>
-                        ) : (
-                            <>
-                                <Link href="/login">
-                                    <Button variant="ghost" className="font-medium rounded-xl">
-                                        Đăng nhập
-                                    </Button>
-                                </Link>
-                                <Link href="/register">
-                                    <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all">
-                                        Đăng ký miễn phí
-                                    </Button>
-                                </Link>
-                            </>
-                        )}
+                        <Link href="/login">
+                            <Button variant="ghost" className="font-medium rounded-xl">
+                                Đăng nhập
+                            </Button>
+                        </Link>
+                        <Link href="/register">
+                            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all">
+                                Đăng ký miễn phí
+                            </Button>
+                        </Link>
                     </div>
 
-                    <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-                        {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                    </button>
+                    <div className="flex items-center gap-2 md:hidden">
+                        <button className="p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -212,57 +142,16 @@ export function SiteHeader({ showBlogLink = true }: SiteHeaderProps) {
                             </Link>
                         )}
                         <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                            {user ? (
-                                <>
-                                    <div className="flex items-center gap-3 px-4 py-2">
-                                        <Avatar className="w-10 h-10">
-                                            <AvatarImage src={user?.avatar || "/placeholder.svg"} />
-                                            <AvatarFallback className="bg-primary text-primary-foreground">
-                                                {user?.name?.charAt(0) || "U"}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="text-sm font-medium text-foreground">{user?.name}</p>
-                                            <p className="text-xs text-foreground/60">{getRoleLabel(user?.role || "")}</p>
-                                        </div>
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        className="w-full bg-transparent rounded-xl justify-start"
-                                        onClick={() => {
-                                            router.push(`/dashboard/${user.role}`)
-                                            setMobileMenuOpen(false)
-                                        }}
-                                    >
-                                        <LayoutDashboard className="w-4 h-4 mr-2" />
-                                        Dashboard
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        className="w-full bg-transparent rounded-xl justify-start text-destructive hover:text-destructive"
-                                        onClick={() => {
-                                            handleLogout()
-                                            setMobileMenuOpen(false)
-                                        }}
-                                    >
-                                        <LogOut className="w-4 h-4 mr-2" />
-                                        Đăng xuất
-                                    </Button>
-                                </>
-                            ) : (
-                                <>
-                                    <Link href="/login">
-                                        <Button variant="outline" className="w-full bg-transparent rounded-xl">
-                                            Đăng nhập
-                                        </Button>
-                                    </Link>
-                                    <Link href="/register">
-                                        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
-                                            Đăng ký miễn phí
-                                        </Button>
-                                    </Link>
-                                </>
-                            )}
+                            <Link href="/login">
+                                <Button variant="outline" className="w-full bg-transparent rounded-xl">
+                                    Đăng nhập
+                                </Button>
+                            </Link>
+                            <Link href="/register">
+                                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">
+                                    Đăng ký miễn phí
+                                </Button>
+                            </Link>
                         </div>
                     </div>
                 </div>

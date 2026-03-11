@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { petsAPI, productsAPI, servicesAPI, ordersAPI, bookingsAPI, packagesAPI, merchantAPI, aiAPI } from "@/lib/api"
+import { useAuth } from "@/lib/auth-context"
 
 // ==================== Generic Fetch Hook ====================
 interface UseFetchResult<T> {
@@ -56,13 +57,16 @@ export function useMedicalRecords(petId: string) {
   return useFetch<any[]>(() => petsAPI.getMedicalRecords(petId), [petId])
 }
 
+export function usePendingMedicalRecords(petId: string) {
+  return useFetch<any[]>(() => petsAPI.getMedicalRecordsPending(petId), [petId])
+}
+
 // ==================== Products Hooks ====================
 export function useProducts(params?: {
   category?: string;
   search?: string;
   page?: number;
   limit?: number;
-  // Specifications filters
   targetSpecies?: string;
   lifeStage?: string;
   breedSize?: string;
@@ -100,11 +104,7 @@ export function useBookings() {
   return useFetch<any[]>(() => bookingsAPI.list())
 }
 
-// ==================== Dashboard Parallel Fetch Hook ====================
-/**
- * Fetches pets, bookings, and orders in PARALLEL using Promise.all
- * This reduces dashboard load time from T1+T2+T3 to max(T1,T2,T3)
- */
+// ==================== Dashboard Data Hook ====================
 export function useDashboardData() {
   const [data, setData] = useState<{
     pets: any[] | null
@@ -118,7 +118,6 @@ export function useDashboardData() {
     setIsLoading(true)
     setError(null)
     try {
-      // Parallel fetch using Promise.all - key optimization!
       const [petsRes, bookingsRes, ordersRes] = await Promise.all([
         petsAPI.list(),
         bookingsAPI.list(),
@@ -131,16 +130,13 @@ export function useDashboardData() {
         orders: ordersRes.success ? ordersRes.data || [] : [],
       })
 
-      // Collect any errors
       const errors = [
         !petsRes.success ? petsRes.message : null,
         !bookingsRes.success ? bookingsRes.message : null,
         !ordersRes.success ? ordersRes.message : null,
       ].filter(Boolean)
 
-      if (errors.length > 0) {
-        setError(errors.join(", "))
-      }
+      if (errors.length > 0) setError(errors.join(", "))
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load dashboard data")
     } finally {
@@ -152,14 +148,7 @@ export function useDashboardData() {
     refetch()
   }, [refetch])
 
-  return {
-    pets: data.pets,
-    bookings: data.bookings,
-    orders: data.orders,
-    isLoading,
-    error,
-    refetch,
-  }
+  return { ...data, isLoading, error, refetch }
 }
 
 // ==================== Packages Hooks ====================
@@ -181,10 +170,7 @@ export function useMerchantServices() {
 }
 
 export function useMerchantMedicalRecords(params?: { status?: string; pet_id?: string }) {
-  return useFetch<any>(
-    () => merchantAPI.getMedicalRecords(params),
-    [params?.status, params?.pet_id]
-  )
+  return useFetch<any>(() => merchantAPI.getMedicalRecords(params), [params?.status, params?.pet_id])
 }
 
 export function useMerchantCompletedBookings() {
@@ -192,14 +178,7 @@ export function useMerchantCompletedBookings() {
 }
 
 export function useMerchantAnalytics(range: string = "7d", from?: string, to?: string) {
-  return useFetch<any>(
-    () => merchantAPI.getAnalytics(range, from, to),
-    [range, from, to]
-  )
-}
-
-export function usePendingMedicalRecords(petId: string) {
-  return useFetch<any[]>(() => petsAPI.getMedicalRecordsPending(petId), [petId])
+  return useFetch<any>(() => merchantAPI.getAnalytics(range, from, to), [range, from, to])
 }
 
 // ==================== AI Hooks ====================
@@ -214,11 +193,8 @@ export function useAIRecommendProducts(petId: string | null) {
     setError(null)
     try {
       const response = await aiAPI.recommendProducts(petId)
-      if (response.success) {
-        setData(response.data)
-      } else {
-        setError(response.message || "Failed to get recommendations")
-      }
+      if (response.success) setData(response.data)
+      else setError(response.message || "Failed to get recommendations")
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error")
     } finally {
@@ -260,25 +236,25 @@ export function useAIConsultation() {
 // ==================== Manager Hooks ====================
 export function useManagerStats(startDate?: string, endDate?: string) {
   return useFetch<any>(
-    () => import("@/lib/api").then(m => m.managerAPI.getRevenueStats(startDate, endDate)),
+    () => import("@/lib/api").then((m) => m.managerAPI.getRevenueStats(startDate, endDate)),
     [startDate, endDate]
   )
 }
 
 export function useManagerMerchants(params?: { status?: string; page?: number }) {
   return useFetch<{ merchants: any[]; pagination: any }>(
-    () => import("@/lib/api").then(m => m.managerAPI.listMerchants(params)),
+    () => import("@/lib/api").then((m) => m.managerAPI.listMerchants(params)),
     [params?.status, params?.page]
   )
 }
 
 export function usePackages() {
-  return useFetch<any[]>(() => import("@/lib/api").then(m => m.packagesAPI.listAll()))
+  return useFetch<any[]>(() => import("@/lib/api").then((m) => m.packagesAPI.listAll()))
 }
 
 export function useManagerSubscriptions(params?: { page?: number; limit?: number }) {
   return useFetch<{ subscriptions: any[]; pagination: any }>(
-    () => import("@/lib/api").then(m => m.managerAPI.listSubscriptions(params)),
+    () => import("@/lib/api").then((m) => m.managerAPI.listSubscriptions(params)),
     [params?.page, params?.limit]
   )
 }
@@ -286,7 +262,7 @@ export function useManagerSubscriptions(params?: { page?: number; limit?: number
 // ==================== Admin Hooks ====================
 export function useAdminUsers(params?: { role?: string; status?: string; search?: string; page?: number; limit?: number }) {
   return useFetch<{ users: any[]; stats: any; pagination: any }>(
-    () => import("@/lib/api").then(m => m.adminAPI.listUsers(params)),
+    () => import("@/lib/api").then((m) => m.adminAPI.listUsers(params)),
     [params?.role, params?.status, params?.search, params?.page, params?.limit]
   )
 }
@@ -294,37 +270,35 @@ export function useAdminUsers(params?: { role?: string; status?: string; search?
 // ==================== Banners Hooks ====================
 export function useBanners(location?: string) {
   return useFetch<{ banners: any[] }>(
-    () => import("@/lib/api").then(m => m.bannersAPI.list(location)),
+    () => import("@/lib/api").then((m) => m.bannersAPI.list(location)),
     [location]
   )
 }
 
 export function useManagerBanners() {
-  // Fetch all banners for manager (no location filter, includes inactive)
-  return useFetch<{ banners: any[] }>(
-    () => import("@/lib/api").then(m => m.bannersAPI.list()),
-    []
-  )
+  return useFetch<{ banners: any[] }>(() => import("@/lib/api").then((m) => m.bannersAPI.list()), [])
 }
 
-// ==================== Notification Types & Hook ====================
+// ==================== Notification Hooks ====================
 export interface Notification {
   _id: string
-  id?: string  // Alias for compatibility
-  type: 'ORDER_UPDATE' | 'BOOKING_UPDATE' | 'MEDICAL_RECORD' | 'SUBSCRIPTION' | 'SYSTEM'
+  id?: string
+  type: "ORDER_UPDATE" | "BOOKING_UPDATE" | "MEDICAL_RECORD" | "SUBSCRIPTION" | "SYSTEM"
   title: string
   message: string
   is_read: boolean
-  isRead?: boolean  // Alias for compatibility
+  isRead?: boolean
   redirect_url?: string
-  redirectTab?: string  // Alias for compatibility
+  redirectTab?: string
   reference_id?: string
   created_at: string
-  createdAt?: Date  // Alias for compatibility
+  createdAt?: Date
 }
 
 export function useNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const { user } = useAuth()
+  const userId = user?.id
+  const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -333,14 +307,13 @@ export function useNotifications() {
       const { notificationsAPI } = await import("@/lib/api")
       const response = await notificationsAPI.list({ limit: 20 })
       if (response.success && response.data) {
-        // Transform API response to match frontend interface
         const transformed = response.data.notifications.map((n: any) => ({
           ...n,
           id: n._id,
           isRead: n.is_read,
           createdAt: new Date(n.created_at),
-          redirectTab: n.redirect_url?.includes('tab=')
-            ? n.redirect_url.split('tab=')[1]?.split('&')[0]
+          redirectTab: n.redirect_url?.includes("tab=")
+            ? n.redirect_url.split("tab=")[1]?.split("&")[0]
             : undefined,
         }))
         setNotifications(transformed)
@@ -357,14 +330,51 @@ export function useNotifications() {
     fetchNotifications()
   }, [fetchNotifications])
 
+  // Pusher real-time listener
+  useEffect(() => {
+    if (!userId) return
+
+    const { pusherClient } = require("@/lib/pusher")
+    if (!pusherClient) return
+
+    const channel = pusherClient.subscribe(`user-${userId}`)
+    
+    channel.bind("notification", (data: any) => {
+      const newNotification = {
+        ...data,
+        id: data.id || data._id,
+        isRead: false,
+        createdAt: new Date(data.created_at || Date.now()),
+      }
+      
+      setNotifications(prev => [newNotification, ...prev.slice(0, 19)])
+      setUnreadCount(prev => prev + 1)
+      
+      // Optional: show toast for new social notification
+      import("sonner").then(({ toast }) => {
+        toast.info(data.title, {
+          description: data.message,
+          action: data.redirect_url ? {
+            label: "Xem",
+            onClick: () => window.location.href = data.redirect_url
+          } : undefined
+        })
+      })
+    })
+
+    return () => {
+      pusherClient.unsubscribe(`user-${userId}`)
+    }
+  }, [userId])
+
   const markAsRead = useCallback(async (id: string) => {
     try {
       const { notificationsAPI } = await import("@/lib/api")
       await notificationsAPI.markAsRead(id)
-      setNotifications(prev =>
-        prev.map(n => n._id === id || n.id === id ? { ...n, is_read: true, isRead: true } : n)
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === id || n.id === id ? { ...n, is_read: true, isRead: true } : n))
       )
-      setUnreadCount(prev => Math.max(0, prev - 1))
+      setUnreadCount((prev) => Math.max(0, prev - 1))
     } catch (error) {
       console.error("Failed to mark notification as read:", error)
     }
@@ -374,7 +384,7 @@ export function useNotifications() {
     try {
       const { notificationsAPI } = await import("@/lib/api")
       await notificationsAPI.markAllAsRead()
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true, isRead: true })))
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true, isRead: true })))
       setUnreadCount(0)
     } catch (error) {
       console.error("Failed to mark all notifications as read:", error)
@@ -384,3 +394,195 @@ export function useNotifications() {
   return { notifications, unreadCount, markAsRead, markAllAsRead, isLoading, refetch: fetchNotifications }
 }
 
+// ==================== Infinite Scroll Hook ====================
+export function useInView({ onInView }: { onInView: () => void }) {
+  const ref = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) onInView()
+      },
+      { threshold: 0.1 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [onInView])
+
+  return { ref }
+}
+
+// ==================== Social Network Hooks ====================
+export function useSocialFeed(userId?: string) {
+  const [posts, setPosts] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isFetchingMore, setIsFetchingMore] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const [cursor, setCursor] = useState<string | null>(null)
+
+  const fetchInitial = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const { socialAPI } = await import("@/lib/api")
+      const res = await socialAPI.getFeed({ limit: 10, user_id: userId })
+      if (res.success && res.data) {
+        setPosts(res.data.posts || [])
+        setHasMore(res.data.pagination?.has_more ?? false)
+        setCursor(res.data.pagination?.next_cursor ?? null)
+      } else {
+        setError(res.message || "Failed to load feed")
+      }
+    } catch (err) {
+      setError("Failed to load feed")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [userId])
+
+  const fetchMore = useCallback(async () => {
+    if (!hasMore || !cursor || isFetchingMore) return
+    setIsFetchingMore(true)
+    try {
+      const { socialAPI } = await import("@/lib/api")
+      const res = await socialAPI.getFeed({ cursor, limit: 10, user_id: userId })
+      if (res.success && res.data) {
+        setPosts((prev) => [...prev, ...(res.data.posts || [])])
+        setHasMore(res.data.pagination?.has_more ?? false)
+        setCursor(res.data.pagination?.next_cursor ?? null)
+      }
+    } catch (err) {
+      /* silent */
+    } finally {
+      setIsFetchingMore(false)
+    }
+  }, [hasMore, cursor, isFetchingMore, userId])
+
+  useEffect(() => {
+    fetchInitial()
+  }, [fetchInitial])
+
+  return { posts, setPosts, isLoading, isFetchingMore, error, hasMore, fetchMore, refetch: fetchInitial }
+}
+
+export function useSocialPost(id: string) {
+  return useFetch<any>(() => import("@/lib/api").then((m) => m.socialAPI.getPost(id)), [id])
+}
+
+export function useComments(postId: string) {
+  const [comments, setComments] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isFetchingMore, setIsFetchingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [cursor, setCursor] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchInitial = useCallback(async () => {
+    if (!postId) return
+    setIsLoading(true)
+    setError(null)
+    try {
+      const { socialAPI } = await import("@/lib/api")
+      const res = await socialAPI.getComments(postId, { limit: 20 })
+      if (res.success && res.data) {
+        setComments(res.data.comments || [])
+        setHasMore(res.data.pagination?.has_more ?? false)
+        setCursor(res.data.pagination?.next_cursor ?? null)
+      } else {
+        setError(res.message || "Failed to load comments")
+      }
+    } catch (err) {
+      setError("Failed to load comments")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [postId])
+
+  const fetchMore = useCallback(async () => {
+    if (!hasMore || !cursor || isFetchingMore) return
+    setIsFetchingMore(true)
+    try {
+      const { socialAPI } = await import("@/lib/api")
+      const res = await socialAPI.getComments(postId, { cursor, limit: 20 })
+      if (res.success && res.data) {
+        setComments((prev) => [...prev, ...(res.data.comments || [])])
+        setHasMore(res.data.pagination?.has_more ?? false)
+        setCursor(res.data.pagination?.next_cursor ?? null)
+      }
+    } catch (err) {
+      /* silent */
+    } finally {
+      setIsFetchingMore(false)
+    }
+  }, [hasMore, cursor, isFetchingMore, postId])
+
+  useEffect(() => {
+    fetchInitial()
+  }, [fetchInitial])
+
+  return { comments, setComments, isLoading, isFetchingMore, hasMore, fetchMore, error, refetch: fetchInitial }
+}
+
+export function useReplies(commentId: string) {
+  const [replies, setReplies] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [cursor, setCursor] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    if (!commentId) return
+    setIsLoading(true)
+    try {
+      const { socialAPI } = await import("@/lib/api")
+      const res = await socialAPI.getReplies(commentId, { limit: 10 })
+      if (res.success && res.data) {
+        setReplies(res.data.replies || [])
+        setHasMore(res.data.pagination?.has_more ?? false)
+        setCursor(res.data.pagination?.next_cursor ?? null)
+      }
+    } catch (err) {
+      /* silent */
+    } finally {
+      setIsLoading(false)
+    }
+  }, [commentId])
+
+  const fetchMore = useCallback(async () => {
+    if (!hasMore || !cursor) return
+    try {
+      const { socialAPI } = await import("@/lib/api")
+      const res = await socialAPI.getReplies(commentId, { cursor, limit: 10 })
+      if (res.success && res.data) {
+        setReplies((prev) => [...prev, ...(res.data.replies || [])])
+        setHasMore(res.data.pagination?.has_more ?? false)
+        setCursor(res.data.pagination?.next_cursor ?? null)
+      }
+    } catch (err) {
+      /* silent */
+    }
+  }, [hasMore, cursor, commentId])
+
+  return { replies, setReplies, isLoading, hasMore, fetchMore, load }
+}
+
+export function useFriends(userId?: string) {
+  return useFetch<any>(
+    () => import("@/lib/api").then((m) => m.socialAPI.getFriends(userId ? { user_id: userId } : {})),
+    [userId]
+  )
+}
+
+export function useFriendRequests(type: "received" | "sent" = "received") {
+  return useFetch<any>(() => import("@/lib/api").then((m) => m.socialAPI.getFriendRequests(type)), [type])
+}
+
+export function useFriendSuggestions(limit = 10) {
+  return useFetch<any>(() => import("@/lib/api").then((m) => m.socialAPI.getFriendSuggestions(limit)), [limit])
+}
+
+export function useProfile(userId: string) {
+  return useFetch<any>(() => import("@/lib/api").then((m) => m.socialAPI.getProfile(userId)), [userId])
+}

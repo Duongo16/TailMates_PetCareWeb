@@ -133,12 +133,10 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
   }
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col gap-4 overflow-hidden">
-      {/* Header */}
+    <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-xl font-bold text-foreground">Cài đặt tài khoản</h1>
-          <p className="text-foreground/60 text-sm">Quản lý thông tin cá nhân của bạn</p>
+          <h2 className="text-lg font-bold text-foreground">Chỉnh sửa trang cá nhân</h2>
         </div>
         <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
           <DialogTrigger asChild>
@@ -207,7 +205,7 @@ export function ProfileSettings({ user, onUpdate }: ProfileSettingsProps) {
       )}
 
       {/* Main Content - 2 Column Grid */}
-      <div className="grid lg:grid-cols-2 gap-4 flex-1 min-h-0 overflow-auto">
+      <div className="grid lg:grid-cols-2 gap-4">
         {/* Left Column - Personal Info */}
         <Card className="h-fit">
           <CardHeader className="py-3 px-4">

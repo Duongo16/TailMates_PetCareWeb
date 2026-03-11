@@ -19,7 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Menu, X, LogOut, User, Bell, ShoppingCart, Package, Crown, Settings, Calendar, FileText, Info, CheckCheck, type LucideIcon, Coins, Clock } from "lucide-react"
+import { Menu, X, LogOut, User, Bell, ShoppingCart, Package, Crown, Settings, Calendar, FileText, Info, CheckCheck, type LucideIcon, Coins, Clock, PawPrint, Newspaper } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { useCart } from "@/lib/cart-context"
@@ -27,6 +27,7 @@ import { CartModal } from "@/components/ui/cart-modal"
 import { useNotifications, type Notification } from "@/lib/hooks"
 import { GlobalChatOverlay } from "@/components/chat/global-chat-overlay"
 import { UserBalance } from "@/components/user-balance"
+import { DashboardHeader } from "./dashboard-header"
 
 interface Tab {
   id: string
@@ -130,290 +131,11 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top Header */}
-      <header className="sticky top-0 z-50 bg-card border-b border-border">
-        {/* Main header row: Logo + (md: empty center) + Icons */}
-        <div className="flex items-center justify-between h-14 px-4 lg:px-6 xl:px-8">
-          {/* Logo & Mobile Menu toggle (shown only below md) */}
-          <div className="flex items-center gap-2">
-            <button
-              className="md:hidden p-2 rounded-xl hover:bg-secondary"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-            <Link href="/" className="flex items-center gap-2">
-              <Image src="/images/logo-ngang.png" alt="TailMates" width={100} height={40} className="h-8 w-auto" />
-            </Link>
-          </div>
-
-          {/* Desktop Tabs — inline on lg+ */}
-          <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1 bg-secondary/50 p-1 rounded-xl overflow-x-auto">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              const isActive = activeTab === tab.id
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => onTabChange(tab.id)}
-                  className={cn(
-                    "relative flex items-center gap-1.5 px-2.5 xl:px-4 py-2 rounded-lg text-sm font-medium transition-colors z-10 whitespace-nowrap",
-                    isActive
-                      ? "text-primary-foreground"
-                      : "text-foreground/70 hover:text-foreground",
-                  )}
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className="absolute inset-0 bg-primary rounded-lg shadow-sm"
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                  <div className="relative z-10 flex items-center gap-1.5">
-                    <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="hidden xl:inline">{tab.label}</span>
-                    <span className="inline xl:hidden text-xs">{tab.label}</span>
-                    {tab.featureKey && !canAccess(tab.featureKey) && (
-                      <Lock className="w-3 h-3 text-amber-500 opacity-80 flex-shrink-0" />
-                    )}
-                  </div>
-                </button>
-              )
-            })}
-          </nav>
-
-          <div className="flex items-center gap-1 sm:gap-2">
-            {/* Shopping Cart */}
-            {user?.role === "customer" && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative"
-                onClick={() => setCartOpen(true)}
-              >
-                <ShoppingCart className="w-5 h-5" />
-                {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-green-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                    {totalItems}
-                  </span>
-                )}
-              </Button>
-            )}
-
-            {/* Notifications */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="w-5 h-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
-                      {unreadCount > 9 ? '9+' : unreadCount}
-                    </span>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[calc(100vw-2rem)] sm:w-80 max-h-[420px] overflow-y-auto">
-                {/* Header */}
-                <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-                  <span className="font-semibold text-foreground">Thông báo</span>
-                  {unreadCount > 0 && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); markAllAsRead() }}
-                      className="text-xs text-primary hover:underline flex items-center gap-1"
-                    >
-                      <CheckCheck className="w-3 h-3" /> Đọc tất cả
-                    </button>
-                  )}
-                </div>
-
-                {/* Notification List */}
-                {notifications.length === 0 ? (
-                  <div className="p-6 text-center text-foreground/60">
-                    <Bell className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                    <p className="text-sm">Không có thông báo</p>
-                  </div>
-                ) : (
-                  notifications.map((notification) => (
-                    <DropdownMenuItem
-                      key={notification.id}
-                      onClick={() => handleNotificationClick(notification)}
-                      className={cn(
-                        "flex items-start gap-3 p-3 cursor-pointer focus:bg-accent focus:text-accent-foreground group",
-                        !notification.isRead && "bg-primary/5"
-                      )}
-                    >
-                      {/* Icon */}
-                      <div className={cn("w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0", getNotificationColor(notification.type))}>
-                        {getNotificationIcon(notification.type)}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <p className={cn("text-sm truncate font-medium", !notification.isRead ? "text-foreground font-bold" : "text-foreground group-focus:text-accent-foreground")}>
-                          {notification.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate group-focus:text-accent-foreground/90">{notification.message}</p>
-                        <p className="text-xs text-muted-foreground/80 mt-1 group-focus:text-accent-foreground/70">{formatTimeAgo(notification.createdAt)}</p>
-                      </div>
-
-                      {/* Unread Indicator */}
-                      {!notification.isRead && (
-                        <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-2" />
-                      )}
-                    </DropdownMenuItem>
-                  ))
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-secondary transition-colors">
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage src={user?.avatar || "/placeholder.svg"} />
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      {user?.name?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="hidden sm:block text-left">
-                    <p className="text-sm font-medium text-foreground">{user?.name}</p>
-                    <p className="text-xs text-foreground/60">{getRoleLabel(user?.role || "")}</p>
-                  </div>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="px-3 py-2">
-                  <p className="font-medium">{user?.name}</p>
-                  <p className="text-sm text-foreground/60">{user?.email}</p>
-                </div>
-                <DropdownMenuSeparator />
-                {["customer", "merchant"].includes(user?.role || "") && (
-                  <>
-                    <div className="px-3 pb-2">
-                      <UserBalance showAdd={false} />
-                    </div>
-                    <DropdownMenuItem onClick={() => router.push("/top-up")}>
-                      <Coins className="w-4 h-4 mr-2 text-yellow-500" />
-                      Nạp tiền TM
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push("/dashboard/transactions")}>
-                      <Clock className="w-4 h-4 mr-2 text-blue-500" />
-                      Lịch sử giao dịch
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {user?.role === "customer" && (
-                  <>
-                    <DropdownMenuItem onClick={() => onTabChange("orders")}>
-                      <Package className="w-4 h-4 mr-2" />
-                      Đơn hàng
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onTabChange("subscription")}>
-                      <Crown className="w-4 h-4 mr-2" />
-                      Nâng cấp
-                    </DropdownMenuItem>
-                  </>
-                )}
-                {user?.role === "manager" && (
-                  <DropdownMenuItem onClick={() => router.push("/dashboard/manager/terms-policies")}>
-                    <FileText className="w-4 h-4 mr-2" />
-                    Điều khoản & Chính sách
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem onClick={() => onTabChange("settings")}>
-                  <Settings className="w-4 h-4 mr-2" />
-                  Cài đặt
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Đăng xuất
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        {/* Mid-size Tabs Row (md to lg) — scrollable horizontal bar */}
-        <div className="hidden md:flex lg:hidden border-t border-border overflow-x-auto scrollbar-none">
-          <div className="flex items-center gap-0.5 px-3 py-1.5 min-w-max">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              const isActive = activeTab === tab.id
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => onTabChange(tab.id)}
-                  className={cn(
-                    "relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-foreground/70 hover:text-foreground hover:bg-secondary",
-                  )}
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span>{tab.label}</span>
-                  {tab.featureKey && !canAccess(tab.featureKey) && (
-                    <Lock className="w-3 h-3 text-amber-500 opacity-80 flex-shrink-0" />
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Mobile Menu (below md) */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.nav
-              className="md:hidden border-t border-border bg-card overflow-hidden"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
-            >
-              <div className="p-2 space-y-1">
-                {tabs.map((tab, index) => {
-                  const Icon = tab.icon
-                  const isActive = activeTab === tab.id
-                  return (
-                    <motion.button
-                      key={tab.id}
-                      onClick={() => {
-                        onTabChange(tab.id)
-                        setMobileMenuOpen(false)
-                      }}
-                      className={cn(
-                        "relative flex items-center gap-3 w-full px-4 py-3 rounded-xl font-medium transition-colors",
-                        isActive
-                          ? "text-primary-foreground"
-                          : "text-foreground/70 hover:bg-secondary",
-                      )}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="activeMobileTab"
-                          className="absolute inset-0 bg-primary rounded-xl"
-                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                        />
-                      )}
-                      <Icon className="w-5 h-5 relative z-10" />
-                      <span className="relative z-10">{tab.label}</span>
-                      {tab.featureKey && !canAccess(tab.featureKey) && (
-                        <Lock className="w-3 h-3 text-amber-500 opacity-80 ml-auto relative z-10" />
-                      )}
-                    </motion.button>
-                  )
-                })}
-              </div>
-            </motion.nav>
-          )}
-        </AnimatePresence>
-      </header>
+      <DashboardHeader 
+        tabs={tabs} 
+        activeTab={activeTab} 
+        onTabChange={onTabChange} 
+      />
 
       {/* Main Content */}
       <main className="p-4 lg:p-8 pb-24 md:pb-4 lg:pb-8 max-w-7xl mx-auto">{children}</main>
@@ -455,16 +177,6 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
 
       {/* Global Chat Overlay - accessible to all logged-in users */}
       <GlobalChatOverlay />
-
-      {/* Cart Modal */}
-      <CartModal
-        open={cartOpen}
-        onOpenChange={setCartOpen}
-        onCheckout={() => {
-          // Navigate to orders tab after checkout
-          onTabChange("orders")
-        }}
-      />
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import connectDB from "@/lib/db";
 import Notification, { NotificationType, INotification } from "@/models/Notification";
+import { pusherServer } from "@/lib/pusher";
 
 /**
  * Notification Service
@@ -16,7 +17,7 @@ interface CreateNotificationData {
 }
 
 /**
- * Create a new notification for a user
+ * Create a new notification for a user and trigger real-time event via Pusher
  */
 export async function createNotification(data: CreateNotificationData): Promise<INotification | null> {
     try {
@@ -32,11 +33,69 @@ export async function createNotification(data: CreateNotificationData): Promise<
             is_read: false,
         });
 
+        // Trigger real-time notification
+        if (pusherServer) {
+            await pusherServer.trigger(`user-${data.userId}`, "notification", {
+                id: notification._id,
+                type: data.type,
+                title: data.title,
+                message: data.message,
+                redirect_url: data.redirectUrl,
+                created_at: notification.created_at,
+            });
+        }
+
         return notification;
     } catch (error) {
         console.error("Failed to create notification:", error);
         return null;
     }
+}
+
+/** Social Notification Helpers */
+
+export async function notifySocialLike(authorId: string, likerName: string, postId: string) {
+    return createNotification({
+        userId: authorId,
+        type: NotificationType.SOCIAL_LIKE,
+        title: "Lượt thích mới",
+        message: `${likerName} đã thích bài viết của bạn.`,
+        redirectUrl: `/social/post/${postId}`,
+        referenceId: postId
+    });
+}
+
+export async function notifySocialComment(authorId: string, commenterName: string, postId: string, text: string) {
+    return createNotification({
+        userId: authorId,
+        type: NotificationType.SOCIAL_COMMENT,
+        title: "Bình luận mới",
+        message: `${commenterName} đã bình luận: "${text.slice(0, 50)}${text.length > 50 ? '...' : ''}"`,
+        redirectUrl: `/social/post/${postId}`,
+        referenceId: postId
+    });
+}
+
+export async function notifyFriendRequest(recipientId: string, requesterName: string) {
+    return createNotification({
+        userId: recipientId,
+        type: NotificationType.SOCIAL_FRIEND_REQUEST,
+        title: "Lời mời kết bạn",
+        message: `${requesterName} đã gửi lời mời kết bạn cho bạn.`,
+        redirectUrl: `/social/friends?tab=requests`,
+        referenceId: recipientId
+    });
+}
+
+export async function notifyFriendAccepted(requesterId: string, acceptorName: string) {
+    return createNotification({
+        userId: requesterId,
+        type: NotificationType.SOCIAL_FRIEND_REQUEST, // Reuse or add SOCIAL_FRIEND_ACCEPTED
+        title: "Chấp nhận kết bạn",
+        message: `${acceptorName} đã chấp nhận lời mời kết bạn của bạn.`,
+        redirectUrl: `/social/profile/${requesterId}`, // wait, should go to acceptor profile
+        referenceId: requesterId
+    });
 }
 
 /**

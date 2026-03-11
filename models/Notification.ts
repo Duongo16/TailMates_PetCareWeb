@@ -7,6 +7,9 @@ export enum NotificationType {
     MEDICAL_RECORD = "MEDICAL_RECORD",
     SUBSCRIPTION = "SUBSCRIPTION",
     SYSTEM = "SYSTEM",
+    SOCIAL_LIKE = "SOCIAL_LIKE",
+    SOCIAL_COMMENT = "SOCIAL_COMMENT",
+    SOCIAL_FRIEND_REQUEST = "SOCIAL_FRIEND_REQUEST",
 }
 
 // ==================== Interface ====================

@@ -7,7 +7,6 @@ import { useAuth } from "@/lib/auth-context"
 import { useRouter, useSearchParams } from "next/navigation"
 import { MERCHANT_TABS, type MerchantTab } from "@/lib/merchant-constants"
 import { Loader2 } from "lucide-react"
-import BlogList from "@/components/merchant/blog-list"
 
 export default function MerchantDashboardPage() {
   const { user, isLoading } = useAuth()
@@ -46,7 +45,7 @@ export default function MerchantDashboardPage() {
 
   return (
     <DashboardShell tabs={MERCHANT_TABS} activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab as MerchantTab)}>
-      {activeTab === "blog" ? <BlogList /> : <MerchantDashboardContent activeTab={activeTab} setActiveTab={setActiveTab} />}
+      <MerchantDashboardContent activeTab={activeTab} setActiveTab={setActiveTab} />
     </DashboardShell>
   )
 }
