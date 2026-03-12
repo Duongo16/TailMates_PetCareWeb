@@ -473,7 +473,7 @@ export function PetProfile({
 
   // Render pet form fields inline (not as nested component to prevent focus loss)
   const renderPetFormFields = (isEdit: boolean) => (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 p-1">
       {/* Column 1: Core Info & Image */}
       <div className="space-y-4">
         <ImageUpload
@@ -687,7 +687,7 @@ export function PetProfile({
       </div>
 
       {/* Column 3: PawMatch Profile & Submit */}
-      <div className="space-y-6">
+      <div className="space-y-6 md:col-span-2 xl:col-span-1">
         <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 space-y-4">
           <h3 className="text-sm font-bold flex items-center gap-2 text-primary">
             <Sparkles className="w-4 h-4" />
@@ -770,7 +770,7 @@ export function PetProfile({
           Thêm thú cưng ngay
         </Button>
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent className="rounded-3xl w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto lg:overflow-y-hidden">
+          <DialogContent className="rounded-3xl w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Thêm thú cưng mới</DialogTitle>
             </DialogHeader>
@@ -790,7 +790,7 @@ export function PetProfile({
       </div>
 
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="rounded-3xl w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto lg:overflow-y-hidden">
+        <DialogContent className="rounded-3xl w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chỉnh sửa {selectedPet?.name}</DialogTitle>
           </DialogHeader>
@@ -914,7 +914,7 @@ export function PetProfile({
                         <Plus className="w-4 h-4" />
                       </Button>
                       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                        <DialogContent className="rounded-3xl w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto lg:overflow-y-hidden">
+                        <DialogContent className="rounded-3xl w-[95vw] lg:max-w-6xl max-h-[90vh] overflow-y-auto">
                           <DialogHeader>
                             <DialogTitle>Thêm thú cưng mới</DialogTitle>
                           </DialogHeader>
