@@ -208,20 +208,23 @@ export function ManagerOverview({ setActiveTab }: ManagerOverviewProps) {
     }, [totalOrderRevenue, totalPackageRevenue])
 
     const packagePerformanceData = useMemo(() => {
-        if (!packagesData || !statsData) return []
+        if (!packagesData || !statsData?.packages?.performance) return []
 
-        return (packagesData || []).slice(0, 6).map((pkg: any, i: number) => {
-            // Since we don't have per-package sales in statsData yet, 
-            // we'll still use some randomization but weighted by total subscription count
-            const sales = Math.floor(Math.random() * (totalSubscriptions || 10)) + 1
+        const performanceMap = new Map()
+        statsData.packages.performance.forEach((p: any) => {
+            performanceMap.set(p._id.toString(), p)
+        })
+
+        return (packagesData || []).map((pkg: any, i: number) => {
+            const perf = performanceMap.get(pkg._id.toString())
             return {
                 name: pkg.name.slice(0, 10),
-                sales: sales,
-                revenue: sales * pkg.price,
+                sales: perf?.sales || 0,
+                revenue: perf?.revenue || 0,
                 fill: COLORS[i % COLORS.length]
             }
-        })
-    }, [packagesData, statsData, totalSubscriptions])
+        }).sort((a, b) => b.sales - a.sales).slice(0, 6)
+    }, [packagesData, statsData])
 
     // ── Leaderboard ───────────────────────────────────────────
     const topMerchants = useMemo(() => {

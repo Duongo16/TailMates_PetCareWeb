@@ -4,6 +4,7 @@ import User from "@/models/User";
 import Order from "@/models/Order";
 import Booking from "@/models/Booking";
 import SubscriptionLog from "@/models/SubscriptionLog";
+import Package from "@/models/Package";
 import { authenticate, authorize, apiResponse } from "@/lib/auth";
 import { UserRole } from "@/models/User";
 
@@ -159,6 +160,42 @@ export async function GET(request: NextRequest) {
 
     const dailyRevenue = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date));
 
+    // Package performance (sales and revenue per package)
+    const packagePerformance = await SubscriptionLog.aggregate([
+      {
+        $match: {
+          status: "SUCCESS",
+          created_at: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: "$package_id",
+          sales: { $sum: 1 },
+          revenue: { $sum: "$amount" },
+        },
+      },
+      {
+        $lookup: {
+          from: "packages",
+          localField: "_id",
+          foreignField: "_id",
+          as: "package_info",
+        },
+      },
+      {
+        $unwind: "$package_info",
+      },
+      {
+        $project: {
+          _id: 1,
+          name: "$package_info.name",
+          sales: 1,
+          revenue: 1,
+        },
+      },
+    ]);
+
     const totalPackageRevenue = packageSubscriptions[0]?.total_revenue || 0;
     const totalOrderRevenue = completedOrders[0]?.total_revenue || 0;
 
@@ -174,6 +211,7 @@ export async function GET(request: NextRequest) {
       packages: {
         total_revenue: totalPackageRevenue,
         subscription_count: packageSubscriptions[0]?.subscription_count || 0,
+        performance: packagePerformance,
       },
       total_platform_revenue: totalOrderRevenue + totalPackageRevenue,
       bookings: {

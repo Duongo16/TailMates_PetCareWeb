@@ -1,13 +1,13 @@
 "use client"
 
-import { useParams, useSearchParams } from "next/navigation"
+import { useParams, useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { useProfile, useSocialFeed } from "@/lib/hooks"
+import { useProfile, useSocialFeed, useFriends } from "@/lib/hooks"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, UserPlus, UserMinus, UserCheck, MessageCircle, PawPrint, Users, Image as ImageIcon, Grid3X3, Newspaper } from "lucide-react"
+import { Loader2, UserPlus, UserMinus, UserCheck, MessageCircle, PawPrint, Users, Image as ImageIcon, Grid3X3, Newspaper, XCircle } from "lucide-react"
 import { PostCard } from "@/components/social/post-card"
 import { socialAPI } from "@/lib/api"
 import { toast } from "sonner"
@@ -16,12 +16,16 @@ import Link from "next/link"
 import { ProfileSettings } from "@/components/customer/profile-settings"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import BlogList from "@/components/customer/blog-list"
+import { startConversation } from "@/lib/chat-events"
 
 function UserProfileContent() {
   const { userId } = useParams() as { userId: string }
   const searchParams = useSearchParams()
+  const router = useRouter()
   const { user: currentUser } = useAuth()
   const { data: profile, isLoading: isProfileLoading, refetch: refetchProfile } = useProfile(userId)
+  const { data: friendsData, isLoading: isFriendsLoading } = useFriends(userId)
+  const friends = friendsData?.friends || []
   const { posts, isLoading: isPostsLoading, fetchMore, hasMore } = useSocialFeed(userId)
   const [isActionLoading, setIsActionLoading] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
@@ -53,9 +57,18 @@ function UserProfileContent() {
   }
 
   const isOwn = currentUser?.id === userId
-  const friendshipStatus = profile.friendshipStatus // PENDING_SENT, PENDING_RECEIVED, ACCEPTED, NONE
+  const friendship = profile.friendship
+  let friendshipStatus = "NONE"
+  if (friendship) {
+    if (friendship.status === "ACCEPTED") friendshipStatus = "ACCEPTED"
+    else if (friendship.status === "PENDING") {
+      friendshipStatus = friendship.role === "requester" ? "PENDING_SENT" : "PENDING_RECEIVED"
+    } else if (friendship.status === "REJECTED") {
+      friendshipStatus = "NONE"
+    }
+  }
 
-  const handleFriendAction = async () => {
+  const handleFriendAction = async (actionOverride?: "accept" | "reject") => {
     setIsActionLoading(true)
     try {
       if (friendshipStatus === "NONE") {
@@ -65,8 +78,11 @@ function UserProfileContent() {
         const res = await socialAPI.unfriend(profile.friendship.id)
         if (res.success) toast.info("Đã hủy yêu cầu kết bạn")
       } else if (friendshipStatus === "PENDING_RECEIVED") {
-        const res = await socialAPI.respondFriendRequest(profile.friendship.id, "accept")
-        if (res.success) toast.success("Đã đồng ý kết bạn")
+        const action = actionOverride || "accept"
+        const res = await socialAPI.respondFriendRequest(profile.friendship.id, action)
+        if (res.success) {
+          toast.success(action === "accept" ? "Đã đồng ý kết bạn" : "Đã từ chối lời mời")
+        }
       } else if (friendshipStatus === "ACCEPTED") {
         if (confirm("Bạn có chắc chắn muốn hủy kết bạn?")) {
           const res = await socialAPI.unfriend(profile.friendship.id)
@@ -123,7 +139,7 @@ function UserProfileContent() {
           {!isOwn && (
             <div className="flex gap-3 w-full md:w-auto">
               <Button 
-                onClick={handleFriendAction}
+                onClick={() => handleFriendAction()}
                 disabled={isActionLoading}
                 variant={friendshipStatus === "ACCEPTED" ? "outline" : "default"}
                 className={friendshipStatus === "ACCEPTED" ? "border-primary/20 text-primary hover:bg-primary/5" : "bg-primary hover:bg-primary/90 text-primary-foreground"}
@@ -137,7 +153,21 @@ function UserProfileContent() {
                   </>
                 )}
               </Button>
-              <Button variant="outline" className="flex-1 md:flex-none">
+              {friendshipStatus === "PENDING_RECEIVED" && (
+                <Button 
+                  onClick={() => handleFriendAction("reject")}
+                  disabled={isActionLoading}
+                  variant="outline"
+                  className="border-destructive/20 text-destructive hover:bg-destructive/5"
+                >
+                  {isActionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><XCircle className="mr-2 h-4 w-4" /> Từ chối</>}
+                </Button>
+              )}
+              <Button 
+                variant="outline" 
+                className="flex-1 md:flex-none hover:bg-primary/5 hover:text-primary transition-colors"
+                onClick={() => startConversation({ type: 'PAWMATCH', participantId: userId })}
+              >
                 <MessageCircle className="mr-2 h-4 w-4" /> Nhắn tin
               </Button>
             </div>
@@ -226,6 +256,58 @@ function UserProfileContent() {
             {profile.pets.length > 4 && (
               <Button variant="ghost" className="w-full mt-3 text-xs text-gray-500 hover:text-green-600" asChild>
                 <Link href={`/social/profile/${userId}/pets`}>Xem tất cả</Link>
+              </Button>
+            )}
+          </Card>
+
+          {/* Friends List */}
+          <Card className="p-5 border-border shadow-sm bg-card">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-foreground flex items-center">
+                Bạn bè ({profile.stats.friend_count || 0})
+              </h3>
+              <Link href={`/social/friends?userId=${userId}`} className="text-xs text-primary hover:underline font-medium">
+                Tất cả
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-3">
+              {friends.slice(0, 6).map((item: any) => {
+                const friend = item.friend || item;
+                const friendId = friend._id || friend.id;
+                return (
+                  <Link 
+                    key={friendId || item.friendship_id} 
+                    href={`/social/profile/${friendId}`} 
+                    className="flex flex-col items-center group"
+                  >
+                    <Avatar className="w-14 h-14 border-2 border-background shadow-sm group-hover:ring-2 group-hover:ring-primary/20 transition-all">
+                      <AvatarImage src={friend.avatar?.url || friend.avatar} />
+                      <AvatarFallback className="bg-primary/5 text-primary text-xs">
+                        {friend.full_name?.charAt(0) || friend.name?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-[10px] mt-1.5 font-medium text-foreground truncate w-full text-center">
+                      {friend.full_name?.split(' ')[0] || friend.name?.split(' ')[0]}
+                    </span>
+                  </Link>
+                );
+              })}
+              {friends.length === 0 && !isFriendsLoading && (
+                <div className="col-span-3 py-6 text-center border-2 border-dashed border-gray-100 rounded-xl">
+                  <Users className="w-8 h-8 mx-auto text-gray-200 mb-2" />
+                  <p className="text-xs text-gray-400">Chưa có bạn bè nào</p>
+                </div>
+              )}
+              {isFriendsLoading && (
+                <div className="col-span-3 py-6 flex justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary/30" />
+                </div>
+              )}
+            </div>
+            {friends.length > 6 && (
+              <Button variant="ghost" className="w-full mt-3 text-xs text-gray-500 hover:text-primary" asChild>
+                <Link href={`/social/friends?userId=${userId}`}>Xem thêm</Link>
               </Button>
             )}
           </Card>

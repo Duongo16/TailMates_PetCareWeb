@@ -254,6 +254,12 @@ export function MerchantOverview({ setActiveTab }: MerchantOverviewProps) {
         })
     }, [analytics, currentPackage])
 
+    // ── Service performance (Hiệu quả dịch vụ) ─────────────────
+    const servicePerformance = useMemo(() => {
+        if (analytics?.servicePerformance?.length) return analytics.servicePerformance
+        return []
+    }, [analytics])
+
     // ── Order conversion funnel ───────────────────────────────
     const funnelData = useMemo(() => {
         if (!orders?.length) return [
@@ -425,8 +431,8 @@ export function MerchantOverview({ setActiveTab }: MerchantOverviewProps) {
                     sub={analyticsLoading ? "" : formatPrice(totalRevenue)}
                     iconBg="bg-primary/10"
                     iconColor="text-primary"
-                    trend="+12.5%"
-                    trendPositive={true}
+                    trend={analytics?.summary?.revenueTrend ? `${analytics.summary.revenueTrend > 0 ? '+' : ''}${analytics.summary.revenueTrend}%` : undefined}
+                    trendPositive={(analytics?.summary?.revenueTrend ?? 0) >= 0}
                     onClick={() => setActiveTab("analytics")}
                 />
                 <KpiCard
@@ -562,7 +568,7 @@ export function MerchantOverview({ setActiveTab }: MerchantOverviewProps) {
                 </Card>
             </div>
 
-            {/* ── Section 4: Category Pie + Top Products ── */}
+            {/* ── Section 4: Category Pie + Service Performance ── */}
             <div className="grid lg:grid-cols-5 gap-4">
                 {/* Category Pie */}
                 <Card className="lg:col-span-2 border-none shadow-sm bg-white/50 backdrop-blur-md overflow-hidden">
@@ -604,56 +610,37 @@ export function MerchantOverview({ setActiveTab }: MerchantOverviewProps) {
                     </CardContent>
                 </Card>
 
-                {/* Top Products */}
+                {/* Service Performance Chart */}
                 <Card className="lg:col-span-3 border-none shadow-sm bg-white/50 backdrop-blur-md overflow-hidden">
                     <CardHeader className="py-4 pb-2">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-2 text-primary font-bold text-base">
-                                <Star className="w-5 h-5" /> Top sản phẩm bán chạy
-                            </CardTitle>
-                            <Button
-                                variant="ghost" size="sm"
-                                className="text-xs rounded-xl hover:bg-primary/10 hover:text-primary h-8"
-                                onClick={() => setActiveTab("analytics")}
-                            >
-                                Xem thêm <ChevronRight className="w-3 h-3 ml-1" />
-                            </Button>
-                        </div>
+                        <CardTitle className="flex items-center gap-2 text-primary font-bold text-base">
+                            <Zap className="w-5 h-5" /> Hiệu quả các gói dịch vụ
+                        </CardTitle>
+                        <CardDescription className="text-[10px]">Tỉ lệ đăng ký và doanh thu theo dịch vụ</CardDescription>
                     </CardHeader>
                     <CardContent className="pb-4">
-                        {topProducts.length > 0 ? (
-                            <div className="h-[200px]">
+                        {servicePerformance.length > 0 ? (
+                            <div className="h-[240px] mt-2">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={topProducts} layout="vertical" margin={{ left: 0, right: 16 }}>
-                                        <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#9CA3AF" }} tickFormatter={(v) => formatCompact(v)} />
-                                        <YAxis type="category" dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#374151", fontWeight: 600 }} width={110} />
+                                    <BarChart data={servicePerformance} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#6B7280", fontWeight: 700 }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#9CA3AF" }} />
                                         <Tooltip
                                             contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
-                                            formatter={(v: any) => [formatPrice(v), "Doanh thu"]}
+                                            formatter={(value: any, name: any) => [name === "revenue" ? formatPrice(value) : value, name === "revenue" ? "Doanh thu" : "Lượt bán"]}
                                         />
-                                        <Bar dataKey="revenue" name="Doanh thu" radius={[0, 8, 8, 0]} barSize={18}>
-                                            {topProducts.map((_: any, i: number) => (
-                                                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                        <Bar dataKey="sales" name="Lượt bán" radius={[6, 6, 0, 0]} barSize={28}>
+                                            {servicePerformance.map((entry: any, index: number) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={0.8} />
                                             ))}
                                         </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>
                             </div>
                         ) : (
-                            <div className="h-[200px] flex flex-col items-center justify-center text-foreground/30 gap-2">
-                                <Package className="w-10 h-10" />
-                                <p className="text-sm font-medium">Chưa có dữ liệu sản phẩm</p>
-                            </div>
-                        )}
-                        {/* Sold count badges */}
-                        {topProducts.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-3">
-                                {topProducts.map((p: any, i: number) => (
-                                    <span key={i} className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
-                                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
-                                        {p.sold ?? "—"} đã bán
-                                    </span>
-                                ))}
+                            <div className="h-[240px] flex flex-col items-center justify-center text-foreground/30 gap-2">
+                                <Activity className="w-10 h-10" />
+                                <p className="text-sm font-medium">Chưa có dữ liệu dịch vụ</p>
                             </div>
                         )}
                     </CardContent>

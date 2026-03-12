@@ -47,14 +47,24 @@ async function fetchWithAuth<T>(
       headers,
     });
 
-    const data = await response.json();
+    // Check if the response is JSON
+    const contentType = response.headers.get("content-type");
+    let data: any = {};
+    
+    if (contentType && contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      // Not JSON, handle as text or empty
+      const text = await response.text();
+      data = { message: text || response.statusText };
+    }
 
     if (!response.ok) {
       // Automatic token refresh logic
-      if (data.code === "TOKEN_EXPIRED") {
+      if (data.code === "TOKEN_EXPIRED" || response.status === 401) {
         const refreshToken = typeof window !== "undefined" ? localStorage.getItem("tailmates_refresh_token") : null;
 
-        if (refreshToken) {
+        if (refreshToken && data.code === "TOKEN_EXPIRED") {
           console.log("Token expired, attempting refresh...");
           try {
             const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
@@ -104,7 +114,7 @@ async function fetchWithAuth<T>(
 
       return {
         success: false,
-        message: data.message || "Request failed",
+        message: data.message || `Request failed with status ${response.status}`,
         error: data.message,
       };
     }
@@ -116,16 +126,18 @@ async function fetchWithAuth<T>(
     };
   } catch (error) {
     const isServer = typeof window === "undefined";
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    
     console.error(`API Error [${isServer ? "SERVER" : "CLIENT"}]:`, {
       url,
       method: options.method || "GET",
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: errorMessage,
     });
 
     return {
       success: false,
       message: "Network error",
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: errorMessage,
     };
   }
 }

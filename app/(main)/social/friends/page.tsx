@@ -2,8 +2,9 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card } from "@/components/ui/card"
-import { useFriends, useFriendRequests, useFriendSuggestions } from "@/lib/hooks"
-import { Loader2, Users, UserPlus, Send, Sparkles, UserMinus } from "lucide-react"
+import { useFriends, useFriendRequests, useFriendSuggestions, useProfile } from "@/lib/hooks"
+import { useAuth } from "@/lib/auth-context"
+import { Loader2, Users, UserPlus, Send, Sparkles, UserMinus, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { socialAPI } from "@/lib/api"
@@ -11,13 +12,21 @@ import { toast } from "sonner"
 import Link from "next/link"
 import { Suspense, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { startConversation } from "@/lib/chat-events"
 
 function FriendsContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const activeTab = searchParams.get("tab") || "all"
 
-  const { data: friendsData, isLoading: isFriendsLoading, refetch: refetchFriends } = useFriends()
+  const { user: currentUser } = useAuth()
+  const userIdParam = searchParams.get("userId")
+  const isOwn = !userIdParam || (currentUser && userIdParam === currentUser.id)
+  
+  const { data: profileData } = useProfile(userIdParam || "")
+  const profile = profileData?.user || profileData
+
+  const { data: friendsData, isLoading: isFriendsLoading, refetch: refetchFriends } = useFriends(userIdParam || undefined)
   const { data: receivedRequests, isLoading: isReceivedLoading, refetch: refetchReceived } = useFriendRequests("received")
   const { data: sentRequests, isLoading: isSentLoading, refetch: refetchSent } = useFriendRequests("sent")
   const { data: suggestions, isLoading: isSuggestionsLoading, refetch: refetchSuggestions } = useFriendSuggestions(20)
@@ -26,6 +35,13 @@ function FriendsContent() {
   const received = receivedRequests?.requests || []
   const sent = sentRequests?.requests || []
   const suggestList = suggestions?.suggestions || []
+
+  // If viewing someone else's friends and tab is not "all", redirect to "all"
+  if (!isOwn && activeTab !== "all") {
+    const params = new URLSearchParams(searchParams)
+    params.set("tab", "all")
+    router.replace(`/social/friends?${params.toString()}`)
+  }
 
   const setTab = (value: string) => {
     const params = new URLSearchParams(searchParams)
@@ -40,13 +56,17 @@ function FriendsContent() {
           <Users className="w-6 h-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Bạn bè</h1>
-          <p className="text-muted-foreground text-sm">Kết nối và mở rộng cộng đồng thú cưng của bạn</p>
+          <h1 className="text-2xl font-bold text-foreground">
+            {isOwn ? "Bạn bè của tôi" : `Bạn bè của ${profile?.full_name || profile?.name || "người dùng"}`}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {isOwn ? "Kết nối và mở rộng cộng đồng thú cưng của bạn" : `Xem danh sách những người bạn của ${profile?.full_name || profile?.name || "người dùng"}`}
+          </p>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setTab} className="w-full">
-        <TabsList className="w-full bg-card border border-border p-1 mb-8 h-12 rounded-xl shadow-sm">
+        <TabsList className={`w-full bg-card border border-border p-1 mb-8 h-12 rounded-xl shadow-sm ${!isOwn ? 'hidden' : 'flex'}`}>
           <TabsTrigger value="all" className="flex-1 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
             Tất cả ({friends.length})
           </TabsTrigger>
@@ -65,11 +85,11 @@ function FriendsContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {friends.map((item: any) => (
               <FriendCard 
-                key={item.friendship_id} 
-                user={item.friend} 
+                key={item.friendship_id || item.id || (item.friend?._id || item.friend?.id)} 
+                user={item.friend || item} 
                 friendshipId={item.friendship_id}
                 onUpdate={refetchFriends}
-                showUnfriend
+                showUnfriend={isOwn}
               />
             ))}
             {!isFriendsLoading && friends.length === 0 && (
@@ -129,18 +149,22 @@ function FriendsContent() {
 
         <TabsContent value="suggestions">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {suggestList.map((item: any) => (
-              <FriendCard 
-                key={item.user._id} 
-                user={item.user} 
-                onUpdate={() => {
-                  refetchSuggestions()
-                  refetchSent()
-                }}
-                showAddFriend
-                subtitle={item.mutualFriends > 0 ? `${item.mutualFriends} bạn chung` : 'Gợi ý cho bạn'}
-              />
-            ))}
+            {suggestList.map((item: any) => {
+              const user = item.user || item;
+              if (!user) return null;
+              return (
+                <FriendCard 
+                  key={user._id || user.id} 
+                  user={user} 
+                  onUpdate={() => {
+                    refetchSuggestions()
+                    refetchSent()
+                  }}
+                  showAddFriend
+                  subtitle={item.mutualFriends > 0 ? `${item.mutualFriends} bạn chung` : 'Gợi ý cho bạn'}
+                />
+              );
+            })}
             {!isSuggestionsLoading && suggestList.length === 0 && (
               <EmptyState 
                 icon={<Sparkles className="w-12 h-12" />}
@@ -170,6 +194,8 @@ export default function FriendsPage() {
 
 function FriendCard({ user, friendshipId, onUpdate, showUnfriend = false, showAddFriend = false, subtitle }: any) {
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  if (!user) return null;
 
   const handleAction = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -211,6 +237,9 @@ function FriendCard({ user, friendshipId, onUpdate, showUnfriend = false, showAd
           </div>
         </Link>
         <div className="flex gap-2">
+          <Button size="sm" variant="ghost" className="text-primary hover:bg-primary/10" onClick={() => startConversation({ type: 'PAWMATCH', participantId: userId })}>
+            <MessageSquare className="w-4 h-4" />
+          </Button>
           {showUnfriend && (
             <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={handleAction} disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserMinus className="w-4 h-4" />}
@@ -229,12 +258,14 @@ function FriendCard({ user, friendshipId, onUpdate, showUnfriend = false, showAd
 
 function FriendRequestCard({ req, onUpdate, isReceived = false }: any) {
   const [loading, setLoading] = useState(false)
-  const user = isReceived ? req.requester : req.recipient
+  const user = isReceived ? req.requester_id : req.recipient_id;
+  
+  if (!user) return null;
 
   const handleResponse = async (action: "accept" | "reject") => {
     setLoading(true)
     try {
-      await socialAPI.respondFriendRequest(req._id, action)
+      await socialAPI.respondFriendRequest(req.id || req._id, action)
       toast.success(action === "accept" ? "Đã chấp nhận kết bạn" : "Đã từ chối lời mời")
       onUpdate()
     } catch (error) {
@@ -247,7 +278,7 @@ function FriendRequestCard({ req, onUpdate, isReceived = false }: any) {
   const handleCancel = async () => {
     setLoading(true)
     try {
-      await socialAPI.unfriend(req._id)
+      await socialAPI.unfriend(req.id || req._id)
       toast.info("Đã hủy lời mời")
       onUpdate()
     } catch (error) {
@@ -257,31 +288,39 @@ function FriendRequestCard({ req, onUpdate, isReceived = false }: any) {
     }
   }
 
+  const userName = user.full_name || user.name || "Người dùng"
+  const userAvatar = user.avatar?.url || user.avatar
+
   return (
-    <Card className="p-4 border-none shadow-sm overflow-hidden relative bg-card">
+    <Card className="p-4 border-none shadow-sm hover:shadow-md transition-shadow bg-card">
       <div className="flex items-center gap-4">
         <Link href={`/social/profile/${user.id || user._id}`}>
-          <Avatar className="w-16 h-16 rounded-xl">
-            <AvatarImage src={user.avatar?.url || user.avatar} />
-            <AvatarFallback className="bg-primary/10 text-primary rounded-xl">{user.name?.charAt(0)}</AvatarFallback>
+          <Avatar className="w-16 h-16 rounded-xl border-2 border-primary/5">
+            <AvatarImage src={userAvatar} />
+            <AvatarFallback className="bg-primary/10 text-primary rounded-xl font-bold">
+              {userName.charAt(0)}
+            </AvatarFallback>
           </Avatar>
         </Link>
         <div className="flex-1 min-w-0">
           <Link href={`/social/profile/${user.id || user._id}`}>
-            <h3 className="font-bold text-foreground truncate">{user.name}</h3>
+            <h3 className="font-bold text-foreground truncate hover:text-primary transition-colors">{userName}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isReceived ? "Gửi lời mời cho bạn" : "Đã gửi lời mời"}
+            </p>
           </Link>
           <div className="flex gap-2 mt-3">
             {isReceived ? (
               <>
-                <Button size="sm" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => handleResponse("accept")} disabled={loading}>
+                <Button size="sm" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm shadow-primary/20" onClick={() => handleResponse("accept")} disabled={loading}>
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Chấp nhận"}
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1" onClick={() => handleResponse("reject")} disabled={loading}>
+                <Button size="sm" variant="outline" className="flex-1 font-semibold" onClick={() => handleResponse("reject")} disabled={loading}>
                   Từ chối
                 </Button>
               </>
             ) : (
-              <Button size="sm" variant="outline" className="w-full text-muted-foreground" onClick={handleCancel} disabled={loading}>
+              <Button size="sm" variant="outline" className="w-full text-muted-foreground font-semibold" onClick={handleCancel} disabled={loading}>
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Hủy yêu cầu"}
               </Button>
             )}

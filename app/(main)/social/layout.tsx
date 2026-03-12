@@ -1,6 +1,7 @@
 "use client"
 
 import { SiteHeader } from "@/components/site-header"
+import { GlobalChatOverlay } from "@/components/chat/global-chat-overlay"
 
 export default function SocialLayout({
   children,
@@ -13,6 +14,7 @@ export default function SocialLayout({
       <main className="flex-1">
         {children}
       </main>
+      <GlobalChatOverlay />
     </div>
   )
 }
