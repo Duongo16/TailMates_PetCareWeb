@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { pusherClient } from "@/lib/pusher"
@@ -9,7 +9,7 @@ import { ChatWindow } from "@/components/chat/chat-window"
 import { Loader2, MessageSquare } from "lucide-react"
 import { conversationsAPI } from "@/lib/api"
 
-export default function SocialMessagesPage() {
+function MessagesContent() {
     const { user, isLoading: authLoading } = useAuth()
     const searchParams = useSearchParams()
     const targetUserId = searchParams.get("userId")
@@ -123,5 +123,17 @@ export default function SocialMessagesPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function SocialMessagesPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[60vh] bg-gray-50/50">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            </div>
+        }>
+            <MessagesContent />
+        </Suspense>
     )
 }
