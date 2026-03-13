@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MoreHorizontal, Globe, Users, Lock, PawPrint } from "lucide-react"
+import { MoreHorizontal, Globe, Users, Lock, PawPrint, Pencil, X, ImageIcon } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
 import { formatDistanceToNow } from "date-fns"
 import { vi } from "date-fns/locale"
 import { ReactionBar } from "@/components/social/reaction-bar"
@@ -22,9 +23,10 @@ const PRIVACY_ICON: Record<string, React.ReactNode> = {
 interface PostCardProps {
   post: any
   onDeleted?: (id: string) => void
+  onUpdated?: (updatedPost: any) => void
 }
 
-export function PostCard({ post, onDeleted }: PostCardProps) {
+export function PostCard({ post, onDeleted, onUpdated }: PostCardProps) {
   const { user } = useAuth()
   const [showComments, setShowComments] = useState(true)
   const [showMenu, setShowMenu] = useState(false)
@@ -35,6 +37,14 @@ export function PostCard({ post, onDeleted }: PostCardProps) {
   const [isContentExpanded, setIsContentExpanded] = useState(false)
   const [isContentClamped, setIsContentClamped] = useState(false)
   const contentRef = useRef<HTMLParagraphElement>(null)
+
+  // Edit state
+  const [isEditing, setIsEditing] = useState(false)
+  const [editContent, setEditContent] = useState(post.content || "")
+  const [editImages, setEditImages] = useState<{ url: string; public_id: string }[]>(post.images || [])
+  const [editPrivacy, setEditPrivacy] = useState<"PUBLIC" | "FRIENDS" | "PRIVATE">(post.privacy || "PUBLIC")
+  const [isSaving, setIsSaving] = useState(false)
+  const editFileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const el = contentRef.current
@@ -63,6 +73,74 @@ export function PostCard({ post, onDeleted }: PostCardProps) {
     } finally {
       setIsDeleting(false)
       setShowMenu(false)
+    }
+  }
+
+  const handleStartEdit = () => {
+    setEditContent(post.content || "")
+    setEditImages(post.images || [])
+    setEditPrivacy(post.privacy || "PUBLIC")
+    setIsEditing(true)
+    setShowMenu(false)
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+  }
+
+  const handleEditImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
+    if (editImages.length + files.length > 10) {
+      toast.error("Chỉ được đính kèm tối đa 10 ảnh")
+      return
+    }
+    for (const file of files) {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!)
+      formData.append("cloud_name", process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!)
+      try {
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          { method: "POST", body: formData }
+        )
+        const data = await res.json()
+        setEditImages(prev => [...prev, { url: data.secure_url, public_id: data.public_id }])
+      } catch {
+        toast.error("Lỗi tải ảnh lên")
+      }
+    }
+  }
+
+  const handleSaveEdit = async () => {
+    if (!editContent.trim() && editImages.length === 0) {
+      toast.error("Bài viết phải có nội dung hoặc ít nhất 1 ảnh")
+      return
+    }
+    setIsSaving(true)
+    try {
+      const res = await socialAPI.updatePost(post._id, {
+        content: editContent,
+        images: editImages,
+        privacy: editPrivacy,
+      })
+      if (res.success) {
+        toast.success("Đã cập nhật bài viết")
+        setIsEditing(false)
+        // Update local post data
+        post.content = editContent
+        post.images = editImages
+        post.privacy = editPrivacy
+        post.is_edited = true
+        onUpdated?.(res.data)
+      } else {
+        toast.error(res.message || "Lỗi cập nhật bài viết")
+      }
+    } catch {
+      toast.error("Lỗi cập nhật bài viết")
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -145,6 +223,7 @@ export function PostCard({ post, onDeleted }: PostCardProps) {
                 </Link>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <span>{timeAgo}</span>
+                  {post.is_edited && <span className="italic">· đã chỉnh sửa</span>}
                   <span>·</span>
                   <span className="flex items-center gap-0.5">{PRIVACY_ICON[post.privacy] || <Globe className="w-3 h-3" />}</span>
                 </div>
@@ -169,6 +248,13 @@ export function PostCard({ post, onDeleted }: PostCardProps) {
                       className="absolute right-0 top-9 z-50 bg-card rounded-xl shadow-lg border border-border py-1 min-w-32"
                     >
                       <button
+                        onClick={handleStartEdit}
+                        className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-secondary transition-colors flex items-center gap-2"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        Chỉnh sửa
+                      </button>
+                      <button
                         onClick={handleDelete}
                         disabled={isDeleting}
                         className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
@@ -182,26 +268,97 @@ export function PostCard({ post, onDeleted }: PostCardProps) {
             )}
           </div>
 
-          {/* Content */}
-          {post.content && (
-            <div className="mt-3 px-1">
-              <p
-                ref={contentRef}
-                className={`text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed ${
-                  !isContentExpanded ? "line-clamp-2" : ""
-                }`}
-              >
-                {post.content}
-              </p>
-              {isContentClamped && (
-                <button
-                  onClick={() => setIsContentExpanded(s => !s)}
-                  className="text-xs font-medium text-primary hover:text-primary/80 mt-1 transition-colors"
-                >
-                  {isContentExpanded ? "Thu gọn" : "Xem thêm"}
-                </button>
+          {/* Content - Edit mode or View mode */}
+          {isEditing ? (
+            <div className="mt-3 space-y-3">
+              <Textarea
+                autoFocus
+                value={editContent}
+                onChange={e => setEditContent(e.target.value)}
+                placeholder="Nội dung bài viết..."
+                className="border border-border bg-secondary/30 rounded-xl p-3 resize-none min-h-[100px] text-sm focus-visible:ring-1 focus-visible:ring-primary shadow-none"
+                rows={4}
+              />
+
+              {/* Edit images */}
+              {editImages.length > 0 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {editImages.map((img, i) => (
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden group">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img.url} alt="" className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => setEditImages(prev => prev.filter((_, idx) => idx !== i))}
+                        className="absolute top-1 right-1 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               )}
+
+              {/* Edit actions */}
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <div className="flex gap-2 items-center">
+                  <button
+                    onClick={() => editFileRef.current?.click()}
+                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 px-3 py-1.5 rounded-xl transition-colors"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    Thêm ảnh
+                  </button>
+                  <input ref={editFileRef} type="file" accept="image/*" multiple className="hidden" onChange={handleEditImageUpload} />
+
+                  <select
+                    value={editPrivacy}
+                    onChange={e => setEditPrivacy(e.target.value as any)}
+                    className="text-xs text-muted-foreground hover:text-primary bg-transparent border-none outline-none cursor-pointer px-2"
+                  >
+                    <option value="PUBLIC">🌍 Mọi người</option>
+                    <option value="FRIENDS">👥 Bạn bè</option>
+                    <option value="PRIVATE">🔒 Chỉ mình tôi</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCancelEdit}
+                    className="text-xs px-3 py-1.5 rounded-xl text-muted-foreground hover:bg-secondary transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={isSaving || (!editContent.trim() && editImages.length === 0)}
+                    className="text-xs px-4 py-1.5 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors font-medium"
+                  >
+                    {isSaving ? "Đang lưu..." : "Lưu"}
+                  </button>
+                </div>
+              </div>
             </div>
+          ) : (
+            post.content && (
+              <div className="mt-3 px-1">
+                <p
+                  ref={contentRef}
+                  className={`text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed ${
+                    !isContentExpanded ? "line-clamp-2" : ""
+                  }`}
+                >
+                  {post.content}
+                </p>
+                {isContentClamped && (
+                  <button
+                    onClick={() => setIsContentExpanded(s => !s)}
+                    className="text-xs font-medium text-primary hover:text-primary/80 mt-1 transition-colors"
+                  >
+                    {isContentExpanded ? "Thu gọn" : "Xem thêm"}
+                  </button>
+                )}
+              </div>
+            )
           )}
 
           {/* Pet tags */}

@@ -300,7 +300,7 @@ export function GlobalChatOverlay() {
                             animate={{ 
                                 scale: 1, 
                                 opacity: 1,
-                                bottom: window.innerWidth < 768 ? "80px" : "32px"
+                                bottom: window.innerWidth < 768 ? "80px" : (isScrollTopVisible ? "100px" : "32px")
                             }}
                             exit={{ scale: 0, opacity: 0 }}
                             transition={{ 

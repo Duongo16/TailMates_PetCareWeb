@@ -3,20 +3,12 @@
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { MapPin, Stethoscope, TrendingUp, UserPlus } from "lucide-react"
+import { MapPin, Stethoscope, UserPlus } from "lucide-react"
 import { useFriendSuggestions } from "@/lib/hooks"
 import { socialAPI } from "@/lib/api"
 import { useState } from "react"
 import { toast } from "sonner"
 
-// Trending hashtags (static for now, can be made dynamic)
-const TRENDING = [
-  { tag: "DogLovers", posts: 2847 },
-  { tag: "PetPhotography", posts: 5342 },
-  { tag: "VetTips", posts: 1923 },
-  { tag: "CatBreed", posts: 3456 },
-  { tag: "PawsOfTailMates", posts: 891 },
-]
 
 // Nearby vets (can be made dynamic)
 const NEARBY_VETS = [
@@ -123,23 +115,7 @@ export function SocialSidebar() {
         </Link>
       </div>
 
-      {/* Trending */}
-      <div className="bg-card rounded-2xl shadow-sm border border-border p-4">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-bold text-foreground">Đang thịnh hành</h3>
-        </div>
-        <div className="space-y-2.5">
-          {TRENDING.map(({ tag, posts }) => (
-            <Link key={tag} href={`/social/hashtag/${tag}`} className="block group">
-              <p className="text-sm font-semibold text-primary/80 group-hover:text-primary transition-colors">
-                #{tag}
-              </p>
-              <p className="text-xs text-muted-foreground">{posts.toLocaleString()} bài viết</p>
-            </Link>
-          ))}
-        </div>
-      </div>
+
 
       {/* Nearby Vets */}
       <div className="bg-card rounded-2xl shadow-sm border border-border p-4">
