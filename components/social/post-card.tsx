@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -32,6 +32,16 @@ export function PostCard({ post, onDeleted }: PostCardProps) {
   const [localCommentCount, setLocalCommentCount] = useState(post.comment_count || 0)
   const [selectedImageIdx, setSelectedImageIdx] = useState<number | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isContentExpanded, setIsContentExpanded] = useState(false)
+  const [isContentClamped, setIsContentClamped] = useState(false)
+  const contentRef = useRef<HTMLParagraphElement>(null)
+
+  useEffect(() => {
+    const el = contentRef.current
+    if (el) {
+      setIsContentClamped(el.scrollHeight > el.clientHeight)
+    }
+  }, [post.content])
 
   const author = post.author_id
   const authorName = author?.full_name || "Người dùng"
@@ -64,7 +74,7 @@ export function PostCard({ post, onDeleted }: PostCardProps) {
       return (
         <div className="mt-3 -mx-4 cursor-pointer" onClick={() => setSelectedImageIdx(0)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={images[0].url} alt="" className="w-full max-h-[480px] object-cover" />
+          <img src={images[0].url} alt="" className="w-full max-h-[600px] object-contain bg-black/5" />
         </div>
       )
     }
@@ -73,7 +83,7 @@ export function PostCard({ post, onDeleted }: PostCardProps) {
         <div className="mt-3 -mx-4 grid grid-cols-2 gap-0.5">
           {images.map((img: any, i: number) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={i} src={img.url} alt="" className="w-full h-56 object-cover cursor-pointer" onClick={() => setSelectedImageIdx(i)} />
+            <img key={i} src={img.url} alt="" className="w-full h-72 object-contain bg-black/5 cursor-pointer" onClick={() => setSelectedImageIdx(i)} />
           ))}
         </div>
       )
@@ -82,10 +92,10 @@ export function PostCard({ post, onDeleted }: PostCardProps) {
       return (
         <div className="mt-3 -mx-4 grid grid-cols-2 gap-0.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={images[0].url} alt="" className="w-full h-64 object-cover cursor-pointer row-span-2" onClick={() => setSelectedImageIdx(0)} />
+          <img src={images[0].url} alt="" className="w-full h-64 object-contain bg-black/5 cursor-pointer row-span-2" onClick={() => setSelectedImageIdx(0)} />
           {images.slice(1).map((img: any, i: number) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={i} src={img.url} alt="" className="w-full h-32 object-cover cursor-pointer" onClick={() => setSelectedImageIdx(i + 1)} />
+            <img key={i} src={img.url} alt="" className="w-full h-32 object-contain bg-black/5 cursor-pointer" onClick={() => setSelectedImageIdx(i + 1)} />
           ))}
         </div>
       )
@@ -174,9 +184,24 @@ export function PostCard({ post, onDeleted }: PostCardProps) {
 
           {/* Content */}
           {post.content && (
-            <p className="mt-3 text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed px-1">
-              {post.content}
-            </p>
+            <div className="mt-3 px-1">
+              <p
+                ref={contentRef}
+                className={`text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed ${
+                  !isContentExpanded ? "line-clamp-2" : ""
+                }`}
+              >
+                {post.content}
+              </p>
+              {isContentClamped && (
+                <button
+                  onClick={() => setIsContentExpanded(s => !s)}
+                  className="text-xs font-medium text-primary hover:text-primary/80 mt-1 transition-colors"
+                >
+                  {isContentExpanded ? "Thu gọn" : "Xem thêm"}
+                </button>
+              )}
+            </div>
           )}
 
           {/* Pet tags */}

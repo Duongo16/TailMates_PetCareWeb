@@ -33,11 +33,11 @@ export async function GET(
     };
 
     if (cursor) {
-      query._id = { $gt: new mongoose.Types.ObjectId(cursor) }; // Cũ hơn trước, mới sau
+      query._id = { $lt: new mongoose.Types.ObjectId(cursor) }; // Mới hơn trước, cũ sau
     }
 
     const comments = await SocialComment.find(query)
-      .sort({ _id: 1 }) // Cũ nhất lên trên
+      .sort({ _id: -1 }) // Mới nhất lên trên
       .limit(limit + 1)
       .populate("author_id", "full_name avatar _id")
       .lean();
