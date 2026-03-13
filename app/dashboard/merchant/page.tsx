@@ -17,8 +17,11 @@ function MerchantDashboardContentWrapper() {
   // Handle tab from URL
   useEffect(() => {
     const tab = searchParams.get("tab") as MerchantTab
-    if (tab && MERCHANT_TABS.some(t => t.id === tab)) {
-      setActiveTab(tab)
+    if (tab) {
+      const isValidTab = MERCHANT_TABS.some(t => t.id === tab || t.children?.some(c => c.id === tab))
+      if (isValidTab) {
+        setActiveTab(tab)
+      }
     }
   }, [searchParams])
 

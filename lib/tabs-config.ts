@@ -23,11 +23,15 @@ export const CUSTOMER_TABS: TabItem[] = [
 
 export const MERCHANT_TABS: TabItem[] = [
   { id: "dashboard", label: "Tổng quan", icon: Home },
-  { id: "products", label: "Sản phẩm", icon: Package },
-  { id: "services", label: "Dịch vụ", icon: Sparkles },
-  { id: "orders", label: "Đơn hàng", icon: Truck },
-  { id: "bookings", label: "Lịch hẹn", icon: Calendar },
-  { id: "medical-records", label: "Sổ Y Tế", icon: FileText },
+  { id: "catalog-group", label: "Kinh doanh", icon: Package, children: [
+    { id: "products", label: "Sản phẩm", icon: Package },
+    { id: "services", label: "Dịch vụ", icon: Sparkles },
+  ]},
+  { id: "operations-group", label: "Quản lý", icon: Truck, children: [
+    { id: "orders", label: "Đơn hàng", icon: Truck },
+    { id: "bookings", label: "Lịch hẹn", icon: Calendar },
+    { id: "medical-records", label: "Sổ Y Tế", icon: FileText },
+  ]},
   { id: "scanner", label: "Máy Quét QR", icon: QrCode, featureKey: "qr_scanning" },
   { id: "analytics", label: "Thống kê", icon: BarChart3, featureKey: "advanced_analytics" },
   { id: "subscription", label: "Gói Merchant", icon: Crown },
@@ -38,8 +42,10 @@ export const MANAGER_TABS: TabItem[] = [
   { id: "revenue", label: "Doanh thu", icon: TrendingUp },
   { id: "merchants", label: "Merchant", icon: Store },
   { id: "packages", label: "Gói đăng ký", icon: Package },
-  { id: "banners", label: "Banner", icon: ImageIcon },
-  { id: "blog", label: "Quản lý Blog", icon: Newspaper },
+  { id: "content-group", label: "Nội dung", icon: Newspaper, children: [
+    { id: "banners", label: "Banner", icon: ImageIcon },
+    { id: "blog", label: "Quản lý Blog", icon: Newspaper },
+  ]},
   { id: "settings", label: "Cài đặt", icon: Settings },
 ]
 

@@ -15,8 +15,10 @@ const tabs = [
   { id: "revenue" as ManagerTab, label: "Doanh thu", icon: TrendingUp },
   { id: "merchants" as ManagerTab, label: "Merchant", icon: Store },
   { id: "packages" as ManagerTab, label: "Gói đăng ký", icon: Package },
-  { id: "banners" as ManagerTab, label: "Banner", icon: ImageIcon },
-  { id: "blog" as ManagerTab, label: "Quản lý Blog", icon: Newspaper },
+  { id: "content-group", label: "Nội dung", icon: Newspaper, children: [
+    { id: "banners" as ManagerTab, label: "Banner", icon: ImageIcon },
+    { id: "blog" as ManagerTab, label: "Quản lý Blog", icon: Newspaper },
+  ]},
   { id: "settings" as ManagerTab, label: "Cài đặt", icon: Settings },
 ]
 
