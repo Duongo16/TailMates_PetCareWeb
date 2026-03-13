@@ -175,7 +175,7 @@ export async function GET(req: NextRequest) {
             }
         ])
 
-        const combinedCategories = [...productCategories, ...bookingCategories].reduce((acc: any[], curr) => {
+        const combinedCategories = [...productCategories, ...bookingCategories.map(c => ({ _id: "Dịch vụ", value: c.value }))].reduce((acc: any[], curr) => {
             const existing = acc.find(c => c.name === curr._id)
             if (existing) {
                 existing.value += curr.value
@@ -185,7 +185,43 @@ export async function GET(req: NextRequest) {
             return acc
         }, [])
 
-        // 3. Top Products
+        // 3. Package Performance (Hiệu quả các gói dịch vụ) - Using real SubscriptionLog data
+        const packagePerformance = await mongoose.model("SubscriptionLog").aggregate([
+            {
+                $match: {
+                    status: "SUCCESS",
+                    created_at: { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $group: {
+                    _id: "$package_id",
+                    sales: { $sum: 1 },
+                    revenue: { $sum: "$amount" }
+                }
+            },
+            {
+                $lookup: {
+                    from: "packages",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "package"
+                }
+            },
+            { $unwind: "$package" },
+            {
+                $project: {
+                    _id: 1,
+                    name: "$package.name",
+                    sales: 1,
+                    revenue: 1
+                }
+            },
+            { $sort: { sales: -1 } },
+            { $limit: 6 }
+        ])
+
+        // 4. Top Products
         const topProducts = await Order.aggregate([
             {
                 $match: {
@@ -223,10 +259,10 @@ export async function GET(req: NextRequest) {
                 }
             },
             { $sort: { sold: -1 } },
-            { $limit: 5 }
+            { $limit: 10 }
         ])
 
-        // 4. Top Customers
+        // 5. Top Customers
         const topCustomers = await Order.aggregate([
             {
                 $match: {
@@ -261,12 +297,11 @@ export async function GET(req: NextRequest) {
                     orderCount: 1
                 }
             },
-            { $sort: { totalSpent: -1 } },
-            { $limit: 5 }
+            { $sort: { totalSpent: -1 } }, // top customers based on spending
+            { $limit: 10 }
         ])
 
-        // 5. Slow Moving Products
-        // This is a bit more complex, let's simplify for now: products with stock but 0 sold in period
+        // 6. Slow Moving Products
         const soldProductIds = await Order.distinct("items.product_id", {
             merchant_id: merchantId,
             status: OrderStatus.COMPLETED,
@@ -278,27 +313,46 @@ export async function GET(req: NextRequest) {
             _id: { $nin: soldProductIds },
             stock_quantity: { $gt: 0 },
             is_active: true
-        }).limit(5).select("name stock_quantity updated_at")
+        }).limit(10).select("name stock_quantity updated_at")
 
         const formattedSlowProducts = slowProducts.map((p: any) => ({
             id: p._id,
             name: p.name,
             stock: p.stock_quantity,
-            lastSold: "N/A" // Simplified
+            lastSold: "N/A"
         }))
+
+        // Get recent insights (mock for now but can be derived from data)
+        const insights = []
+        if (topProducts.length > 0) {
+            insights.push({
+                title: "Sản phẩm chủ lực",
+                description: `${topProducts[0].name} là sản phẩm bán chạy nhất với ${topProducts[0].sold} lượt bán.`,
+                type: "success"
+            })
+        }
+        if (totalRevenue > 0) {
+            insights.push({
+                title: "Doanh thu ổn định",
+                description: `Tổng doanh thu đạt ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalRevenue)} trong giai đoạn này.`,
+                type: "info"
+            })
+        }
 
         return apiResponse.success({
             summary: {
                 totalRevenue,
                 netIncome,
                 totalOrders,
-                conversionRate: 0 // TODO
+                conversionRate: 0 
             },
             chartData,
             categories: combinedCategories,
+            servicePerformance,
             topProducts,
             topCustomers,
-            slowProducts: formattedSlowProducts
+            slowProducts: formattedSlowProducts,
+            insights
         })
 
     } catch (err: any) {

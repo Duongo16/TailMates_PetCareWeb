@@ -72,9 +72,11 @@ export async function POST(request: NextRequest) {
                 metadata,
                 unreadCount: new Map(allParticipants.map(id => [id.toString(), 0]))
             });
-
-            await conversation.populate("participants", "name email image");
         }
+
+        // Always populate before returning
+        await conversation.populate("participants", "full_name email avatar");
+        await conversation.populate("lastMessage");
 
         return apiResponse.success(conversation);
     } catch (error) {

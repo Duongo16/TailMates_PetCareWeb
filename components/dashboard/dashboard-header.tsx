@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { useFeatureAccess } from "@/hooks/use-feature-access"
 import { 
-  Menu, X, LogOut, User, Bell, ShoppingCart, Package, Crown, Settings, 
+  Menu, X, LogOut, User, Users, Bell, ShoppingCart, Package, Crown, Settings, 
   Calendar, FileText, Info, CheckCheck, Coins, Clock, PawPrint, Newspaper, Lock, ChevronRight 
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -300,6 +300,13 @@ export function DashboardHeader({
                     </span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground group-focus:text-primary transition-all group-focus:translate-x-1" />
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => router.push("/social/friends")}
+                  className="focus:bg-primary/5 focus:text-primary cursor-pointer transition-colors"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Bạn bè
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {["customer", "merchant"].includes(user?.role || "") && (

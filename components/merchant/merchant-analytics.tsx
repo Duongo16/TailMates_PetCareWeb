@@ -77,8 +77,8 @@ export function MerchantAnalytics({ onBack }: { onBack?: () => void }) {
             label: "Tổng doanh thu",
             value: analytics?.summary?.totalRevenue || 0,
             formattedValue: formatPrice(analytics?.summary?.totalRevenue || 0),
-            trend: "+12.5%",
-            isPositive: true,
+            trend: analytics?.summary?.revenueTrend ? `${analytics.summary.revenueTrend > 0 ? '+' : ''}${analytics.summary.revenueTrend}%` : "0%",
+            isPositive: (analytics?.summary?.revenueTrend ?? 0) >= 0,
             icon: DollarSign,
             color: "#F97316"
         },
@@ -86,8 +86,8 @@ export function MerchantAnalytics({ onBack }: { onBack?: () => void }) {
             label: "Thu nhập ròng",
             value: analytics?.summary?.netIncome || 0,
             formattedValue: formatPrice(analytics?.summary?.netIncome || 0),
-            trend: "+10.2%",
-            isPositive: true,
+            trend: analytics?.summary?.incomeTrend ? `${analytics.summary.incomeTrend > 0 ? '+' : ''}${analytics.summary.incomeTrend}%` : "0%",
+            isPositive: (analytics?.summary?.incomeTrend ?? 0) >= 0,
             icon: Zap,
             color: "#0EA5E9"
         },
@@ -95,27 +95,26 @@ export function MerchantAnalytics({ onBack }: { onBack?: () => void }) {
             label: "Đơn hàng",
             value: analytics?.summary?.totalOrders || 0,
             formattedValue: (analytics?.summary?.totalOrders || 0).toLocaleString(),
-            trend: "+5.1%",
-            isPositive: true,
+            trend: analytics?.summary?.orderTrend ? `${analytics.summary.orderTrend > 0 ? '+' : ''}${analytics.summary.orderTrend}%` : "0%",
+            isPositive: (analytics?.summary?.orderTrend ?? 0) >= 0,
             icon: ShoppingCart,
             color: "#10B981"
         }
     ]
 
-    const insights = [
+    const insights = analytics?.insights?.length > 0 ? analytics.insights.map((ins: any) => ({
+        title: ins.title,
+        description: ins.description,
+        icon: ins.type === "success" ? TrendingUp : ins.type === "info" ? Sparkles : Zap,
+        color: ins.type === "success" ? "text-green-600" : ins.type === "info" ? "text-blue-600" : "text-amber-600",
+        bg: ins.type === "success" ? "bg-green-50" : ins.type === "info" ? "bg-blue-50" : "bg-amber-50"
+    })) : [
         {
-            title: "Tăng trưởng ấn tượng",
-            description: "Doanh thu tuần này tăng 15.4% so với tuần trước, chủ yếu nhờ dòng thức ăn hạt.",
-            icon: TrendingUp,
-            color: "text-green-600",
-            bg: "bg-green-50"
-        },
-        {
-            title: "Sản phẩm chủ lực",
-            description: "Dịch vụ Tắm & Spa chiếm 40% tổng số lịch hẹn trong 30 ngày qua.",
-            icon: Sparkles,
-            color: "text-blue-600",
-            bg: "bg-blue-50"
+            title: "Khám phá xu hướng",
+            description: "Bắt đầu kinh doanh để nhận các phân tích thông minh về cửa hàng của bạn.",
+            icon: Lightbulb,
+            color: "text-primary-600",
+            bg: "bg-primary/5"
         }
     ]
 
@@ -164,7 +163,7 @@ export function MerchantAnalytics({ onBack }: { onBack?: () => void }) {
             {/* Smart Insights Banner */}
             {!isLoading && (
                 <div className="grid md:grid-cols-2 gap-4">
-                    {insights.map((insight, i) => (
+                    {insights.map((insight: any, i: number) => (
                         <div key={i} className={`flex items-start gap-4 p-4 rounded-3xl border border-transparent ${insight.bg} transition-all hover:shadow-md cursor-default group`}>
                             <div className={`p-2 rounded-2xl bg-white shadow-sm ${insight.color}`}>
                                 <insight.icon className="w-5 h-5" />
