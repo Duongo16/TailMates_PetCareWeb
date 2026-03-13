@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { useFeatureAccess } from "@/hooks/use-feature-access"
 import { 
   Menu, X, LogOut, User, Users, Bell, ShoppingCart, Package, Crown, Settings, 
-  Calendar, FileText, Info, CheckCheck, Coins, Clock, PawPrint, Newspaper, Lock, ChevronRight 
+  Calendar, FileText, Info, CheckCheck, Coins, Clock, PawPrint, Newspaper, Lock, ChevronRight, ChevronDown 
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -77,6 +77,12 @@ export function DashboardHeader({
   const isSocialActive = pathname === "/social" || pathname.startsWith("/social/")
   const isBlogActive = pathname.startsWith("/blog")
   const currentActiveTab = activeTab || (isSocialActive ? "social" : isBlogActive ? "blog-nav" : "")
+
+  // Check if a child of a group is active
+  const isGroupActive = (tab: TabItem) => {
+    if (!tab.children) return false
+    return tab.children.some(child => currentActiveTab === child.id)
+  }
 
   // Notification helper functions
   const getNotificationIcon = (type: Notification['type']) => {
@@ -155,10 +161,69 @@ export function DashboardHeader({
 
           {/* Center: Desktop Tabs — inline on lg+ */}
           <div className="flex-none hidden lg:block">
-            <nav className="flex items-center gap-0.5 xl:gap-1 bg-secondary/50 p-1 rounded-xl overflow-x-auto max-w-[60vw]">
+            <nav className="flex items-center gap-0.5 xl:gap-1 bg-secondary/50 p-1 rounded-xl">
               {allTabs.map((tab) => {
                 const Icon = tab.icon
-                const isActive = currentActiveTab === tab.id
+                const isActive = currentActiveTab === tab.id || isGroupActive(tab)
+
+                // Grouped tab with hover dropdown
+                if (tab.children) {
+                  return (
+                    <div key={tab.id} className="relative group">
+                      <button
+                        className={cn(
+                          "relative flex items-center gap-1.5 px-2.5 xl:px-4 py-2 rounded-lg text-sm font-medium transition-colors z-10 whitespace-nowrap",
+                          isActive
+                            ? "text-primary-foreground"
+                            : "text-foreground/70 hover:text-foreground",
+                        )}
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeTab"
+                            className="absolute inset-0 bg-primary rounded-lg shadow-sm"
+                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                          />
+                        )}
+                        <div className="relative z-10 flex items-center gap-1.5">
+                          <Icon className="w-4 h-4 flex-shrink-0" />
+                          <span className="hidden xl:inline">{tab.label}</span>
+                          <span className="inline xl:hidden text-xs">{tab.label}</span>
+                          <ChevronDown className="w-3 h-3 opacity-60" />
+                        </div>
+                      </button>
+                      {/* Dropdown */}
+                      <div className="absolute top-full left-0 pt-1 hidden group-hover:block z-50">
+                        <div className="bg-card rounded-xl shadow-lg border border-border py-1 min-w-[160px]">
+                          {tab.children.map((child) => {
+                            const ChildIcon = child.icon
+                            const isChildActive = currentActiveTab === child.id
+                            return (
+                              <button
+                                key={child.id}
+                                onClick={() => handleTabClick(child.id)}
+                                className={cn(
+                                  "w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors",
+                                  isChildActive
+                                    ? "text-primary bg-primary/5"
+                                    : "text-foreground/70 hover:text-foreground hover:bg-secondary",
+                                )}
+                              >
+                                <ChildIcon className="w-4 h-4 flex-shrink-0" />
+                                {child.label}
+                                {child.featureKey && !canAccess(child.featureKey) && (
+                                  <Lock className="w-3 h-3 text-amber-500 opacity-80 ml-auto" />
+                                )}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
+                // Normal tab
                 return (
                   <button
                     key={tab.id}
@@ -376,7 +441,50 @@ export function DashboardHeader({
             <div className="flex items-center gap-0.5 px-3 py-1.5 min-w-max">
               {allTabs.map((tab) => {
                 const Icon = tab.icon
-                const isActive = currentActiveTab === tab.id
+                const isActive = currentActiveTab === tab.id || isGroupActive(tab)
+
+                if (tab.children) {
+                  return (
+                    <div key={tab.id} className="relative group">
+                      <button
+                        className={cn(
+                          "relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap",
+                          isActive
+                            ? "bg-primary text-primary-foreground"
+                            : "text-foreground/70 hover:text-foreground hover:bg-secondary",
+                        )}
+                      >
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span>{tab.label}</span>
+                        <ChevronDown className="w-3 h-3 opacity-60" />
+                      </button>
+                      <div className="absolute top-full left-0 pt-1 hidden group-hover:block z-50">
+                        <div className="bg-card rounded-xl shadow-lg border border-border py-1 min-w-[160px]">
+                          {tab.children.map((child) => {
+                            const ChildIcon = child.icon
+                            const isChildActive = currentActiveTab === child.id
+                            return (
+                              <button
+                                key={child.id}
+                                onClick={() => handleTabClick(child.id)}
+                                className={cn(
+                                  "w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition-colors",
+                                  isChildActive
+                                    ? "text-primary bg-primary/5"
+                                    : "text-foreground/70 hover:text-foreground hover:bg-secondary",
+                                )}
+                              >
+                                <ChildIcon className="w-4 h-4 flex-shrink-0" />
+                                {child.label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
                 return (
                   <button
                     key={tab.id}
@@ -413,7 +521,61 @@ export function DashboardHeader({
               <div className="p-2 space-y-1">
                 {allTabs.map((tab, index) => {
                   const Icon = tab.icon
-                  const isActive = currentActiveTab === tab.id
+                  const isActive = currentActiveTab === tab.id || isGroupActive(tab)
+
+                  if (tab.children) {
+                    return (
+                      <div key={tab.id}>
+                        <motion.div
+                          className={cn(
+                            "flex items-center gap-3 w-full px-4 py-3 rounded-xl font-medium text-foreground/50 text-xs uppercase tracking-wider",
+                          )}
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                        >
+                          <Icon className="w-4 h-4" />
+                          {tab.label}
+                        </motion.div>
+                        {tab.children.map((child, ci) => {
+                          const ChildIcon = child.icon
+                          const isChildActive = currentActiveTab === child.id
+                          return (
+                            <motion.button
+                              key={child.id}
+                              onClick={() => {
+                                handleTabClick(child.id)
+                                setMobileMenuOpen(false)
+                              }}
+                              className={cn(
+                                "relative flex items-center gap-3 w-full pl-8 pr-4 py-2.5 rounded-xl font-medium transition-colors",
+                                isChildActive
+                                  ? "text-primary-foreground"
+                                  : "text-foreground/70 hover:bg-secondary",
+                              )}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: (index + ci) * 0.05 }}
+                            >
+                              {isChildActive && (
+                                <motion.div
+                                  layoutId="activeMobileTab"
+                                  className="absolute inset-0 bg-primary rounded-xl"
+                                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                />
+                              )}
+                              <ChildIcon className="w-4 h-4 relative z-10" />
+                              <span className="relative z-10 text-sm">{child.label}</span>
+                              {child.featureKey && !canAccess(child.featureKey) && (
+                                <Lock className="w-3 h-3 text-amber-500 opacity-80 ml-auto relative z-10" />
+                              )}
+                            </motion.button>
+                          )
+                        })}
+                      </div>
+                    )
+                  }
+
                   return (
                     <motion.button
                       key={tab.id}

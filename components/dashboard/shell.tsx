@@ -34,6 +34,7 @@ interface Tab {
   label: string
   icon: LucideIcon
   featureKey?: FeatureKey
+  children?: Tab[]
 }
 
 interface DashboardShellProps {
@@ -56,7 +57,7 @@ export function DashboardShell({ children, tabs, activeTab, onTabChange }: Dashb
   useEffect(() => {
     const handleSwitchTab = (e: any) => {
       if (e.detail && typeof e.detail === 'string') {
-        const tabExists = tabs.some(t => t.id === e.detail)
+        const tabExists = tabs.some(t => t.id === e.detail || t.children?.some((c: any) => c.id === e.detail))
         if (tabExists) {
           onTabChange(e.detail)
         }

@@ -27,8 +27,11 @@ function CustomerDashboardContent() {
   // Handle tab from URL
   useEffect(() => {
     const tab = searchParams.get("tab") as CustomerTab
-    if (tab && CUSTOMER_TABS.some(t => t.id === tab)) {
-      setActiveTab(tab)
+    if (tab) {
+      const isValidTab = CUSTOMER_TABS.some(t => t.id === tab || t.children?.some(c => c.id === tab))
+      if (isValidTab) {
+        setActiveTab(tab)
+      }
     }
   }, [searchParams])
 

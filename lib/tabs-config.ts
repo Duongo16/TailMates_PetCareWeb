@@ -6,15 +6,18 @@ export interface TabItem {
   label: string
   icon: LucideIcon
   featureKey?: FeatureKey
+  children?: TabItem[] // Sub-tabs for grouped display
 }
 
 export const CUSTOMER_TABS: TabItem[] = [
   { id: "dashboard", label: "Dashboard", icon: Home },
   { id: "pets", label: "Thú cưng", icon: Heart },
   { id: "pawmatch", label: "PawMatch", icon: Sparkles, featureKey: "pawmate_connect" },
-  { id: "marketplace", label: "Cửa hàng", icon: ShoppingBag },
-  { id: "booking", label: "Đặt lịch", icon: Calendar },
-  { id: "medical", label: "Sổ y tế", icon: FileText },
+  { id: "services-group", label: "Dịch vụ", icon: ShoppingBag, children: [
+    { id: "marketplace", label: "Cửa hàng", icon: ShoppingBag },
+    { id: "booking", label: "Đặt lịch", icon: Calendar },
+    { id: "medical", label: "Sổ y tế", icon: FileText },
+  ]},
   { id: "subscription", label: "Nâng cấp", icon: Crown },
 ]
 
