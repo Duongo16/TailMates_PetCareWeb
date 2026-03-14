@@ -223,8 +223,12 @@ export function MerchantOverview({ setActiveTab }: MerchantOverviewProps) {
     const subProgress = Math.min(100, Math.round(((subDurationDays - daysLeft) / subDurationDays) * 100))
 
     // ── KPI numbers ───────────────────────────────────────────
-    const totalRevenue = analytics?.summary?.totalRevenue ?? 0
-    const netIncome = analytics?.summary?.netIncome ?? 0
+    // Fallback: calculate revenue from orders when analytics API is blocked
+    const completedOrders = orders?.filter((o: any) => ["COMPLETED", "DONE"].includes(o.status)) ?? []
+    const ordersRevenue = completedOrders.reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0)
+    const totalRevenue = analytics?.summary?.totalRevenue ?? ordersRevenue
+    const commissionFactor = currentPackage?.commission_rate !== undefined ? (1 - currentPackage.commission_rate) : 0.85
+    const netIncome = analytics?.summary?.netIncome ?? Math.round(ordersRevenue * commissionFactor)
     const totalOrders = orders?.length ?? 0
     const pendingOrders = orders?.filter((o: any) => o.status === "PENDING").length ?? 0
     const tmBalance = (user as any)?.tm_balance ?? 0
@@ -238,21 +242,31 @@ export function MerchantOverview({ setActiveTab }: MerchantOverviewProps) {
 
     // ── Revenue chart data ────────────────────────────────────
     const revenueChartData = useMemo(() => {
-        const commissionFactor = currentPackage?.commission_rate !== undefined ? (1 - currentPackage.commission_rate) : 0.85
+        const cFactor = currentPackage?.commission_rate !== undefined ? (1 - currentPackage.commission_rate) : 0.85
 
         if (analytics?.chartData?.length) {
             return analytics.chartData.map((item: any) => ({
                 name: item.name,
                 revenue: item.revenue,
-                netIncome: item.netIncome ?? Math.round(item.revenue * commissionFactor)
+                netIncome: item.netIncome ?? Math.round(item.revenue * cFactor)
             }))
         }
-        // fallback: last 7 days empty
-        return Array.from({ length: 7 }, (_, i) => {
+        // Fallback: build chart from orders data (last 7 days)
+        const chartDays = Array.from({ length: 7 }, (_, i) => {
             const d = new Date(); d.setDate(d.getDate() - (6 - i))
-            return { name: d.toLocaleDateString("vi-VN", { weekday: "short" }), revenue: 0, netIncome: 0 }
+            const dayStr = d.toLocaleDateString("vi-VN", { weekday: "short" })
+            const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+            const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)
+            const dayRevenue = (completedOrders || [])
+                .filter((o: any) => {
+                    const oDate = new Date(o.created_at)
+                    return oDate >= dayStart && oDate < dayEnd
+                })
+                .reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0)
+            return { name: dayStr, revenue: dayRevenue, netIncome: Math.round(dayRevenue * cFactor) }
         })
-    }, [analytics, currentPackage])
+        return chartDays
+    }, [analytics, currentPackage, completedOrders])
 
     // ── Service performance (Hiệu quả dịch vụ) ─────────────────
     const servicePerformance = useMemo(() => {
