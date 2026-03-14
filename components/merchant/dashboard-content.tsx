@@ -1926,7 +1926,6 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
                     <TableHead className="font-semibold text-muted-foreground w-[100px]">MÃ ĐƠN</TableHead>
                     <TableHead className="font-semibold text-muted-foreground">KHÁCH HÀNG</TableHead>
                     <TableHead className="font-semibold text-muted-foreground">NGÀY ĐẶT</TableHead>
-                    <TableHead className="font-semibold text-muted-foreground text-center">SỐ LƯỢNG</TableHead>
                     <TableHead className="font-semibold text-muted-foreground text-right">TỔNG TIỀN</TableHead>
                     <TableHead className="font-semibold text-muted-foreground text-center">TRẠNG THÁI</TableHead>
                     <TableHead className="font-semibold text-muted-foreground text-right pr-6">THAO TÁC</TableHead>
@@ -1953,9 +1952,6 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
                       <TableCell className="text-muted-foreground py-4">
                         {new Date(order.created_at).toLocaleDateString("vi-VN", { day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </TableCell>
-                      <TableCell className="text-center font-medium text-foreground py-4">
-                        {order.items.length}
-                      </TableCell>
                       <TableCell className="text-right font-bold text-primary py-4">
                         {formatPrice(order.total_amount)}
                       </TableCell>
@@ -1980,7 +1976,7 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
                   ))}
                   {!paginatedOrders?.length && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-10 text-foreground/50">
+                      <TableCell colSpan={6} className="text-center py-10 text-foreground/50">
                         Không có đơn hàng nào
                       </TableCell>
                     </TableRow>
