@@ -118,7 +118,7 @@ export function AdminDashboardContent({ activeTab }: AdminDashboardContentProps)
   const [securityPage, setSecurityPage] = useState(1)
 
   // Fetch data for stats and charts (larger set)
-  const { data: dashboardData, isLoading: isDashboardLoading } = useAdminUsers({ limit: 100 })
+  const { data: dashboardData, isLoading: isDashboardLoading } = useAdminUsers({ limit: 1000 })
   
   // Fetch paginated data for Users tab
   const { data: userData, isLoading: isUsersLoading, refetch: refetchUsers } = useAdminUsers({ 
