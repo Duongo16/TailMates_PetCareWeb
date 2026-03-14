@@ -677,6 +677,14 @@ export const adminAPI = {
       method: "PATCH",
       body: JSON.stringify({ user_id: userId, ...data }),
     }),
+
+  getSettings: () => fetchWithAuth<any>("/admin/settings"),
+
+  updateSettings: (data: { topup_maintenance?: boolean; topup_maintenance_message?: string }) =>
+    fetchWithAuth("/admin/settings", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
 };
 
 // ==================== Banners API ====================

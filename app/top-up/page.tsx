@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, QrCode, CheckCircle2, Copy, Check, MessageSquareText, Target, Zap, Headphones } from "lucide-react";
+import { Loader2, QrCode, CheckCircle2, Copy, Check, MessageSquareText, Target, Zap, Headphones, Wrench } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { paymentAPI } from "@/lib/api";
+import { paymentAPI, adminAPI } from "@/lib/api";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { CUSTOMER_TABS } from "@/lib/customer-constants";
@@ -37,6 +37,9 @@ export default function TopUpPage() {
   const [transaction, setTransaction] = useState<any>(null);
   const [copied, setCopied] = useState(false);
   const [countdown, setCountdown] = useState(5);
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState("");
+  const [isCheckingMaintenance, setIsCheckingMaintenance] = useState(true);
 
   const { status } = usePaymentStatus(transaction?.transaction_id, {
     enabled: !!transaction?.transaction_id,
@@ -65,6 +68,16 @@ export default function TopUpPage() {
       return () => clearInterval(timer);
     }
   }, [status, router, user?.role]);
+
+  // Check maintenance mode
+  useEffect(() => {
+    adminAPI.getSettings().then((res) => {
+      if (res.success && res.data) {
+        setIsMaintenanceMode(res.data.topup_maintenance ?? false);
+        setMaintenanceMessage(res.data.topup_maintenance_message || "Chức năng nạp tiền đang tạm bảo trì. Vui lòng quay lại sau.");
+      }
+    }).finally(() => setIsCheckingMaintenance(false));
+  }, []);
 
   const handleCreateQR = async () => {
     const amount = selectedAmount || parseInt(customAmount);
@@ -131,6 +144,45 @@ export default function TopUpPage() {
           </motion.div>
         </div>
       </div>
+    );
+  }
+
+  // Maintenance mode screen
+  if (isCheckingMaintenance) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-secondary">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (isMaintenanceMode) {
+    const tabs = user.role === "merchant" ? MERCHANT_TABS : CUSTOMER_TABS;
+    return (
+      <DashboardShell tabs={tabs as any} activeTab="" onTabChange={handleTabChange}>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] font-sans px-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="max-w-lg w-full text-center"
+          >
+            <div className="mx-auto w-24 h-24 md:w-32 md:h-32 rounded-[32px] bg-orange-50 border-2 border-orange-100 flex items-center justify-center mb-8">
+              <Wrench className="h-12 w-12 md:h-16 md:w-16 text-orange-400 stroke-[1.5]" />
+            </div>
+            <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-3">Đang bảo trì</h2>
+            <p className="text-sm md:text-base text-slate-500 font-medium mb-8 max-w-md mx-auto leading-relaxed">
+              {maintenanceMessage}
+            </p>
+            <div className="inline-flex items-center gap-2 bg-orange-50 border border-orange-100 px-5 py-2.5 rounded-full">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-400"></span>
+              </span>
+              <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Hệ thống đang cập nhật</span>
+            </div>
+          </motion.div>
+        </div>
+      </DashboardShell>
     );
   }
 

@@ -6,6 +6,7 @@ import Transaction, {
 } from "@/models/Transaction";
 import Package from "@/models/Package";
 import Order from "@/models/Order";
+import SystemSettings from "@/models/SystemSettings";
 import { authenticate, apiResponse } from "@/lib/auth";
 import mongoose from "mongoose";
 import {
@@ -34,6 +35,17 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { type, reference_id, amount } = body;
+
+    // Check maintenance mode for TOP_UP
+    if (type === "TOP_UP") {
+      const settings = await SystemSettings.findOne({ key: "system_settings" });
+      if (settings?.topup_maintenance) {
+        return apiResponse.error(
+          settings.topup_maintenance_message || "Chức năng nạp tiền đang tạm bảo trì. Vui lòng quay lại sau.",
+          503
+        );
+      }
+    }
 
     // Validate type
     if (!type || !Object.values(TransactionType).includes(type)) {

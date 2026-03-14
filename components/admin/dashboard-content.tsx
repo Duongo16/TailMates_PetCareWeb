@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useAdminUsers, useManagerStats } from "@/lib/hooks"
 import { adminAPI } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -29,6 +29,7 @@ import {
   HardDrive,
   RefreshCw,
   AlertTriangle,
+  Wallet,
   Eye,
   UserCheck,
   UserX,
@@ -112,6 +113,8 @@ export function AdminDashboardContent({ activeTab }: AdminDashboardContentProps)
   const [searchTerm, setSearchTerm] = useState("")
   const [maintenanceMode, setMaintenanceMode] = useState(false)
   const [registrationOpen, setRegistrationOpen] = useState(true)
+  const [topupMaintenance, setTopupMaintenance] = useState(false)
+  const [topupMaintenanceLoading, setTopupMaintenanceLoading] = useState(false)
   const [roleFilter, setRoleFilter] = useState("ALL")
   const [selectedUser, setSelectedUser] = useState<any | null>(null)
   const [userPage, setUserPage] = useState(1)
@@ -144,6 +147,31 @@ export function AdminDashboardContent({ activeTab }: AdminDashboardContentProps)
 
   const activityUsers = securityData?.users || []
   const securityPagination = securityData?.pagination || { page: 1, pages: 1 }
+
+  // Fetch system settings on mount
+  useEffect(() => {
+    adminAPI.getSettings().then((res) => {
+      if (res.success && res.data) {
+        setTopupMaintenance(res.data.topup_maintenance ?? false)
+      }
+    })
+  }, [])
+
+  const handleToggleTopupMaintenance = useCallback(async (checked: boolean) => {
+    setTopupMaintenanceLoading(true)
+    try {
+      const res = await adminAPI.updateSettings({ topup_maintenance: checked })
+      if (res.success) {
+        setTopupMaintenance(checked)
+      } else {
+        alert(res.message || "Lỗi cập nhật cài đặt")
+      }
+    } catch {
+      alert("Lỗi kết nối server")
+    } finally {
+      setTopupMaintenanceLoading(false)
+    }
+  }, [])
 
   // Reset page when filters change
   useEffect(() => {
@@ -619,6 +647,22 @@ export function AdminDashboardContent({ activeTab }: AdminDashboardContentProps)
               </div>
               <Switch checked={registrationOpen} onCheckedChange={setRegistrationOpen} />
             </div>
+            <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 transition-all hover:bg-secondary/70">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                  <Wallet className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">Bảo trì nạp tiền</p>
+                  <p className="text-sm text-foreground/60">Tạm dừng chức năng nạp tiền TM</p>
+                </div>
+              </div>
+              <Switch
+                checked={topupMaintenance}
+                onCheckedChange={handleToggleTopupMaintenance}
+                disabled={topupMaintenanceLoading}
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -991,6 +1035,17 @@ export function AdminDashboardContent({ activeTab }: AdminDashboardContentProps)
                   <p className="text-sm text-foreground/60">Mở/đóng đăng ký tài khoản</p>
                 </div>
                 <Switch checked={registrationOpen} onCheckedChange={setRegistrationOpen} />
+              </div>
+              <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50">
+                <div>
+                  <p className="font-medium text-foreground">Bảo trì nạp tiền</p>
+                  <p className="text-sm text-foreground/60">Tạm dừng chức năng nạp tiền TM</p>
+                </div>
+                <Switch
+                  checked={topupMaintenance}
+                  onCheckedChange={handleToggleTopupMaintenance}
+                  disabled={topupMaintenanceLoading}
+                />
               </div>
             </CardContent>
           </Card>

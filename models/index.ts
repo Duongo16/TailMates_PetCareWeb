@@ -73,3 +73,6 @@ export type { IReaction } from "./Reaction";
 
 export { default as Friendship, FriendshipStatus } from "./Friendship";
 export type { IFriendship } from "./Friendship";
+
+export { default as SystemSettings } from "./SystemSettings";
+export type { ISystemSettings } from "./SystemSettings";
