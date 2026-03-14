@@ -1,0 +1,1682 @@
+[
+  {
+    "email": "khoatmhs196839@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Trần Minh Khoa",
+    "phone_number": "0987854386",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-22T01:41:13.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-26T08:41:13.000Z"
+    },
+    "refresh_token_version": 14,
+    "tm_balance": 142057,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "huonglthe200568@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Lê Thị Hương",
+    "phone_number": "0887230043",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-02-22T08:40:37.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-24T05:40:37.000Z"
+    },
+    "refresh_token_version": 24,
+    "tm_balance": 917142,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "anhpdhs171727@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Phạm Đức Anh",
+    "phone_number": "0866634830",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-02-22T05:51:12.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-22T08:51:12.000Z"
+    },
+    "refresh_token_version": 25,
+    "tm_balance": 199942,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "mainths198902@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Nguyễn Thị Mai",
+    "phone_number": "0971085790",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-22T02:01:40.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-22T08:01:40.000Z"
+    },
+    "refresh_token_version": 22,
+    "tm_balance": 817360,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "longvhhe198709@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Võ Hoàng Long",
+    "phone_number": "0987587797",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-02-22T12:23:42.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-25T02:23:42.000Z"
+    },
+    "refresh_token_version": 27,
+    "tm_balance": 186162,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "hungdvhs214250@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Đặng Văn Hùng",
+    "phone_number": "0869949262",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-02-23T09:23:17.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-26T03:23:17.000Z"
+    },
+    "refresh_token_version": 9,
+    "tm_balance": 701987,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "lanbthe172110@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Bùi Thị Lan",
+    "phone_number": "0869841833",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-02-23T01:58:44.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-27T04:58:44.000Z"
+    },
+    "refresh_token_version": 1,
+    "tm_balance": 820542,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "tuanhqhs206929@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Hoàng Quốc Tuấn",
+    "phone_number": "0903756838",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-23T02:10:03.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-23T10:10:03.000Z"
+    },
+    "refresh_token_version": 20,
+    "tm_balance": 313319,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "ngocpths202730@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Phan Thị Ngọc",
+    "phone_number": "0923244741",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-02-23T10:45:45.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-26T12:45:45.000Z"
+    },
+    "refresh_token_version": 8,
+    "tm_balance": 447692,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "phucvdhe200496@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Vũ Đình Phúc",
+    "phone_number": "0985557464",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-23T06:05:11.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-25T02:05:11.000Z"
+    },
+    "refresh_token_version": 9,
+    "tm_balance": 495595,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "namntha179629@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Ngô Tùng Nam",
+    "phone_number": "0907946986",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-24T01:58:49.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-28T13:58:49.000Z"
+    },
+    "refresh_token_version": 24,
+    "tm_balance": 564735,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "thaotthe177348@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Trịnh Thị Thảo",
+    "phone_number": "0924239708",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-02-24T01:22:05.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-27T07:22:05.000Z"
+    },
+    "refresh_token_version": 1,
+    "tm_balance": 472844,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "quandmhe212856@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Đỗ Minh Quân",
+    "phone_number": "0984735866",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-02-24T04:13:08.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-24T05:13:08.000Z"
+    },
+    "refresh_token_version": 20,
+    "tm_balance": 229776,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "trangltha177779@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Lý Thị Trang",
+    "phone_number": "0981790639",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-02-24T12:21:47.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-24T09:21:47.000Z"
+    },
+    "refresh_token_version": 1,
+    "tm_balance": 915650,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "binhdvhs217139@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Dương Văn Bình",
+    "phone_number": "0944108245",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-02-24T09:52:28.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-25T08:52:28.000Z"
+    },
+    "refresh_token_version": 15,
+    "tm_balance": 623473,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "yenhths210453@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Hồ Thị Yến",
+    "phone_number": "0981437168",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-25T00:50:08.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-01T13:50:08.000Z"
+    },
+    "refresh_token_version": 21,
+    "tm_balance": 151684,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "trungldhs181770@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Lương Đức Trung",
+    "phone_number": "0862948283",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-25T12:10:52.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-25T02:10:52.000Z"
+    },
+    "refresh_token_version": 14,
+    "tm_balance": 197412,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "hamtha173619@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Mai Thị Hà",
+    "phone_number": "0949495068",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-25T13:55:55.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-27T05:55:55.000Z"
+    },
+    "refresh_token_version": 4,
+    "tm_balance": 743536,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "hieutqhe184445@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Tạ Quang Hiếu",
+    "phone_number": "0935495450",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-25T10:23:11.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-25T13:23:11.000Z"
+    },
+    "refresh_token_version": 6,
+    "tm_balance": 944613,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "linhdths211910@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Đinh Thị Linh",
+    "phone_number": "0944254944",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-25T09:56:48.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-27T10:56:48.000Z"
+    },
+    "refresh_token_version": 11,
+    "tm_balance": 118221,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "dattvhe195129@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Trần Văn Đạt",
+    "phone_number": "0970807658",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-26T13:22:27.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-26T09:22:27.000Z"
+    },
+    "refresh_token_version": 13,
+    "tm_balance": 845626,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "phuongnthe171327@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Nguyễn Thị Phương",
+    "phone_number": "0883133469",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-02-26T10:52:37.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-28T09:52:37.000Z"
+    },
+    "refresh_token_version": 2,
+    "tm_balance": 310942,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "duylhhs185979@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Lê Hoàng Duy",
+    "phone_number": "0882535245",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-02-26T01:04:22.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-02T05:04:22.000Z"
+    },
+    "refresh_token_version": 20,
+    "tm_balance": 261298,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "oanhpthe180479@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Phạm Thị Oanh",
+    "phone_number": "0938542993",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-02-26T12:17:16.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-02T00:17:16.000Z"
+    },
+    "refresh_token_version": 29,
+    "tm_balance": 815260,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "tamvmhs196292@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Võ Minh Tâm",
+    "phone_number": "0944508499",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-02-26T00:30:50.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-26T08:30:50.000Z"
+    },
+    "refresh_token_version": 17,
+    "tm_balance": 246099,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "cucdtha210200@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Đặng Thị Cúc",
+    "phone_number": "0867620989",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-02-27T07:02:41.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-02T07:02:41.000Z"
+    },
+    "refresh_token_version": 21,
+    "tm_balance": 316166,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "khanhbqhe201619@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Bùi Quốc Khánh",
+    "phone_number": "0885155259",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-02-27T08:59:41.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-03T11:59:41.000Z"
+    },
+    "refresh_token_version": 9,
+    "tm_balance": 625488,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "nhunghtha207252@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Hoàng Thị Nhung",
+    "phone_number": "0930688132",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-27T00:56:36.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-27T06:56:36.000Z"
+    },
+    "refresh_token_version": 2,
+    "tm_balance": 668757,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "thinhpdhs175683@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Phan Đức Thịnh",
+    "phone_number": "0942030509",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-02-27T01:05:37.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-01T01:05:37.000Z"
+    },
+    "refresh_token_version": 17,
+    "tm_balance": 413509,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "hanhvthe197203@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Vũ Thị Hạnh",
+    "phone_number": "0980887802",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-27T12:24:49.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-03T03:24:49.000Z"
+    },
+    "refresh_token_version": 4,
+    "tm_balance": 992589,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "sonnvha197611@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Ngô Văn Sơn",
+    "phone_number": "0988934286",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-02-28T03:01:17.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-28T13:01:17.000Z"
+    },
+    "refresh_token_version": 25,
+    "tm_balance": 339746,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "vantthe190335@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Trịnh Thị Vân",
+    "phone_number": "0974683044",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-02-28T10:11:11.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-03T09:11:11.000Z"
+    },
+    "refresh_token_version": 17,
+    "tm_balance": 358177,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "lamdhha217454@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Đỗ Hoàng Lâm",
+    "phone_number": "0940012601",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-02-28T10:28:51.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-04T06:28:51.000Z"
+    },
+    "refresh_token_version": 15,
+    "tm_balance": 340980,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "trildhe175523@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Lý Đình Trí",
+    "phone_number": "0908153855",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-02-28T13:50:01.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-28T02:50:01.000Z"
+    },
+    "refresh_token_version": 8,
+    "tm_balance": 362287,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "anhdths191259@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Dương Thị Ánh",
+    "phone_number": "0865192099",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-02-28T08:17:17.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-02-28T12:17:17.000Z"
+    },
+    "refresh_token_version": 30,
+    "tm_balance": 529470,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "chauhmha200361@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Hồ Minh Châu",
+    "phone_number": "0976716033",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-01T05:30:49.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-03T02:30:49.000Z"
+    },
+    "refresh_token_version": 25,
+    "tm_balance": 214777,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "ngaltha173885@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Lương Thị Nga",
+    "phone_number": "0989837692",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-01T13:06:46.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-01T00:06:46.000Z"
+    },
+    "refresh_token_version": 10,
+    "tm_balance": 657417,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "kienmvhs217352@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Mai Văn Kiên",
+    "phone_number": "0925651279",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-01T04:12:37.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-05T05:12:37.000Z"
+    },
+    "refresh_token_version": 10,
+    "tm_balance": 933772,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "dieutths178888@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Tạ Thị Diệu",
+    "phone_number": "0975440074",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-03-01T09:08:07.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-02T11:08:07.000Z"
+    },
+    "refresh_token_version": 12,
+    "tm_balance": 305858,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "vinhdqhe197297@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Đinh Quang Vinh",
+    "phone_number": "0886711830",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-01T06:28:06.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-03T05:28:06.000Z"
+    },
+    "refresh_token_version": 13,
+    "tm_balance": 750571,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "thanhttha217559@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Trần Thị Thanh",
+    "phone_number": "0987967804",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-02T00:06:23.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-06T09:06:23.000Z"
+    },
+    "refresh_token_version": 18,
+    "tm_balance": 443437,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "haindhs212364@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Nguyễn Đức Hải",
+    "phone_number": "0971260075",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-02T10:33:58.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-04T04:33:58.000Z"
+    },
+    "refresh_token_version": 9,
+    "tm_balance": 403284,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "thultha175754@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Lê Thị Thu",
+    "phone_number": "0947252505",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-02T10:22:16.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-05T13:22:16.000Z"
+    },
+    "refresh_token_version": 13,
+    "tm_balance": 934674,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "minhphhe183008@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Phạm Hoàng Minh",
+    "phone_number": "0973573429",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-02T07:52:04.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-04T00:52:04.000Z"
+    },
+    "refresh_token_version": 17,
+    "tm_balance": 563142,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "giangvtha181246@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Võ Thị Giang",
+    "phone_number": "0863223527",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-03-02T10:12:59.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-04T01:12:59.000Z"
+    },
+    "refresh_token_version": 26,
+    "tm_balance": 235943,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "khoidmha178619@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Đặng Minh Khôi",
+    "phone_number": "0861157568",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-03T05:49:32.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-05T02:49:32.000Z"
+    },
+    "refresh_token_version": 15,
+    "tm_balance": 516007,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "xuanbtha191458@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Bùi Thị Xuân",
+    "phone_number": "0862837288",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-03T01:34:24.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-04T05:34:24.000Z"
+    },
+    "refresh_token_version": 1,
+    "tm_balance": 213114,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "tunghvhs195526@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Hoàng Văn Tùng",
+    "phone_number": "0931022283",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-03T11:27:12.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-05T03:27:12.000Z"
+    },
+    "refresh_token_version": 13,
+    "tm_balance": 237971,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "lypthe180454@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Phan Thị Ly",
+    "phone_number": "0962528534",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-03-03T10:30:27.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-07T02:30:27.000Z"
+    },
+    "refresh_token_version": 6,
+    "tm_balance": 467817,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "baovqha208798@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Vũ Quốc Bảo",
+    "phone_number": "0886854617",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-03T11:31:53.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-04T07:31:53.000Z"
+    },
+    "refresh_token_version": 4,
+    "tm_balance": 672243,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "hiennths171849@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Ngô Thị Hiền",
+    "phone_number": "0933758522",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-04T13:36:23.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-06T03:36:23.000Z"
+    },
+    "refresh_token_version": 3,
+    "tm_balance": 829142,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "manhtdha175282@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Trịnh Đức Mạnh",
+    "phone_number": "0948905885",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-04T00:15:17.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-06T07:15:17.000Z"
+    },
+    "refresh_token_version": 25,
+    "tm_balance": 898102,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "nhidths200631@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Đỗ Thị Nhi",
+    "phone_number": "0887339489",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-04T05:47:06.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-06T07:47:06.000Z"
+    },
+    "refresh_token_version": 2,
+    "tm_balance": 424242,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "tailvha184450@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Lý Văn Tài",
+    "phone_number": "0920671924",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-04T05:36:38.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-06T10:36:38.000Z"
+    },
+    "refresh_token_version": 16,
+    "tm_balance": 166590,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "kimdths199209@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Dương Thị Kim",
+    "phone_number": "0965779490",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-04T04:23:52.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-06T03:23:52.000Z"
+    },
+    "refresh_token_version": 1,
+    "tm_balance": 979538,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "phonghhhe210218@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Hồ Hoàng Phong",
+    "phone_number": "0970638508",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-05T05:18:56.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-05T10:18:56.000Z"
+    },
+    "refresh_token_version": 17,
+    "tm_balance": 357310,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "quyenltha206926@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Lương Thị Quyên",
+    "phone_number": "0983415688",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-03-05T08:02:27.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-06T10:02:27.000Z"
+    },
+    "refresh_token_version": 1,
+    "tm_balance": 239159,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "toanmdhs186640@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Mai Đức Toàn",
+    "phone_number": "0947968773",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-05T05:54:13.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-07T08:54:13.000Z"
+    },
+    "refresh_token_version": 26,
+    "tm_balance": 453661,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "hoatths209974@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Tạ Thị Hoa",
+    "phone_number": "0965351402",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-05T13:31:57.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-08T12:31:57.000Z"
+    },
+    "refresh_token_version": 17,
+    "tm_balance": 963972,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "nghiadvhe196312@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Đinh Văn Nghĩa",
+    "phone_number": "0940853355",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-03-05T02:54:48.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-08T07:54:48.000Z"
+    },
+    "refresh_token_version": 30,
+    "tm_balance": 895513,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "dungtqha205023@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Trần Quốc Dũng",
+    "phone_number": "0885107380",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-03-06T03:47:53.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-07T09:47:53.000Z"
+    },
+    "refresh_token_version": 26,
+    "tm_balance": 407295,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "bichnthe189016@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Nguyễn Thị Bích",
+    "phone_number": "0926051258",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-06T09:46:52.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-06T08:46:52.000Z"
+    },
+    "refresh_token_version": 18,
+    "tm_balance": 567633,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "nhatlmhe184012@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Lê Minh Nhật",
+    "phone_number": "0965980014",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-03-06T09:05:38.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-10T11:05:38.000Z"
+    },
+    "refresh_token_version": 17,
+    "tm_balance": 933913,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "huyenptha199587@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Phạm Thị Huyền",
+    "phone_number": "0968552655",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-06T03:25:37.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-09T08:25:37.000Z"
+    },
+    "refresh_token_version": 25,
+    "tm_balance": 242606,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "hoavdhs217495@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Võ Đình Hoà",
+    "phone_number": "0916023805",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-03-06T12:28:25.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-09T01:28:25.000Z"
+    },
+    "refresh_token_version": 17,
+    "tm_balance": 199306,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "sendths193022@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Đặng Thị Sen",
+    "phone_number": "0938034156",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-07T03:17:55.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-11T04:17:55.000Z"
+    },
+    "refresh_token_version": 27,
+    "tm_balance": 416691,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "locbvha201441@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Bùi Văn Lộc",
+    "phone_number": "0969672310",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-07T08:02:49.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-10T03:02:49.000Z"
+    },
+    "refresh_token_version": 19,
+    "tm_balance": 886692,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "dunghtha205222@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Hoàng Thị Dung",
+    "phone_number": "0987884004",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-07T08:04:46.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-08T01:04:46.000Z"
+    },
+    "refresh_token_version": 28,
+    "tm_balance": 407795,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "quangpmha176274@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Phan Minh Quang",
+    "phone_number": "0938607444",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-07T09:46:03.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-10T06:46:03.000Z"
+    },
+    "refresh_token_version": 30,
+    "tm_balance": 478185,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "tuyetvtha177190@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Vũ Thị Tuyết",
+    "phone_number": "0917312927",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-07T10:23:59.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-08T13:23:59.000Z"
+    },
+    "refresh_token_version": 19,
+    "tm_balance": 864003,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "cuongndhs183112@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Ngô Đức Cường",
+    "phone_number": "0984792828",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-03-08T13:17:39.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-09T06:17:39.000Z"
+    },
+    "refresh_token_version": 17,
+    "tm_balance": 535010,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "tramttha184647@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Trịnh Thị Trâm",
+    "phone_number": "0944785390",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-03-08T02:05:14.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-09T04:05:14.000Z"
+    },
+    "refresh_token_version": 20,
+    "tm_balance": 642341,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "khaidvhs189416@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Đỗ Văn Khải",
+    "phone_number": "0964454538",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 1,
+    "created_at": {
+      "$date": "2026-03-08T03:34:49.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-10T05:34:49.000Z"
+    },
+    "refresh_token_version": 12,
+    "tm_balance": 100572,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "uyenlths208541@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Lý Thị Uyên",
+    "phone_number": "0988762056",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-08T13:52:51.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-09T13:52:51.000Z"
+    },
+    "refresh_token_version": 11,
+    "tm_balance": 853559,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "thiendhhe170614@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Dương Hoàng Thiện",
+    "phone_number": "0944784112",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-08T12:43:10.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-09T11:43:10.000Z"
+    },
+    "refresh_token_version": 9,
+    "tm_balance": 740630,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "thanghvha196744@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Hồ Văn Thắng",
+    "phone_number": "0940420517",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-09T01:04:21.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-13T06:04:21.000Z"
+    },
+    "refresh_token_version": 17,
+    "tm_balance": 352859,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "phuonglthe181159@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Lương Thị Phượng",
+    "phone_number": "0963277328",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-09T13:07:13.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-10T03:07:13.000Z"
+    },
+    "refresh_token_version": 27,
+    "tm_balance": 311378,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "anmqhe176755@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Mai Quốc An",
+    "phone_number": "0976765523",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-09T10:29:04.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-13T01:29:04.000Z"
+    },
+    "refresh_token_version": 23,
+    "tm_balance": 989892,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "hungtdha203492@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Tạ Đức Hưng",
+    "phone_number": "0882502328",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 0,
+    "created_at": {
+      "$date": "2026-03-09T01:28:08.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-11T07:28:08.000Z"
+    },
+    "refresh_token_version": 19,
+    "tm_balance": 695999,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  },
+  {
+    "email": "ngandths197080@fpt.edu.vn",
+    "password": "$2b$10$C/hjaBQxpd2sKcOPRYXzLOlZOc3CbqljeXQVup3c1XGVaYGc1Utmq",
+    "full_name": "Đinh Thị Ngân",
+    "phone_number": "0864018515",
+    "role": "CUSTOMER",
+    "avatar": {},
+    "is_active": true,
+    "merchant_profile": {},
+    "__v": 2,
+    "created_at": {
+      "$date": "2026-03-09T13:02:04.000Z"
+    },
+    "updated_at": {
+      "$date": "2026-03-11T00:02:04.000Z"
+    },
+    "refresh_token_version": 25,
+    "tm_balance": 668127,
+    "auth_provider": "EMAIL",
+    "is_email_verified": false
+  }
+]
