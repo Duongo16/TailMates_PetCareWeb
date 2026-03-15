@@ -153,3 +153,129 @@ export async function verifyEmailConnection(): Promise<boolean> {
     return false;
   }
 }
+
+// ==================== Password Reset Email ====================
+
+/**
+ * Generate HTML email template for password reset OTP
+ */
+function generatePasswordResetOTPEmailHTML(otp: string, fullName?: string): string {
+  const greeting = fullName ? `Xin chào ${fullName}` : "Xin chào";
+  
+  return `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đặt lại mật khẩu TailMates</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; max-width: 100%; border-collapse: collapse; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <!-- Header Content -->
+          <tr>
+            <td style="padding: 30px 40px 20px; text-align: center; border-bottom: 2px solid #f0f0f0;">
+              <h1 style="margin: 0; color: #004aad; font-size: 28px; font-weight: bold;">
+                🐾 TailMates
+              </h1>
+              <p style="margin: 10px 0 0; color: #666666; font-size: 14px;">
+                Nền tảng chăm sóc thú cưng toàn diện
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="margin: 0 0 20px; color: #333333; font-size: 24px; font-weight: 600;">
+                ${greeting}! 🔒
+              </h2>
+              
+              <p style="margin: 0 0 30px; color: #666666; font-size: 16px; line-height: 1.6;">
+                Bạn đã yêu cầu đặt lại mật khẩu tài khoản TailMates. Vui lòng sử dụng mã OTP bên dưới để xác nhận:
+              </p>
+              
+              <!-- OTP Box -->
+              <div style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); border-radius: 12px; padding: 30px; text-align: center; margin: 0 0 30px; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);">
+                <p style="margin: 0 0 10px; color: rgba(255, 255, 255, 0.8); font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">
+                  Mã xác thực đặt lại mật khẩu
+                </p>
+                <div style="font-size: 42px; font-weight: bold; color: #ffffff; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                  ${otp}
+                </div>
+              </div>
+              
+              <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px 20px; border-radius: 0 8px 8px 0; margin: 0 0 30px;">
+                <p style="margin: 0; color: #991b1b; font-size: 14px;">
+                  ⚠️ <strong>Lưu ý:</strong> Mã này sẽ hết hạn sau <strong>5 phút</strong>. Không chia sẻ mã này với bất kỳ ai.
+                </p>
+              </div>
+              
+              <p style="margin: 0; color: #666666; font-size: 14px; line-height: 1.6;">
+                Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này. Mật khẩu của bạn sẽ không thay đổi.
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px 40px; background-color: #f8f9fa; border-radius: 0 0 16px 16px; text-align: center;">
+              <p style="margin: 0 0 10px; color: #999999; font-size: 12px;">
+                © 2026 TailMates. All rights reserved.
+              </p>
+              <p style="margin: 0; color: #999999; font-size: 12px;">
+                Đây là email tự động, vui lòng không trả lời email này.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Send password reset OTP email
+ */
+export async function sendPasswordResetOTPEmail(
+  email: string,
+  otp: string,
+  fullName?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.warn("SMTP not configured. Password Reset OTP:", otp);
+      if (process.env.NODE_ENV === "development") {
+        console.log(`[DEV] Password Reset OTP for ${email}: ${otp}`);
+        return { success: true };
+      }
+      return { success: false, error: "Email service not configured" };
+    }
+
+    const mailOptions = {
+      from: `"TailMates" <${process.env.SMTP_USER}>`,
+      to: email,
+      subject: `[TailMates] Đặt lại mật khẩu - Mã xác thực: ${otp}`,
+      html: generatePasswordResetOTPEmailHTML(otp, fullName),
+      text: `Mã xác thực đặt lại mật khẩu TailMates của bạn là: ${otp}. Mã này sẽ hết hạn sau 5 phút.`,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Password reset OTP email sent to ${email}`);
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send password reset OTP email:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to send email" 
+    };
+  }
+}
+

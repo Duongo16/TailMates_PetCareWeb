@@ -111,6 +111,7 @@ export const REDIS_KEYS = {
   OTP_RATE_LIMIT: (email: string) => `otp_rate:${email.toLowerCase()}`,
   OTP_ATTEMPTS: (email: string) => `otp_attempts:${email.toLowerCase()}`,
   PENDING_REGISTRATION: (email: string) => `pending_reg:${email.toLowerCase()}`,
+  PASSWORD_RESET: (email: string) => `pwd_reset:${email.toLowerCase()}`,
 };
 
 /**
@@ -121,6 +122,7 @@ export const REDIS_TTL = {
   OTP_RATE_LIMIT: 60, // 60 seconds between OTP requests
   OTP_ATTEMPTS: 60 * 60, // 1 hour for max attempts tracking
   PENDING_REGISTRATION: 10 * 60, // 10 minutes for pending registration data
+  PASSWORD_RESET: 10 * 60, // 10 minutes for pending password reset
 };
 
 /**

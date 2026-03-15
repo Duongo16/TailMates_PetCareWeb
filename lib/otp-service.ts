@@ -151,3 +151,38 @@ export async function clearOTPData(email: string): Promise<void> {
   await redis.del(REDIS_KEYS.OTP_RATE_LIMIT(email));
   await redis.del(REDIS_KEYS.OTP_ATTEMPTS(email));
 }
+
+// ==================== Password Reset ====================
+
+/**
+ * Store pending password reset data in Redis
+ */
+export async function storePendingPasswordReset(
+  email: string,
+  data: { new_password_hash: string }
+): Promise<void> {
+  const redis = getRedisClient();
+  const key = REDIS_KEYS.PASSWORD_RESET(email);
+  await redis.setex(key, REDIS_TTL.PASSWORD_RESET, JSON.stringify(data));
+}
+
+/**
+ * Get pending password reset data from Redis
+ */
+export async function getPendingPasswordReset(
+  email: string
+): Promise<{ new_password_hash: string } | null> {
+  const redis = getRedisClient();
+  const key = REDIS_KEYS.PASSWORD_RESET(email);
+  const data = await redis.get(key);
+  if (!data) return null;
+  return JSON.parse(data);
+}
+
+/**
+ * Delete pending password reset data
+ */
+export async function deletePendingPasswordReset(email: string): Promise<void> {
+  const redis = getRedisClient();
+  await redis.del(REDIS_KEYS.PASSWORD_RESET(email));
+}

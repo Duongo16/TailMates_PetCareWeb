@@ -121,9 +121,9 @@ export default function LoginPage() {
                       <Label htmlFor="password" className="text-foreground font-medium">
                         Mật khẩu
                       </Label>
-                      <a href="#" className="text-sm text-primary hover:underline">
+                      <Link href="/forgot-password" className="text-sm text-primary hover:underline">
                         Quên mật khẩu?
-                      </a>
+                      </Link>
                     </div>
                     <div className="relative">
                       <Input

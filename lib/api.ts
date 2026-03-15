@@ -245,6 +245,34 @@ export const authAPI = {
     return response.json();
   },
 
+  // Forgot Password
+  forgotPasswordSendOtp: async (email: string) => {
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password/send-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    return response.json();
+  },
+
+  forgotPasswordVerifyOtp: async (email: string, otp: string) => {
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password/verify-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, otp }),
+    });
+    return response.json();
+  },
+
+  forgotPasswordReset: async (email: string, newPassword: string) => {
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password/reset`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, new_password: newPassword }),
+    });
+    return response.json();
+  },
+
   getMe: () => fetchWithAuth("/users/me"),
 
   updateProfile: (data: Record<string, unknown>) =>
