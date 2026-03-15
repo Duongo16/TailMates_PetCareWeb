@@ -397,19 +397,21 @@ export function useNotifications() {
 // ==================== Infinite Scroll Hook ====================
 export function useInView({ onInView }: { onInView: () => void }) {
   const ref = useRef<HTMLDivElement | null>(null)
+  const onInViewRef = useRef(onInView)
+  onInViewRef.current = onInView
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) onInView()
+        if (entry.isIntersecting) onInViewRef.current()
       },
       { threshold: 0.1 }
     )
     observer.observe(el)
     return () => observer.disconnect()
-  }, [onInView])
+  }, [])
 
   return { ref }
 }
@@ -422,6 +424,7 @@ export function useSocialFeed(userId?: string) {
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [cursor, setCursor] = useState<string | null>(null)
+  const isFetchingRef = useRef(false)
 
   const fetchInitial = useCallback(async () => {
     setIsLoading(true)
@@ -444,7 +447,8 @@ export function useSocialFeed(userId?: string) {
   }, [userId])
 
   const fetchMore = useCallback(async () => {
-    if (!hasMore || !cursor || isFetchingMore) return
+    if (!hasMore || !cursor || isFetchingRef.current) return
+    isFetchingRef.current = true
     setIsFetchingMore(true)
     try {
       const { socialAPI } = await import("@/lib/api")
@@ -457,9 +461,10 @@ export function useSocialFeed(userId?: string) {
     } catch (err) {
       /* silent */
     } finally {
+      isFetchingRef.current = false
       setIsFetchingMore(false)
     }
-  }, [hasMore, cursor, isFetchingMore, userId])
+  }, [hasMore, cursor, userId])
 
   useEffect(() => {
     fetchInitial()
