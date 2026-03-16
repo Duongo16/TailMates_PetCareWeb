@@ -16,6 +16,8 @@ import {
     ThumbsUp,
     ChevronRight,
     ArrowRight,
+    Sparkles,
+    BookOpen,
 } from "lucide-react";
 import { SiteHeader } from "@/components/site-header";
 import { BlogCarousel3D } from "@/components/blog/blog-carousel-3d";
@@ -110,28 +112,60 @@ export default function BlogPage() {
             {/* Site Header */}
             <SiteHeader showBlogLink={true} />
 
-            {/* Hero Section */}
-            {/* 3D Carousel Hero Section */}
-            <section className="relative bg-gradient-to-br from-primary/5 via-primary/10 to-transparent overflow-hidden">
-                {/* Decorative elements */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-orange-200 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+            {/* Hero Section - Vibrant 3D */}
+            <section className="relative bg-gradient-to-br from-primary/5 via-orange-50/80 to-pink-50/50 dark:from-primary/10 dark:via-gray-900/50 dark:to-gray-950 overflow-hidden">
+                {/* Animated floating orbs */}
+                <div className="absolute top-10 right-[15%] w-72 h-72 bg-gradient-to-br from-primary/25 to-orange-400/20 rounded-full blur-[100px] animate-pulse pointer-events-none" />
+                <div className="absolute top-[60%] left-[5%] w-56 h-56 bg-gradient-to-br from-blue-400/15 to-purple-400/15 rounded-full blur-[80px] animate-pulse pointer-events-none" style={{ animationDelay: "1.5s" }} />
+                <div className="absolute bottom-0 right-[30%] w-40 h-40 bg-gradient-to-br from-pink-400/20 to-orange-300/15 rounded-full blur-[60px] animate-pulse pointer-events-none" style={{ animationDelay: "3s" }} />
 
-                <div className="container mx-auto px-4 relative z-10 pt-12 pb-4">
-                    <div className="text-center max-w-2xl mx-auto mb-8">
-                        <h1 className="text-4xl md:text-5xl font-bold font-heading mb-4 leading-tight">
-                            Góc chia sẻ <span className="text-primary">Kiến thức</span>
+                {/* Top decorative pattern */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+
+                <div className="container mx-auto px-4 relative z-10 pt-14 pb-6">
+                    {/* Title area */}
+                    <div className="text-center max-w-3xl mx-auto mb-10">
+                        {/* Small label */}
+                        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest mb-5 border border-primary/20">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Cộng đồng TailMates
+                        </div>
+
+                        <h1 className="text-4xl md:text-6xl font-black font-heading mb-5 leading-tight">
+                            Góc chia sẻ{" "}
+                            <span className="relative inline-block">
+                                <span className="bg-gradient-to-r from-primary via-orange-500 to-pink-500 bg-clip-text text-transparent">
+                                    Kiến thức
+                                </span>
+                                {/* Underline decoration */}
+                                <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M2 8C40 2 80 2 100 6C120 10 160 4 198 4" stroke="url(#underline-gradient)" strokeWidth="4" strokeLinecap="round" />
+                                    <defs>
+                                        <linearGradient id="underline-gradient" x1="0" y1="0" x2="200" y2="0" gradientUnits="userSpaceOnUse">
+                                            <stop stopColor="#F15A29" />
+                                            <stop offset="0.5" stopColor="#F97316" />
+                                            <stop offset="1" stopColor="#EC4899" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                            </span>
                         </h1>
-                        <p className="text-lg text-muted-foreground">
-                            Khám phá những bài viết nổi bật nhất từ cộng đồng TailMates
+                        <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
+                            Khám phá những bài viết nổi bật nhất, mẹo chăm sóc thú cưng
+                            <br className="hidden sm:block" /> và kinh nghiệm từ cộng đồng yêu pet
                         </p>
                     </div>
 
                     {featuredPosts.length > 0 ? (
                         <BlogCarousel3D posts={featuredPosts} />
                     ) : (
-                        <div className="h-[500px] flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                        <div className="h-[520px] flex items-center justify-center">
+                            <div className="flex flex-col items-center gap-4">
+                                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center animate-pulse">
+                                    <BookOpen className="w-8 h-8 text-primary/60" />
+                                </div>
+                                <p className="text-sm text-muted-foreground font-medium">Đang tải bài viết...</p>
+                            </div>
                         </div>
                     )}
                 </div>

@@ -213,18 +213,51 @@ export default function BlogDetailPage() {
 
             {/* Article Content */}
             <article className="container mx-auto px-4 max-w-3xl">
-                <div className="prose prose-lg dark:prose-invert max-w-none mb-12">
-                    {/* 
-               Warning: This renders raw HTML. Ensure content is sanitized on the server 
-               or use a library like 'dompurify' if user input is not trused. 
-               Assuming trusted rich-text output here.
-            */}
-                    <div dangerouslySetInnerHTML={{ __html: post.content }} />
+                {/* Scoped styles to tame raw HTML content */}
+                <style jsx global>{`
+                    .blog-content img {
+                        max-width: 100% !important;
+                        height: auto !important;
+                        border-radius: 12px;
+                        margin: 1.5rem 0;
+                        display: block;
+                    }
+                    .blog-content iframe,
+                    .blog-content video,
+                    .blog-content embed,
+                    .blog-content object {
+                        max-width: 100% !important;
+                    }
+                    .blog-content * {
+                        max-width: 100% !important;
+                        overflow-wrap: break-word;
+                        word-break: break-word;
+                    }
+                    .blog-content table {
+                        display: block;
+                        overflow-x: auto;
+                    }
+                    .blog-content figure {
+                        margin: 1.5rem 0;
+                        float: none !important;
+                    }
+                    .blog-content p,
+                    .blog-content div,
+                    .blog-content span {
+                        float: none !important;
+                    }
+                `}</style>
+
+                <div className="prose prose-lg dark:prose-invert max-w-none mb-12 overflow-hidden break-words">
+                    <div
+                        className="blog-content"
+                        dangerouslySetInnerHTML={{ __html: post.content }}
+                    />
                 </div>
 
                 {/* Tags */}
                 {post.tags && post.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-12 pt-8 border-t border-border">
+                    <div className="flex flex-wrap gap-2 mb-12 pt-8 border-t border-border clear-both">
                         <span className="text-sm font-semibold text-muted-foreground mr-2 py-1">
                             Tags:
                         </span>
@@ -240,7 +273,7 @@ export default function BlogDetailPage() {
                 )}
 
                 {/* Interaction Bar */}
-                <div className="flex items-center justify-between p-6 bg-card rounded-2xl border border-border shadow-sm mb-16">
+                <div className="flex items-center justify-between p-6 bg-card rounded-2xl border border-border shadow-sm mb-16 clear-both">
                     <div className="flex items-center gap-2">
                         <p className="font-semibold mr-4 hidden sm:block">
                             Bài viết hữu ích?

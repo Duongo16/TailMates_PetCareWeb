@@ -23,12 +23,86 @@ import {
   MessageCircle,
   Store,
 } from "lucide-react"
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import { useState, useEffect, useRef, useCallback } from "react"
+import { motion, useScroll, useTransform, useInView, useMotionValue, useSpring } from "framer-motion"
 import { useCustomerPackages, useMerchantPackages } from "@/lib/hooks"
 import { OnboardingModal } from "@/components/onboarding-modal"
 import { SiteHeader } from "@/components/site-header"
 import { useAuth } from "@/lib/auth-context"
+
+// ===== 3D Helper Components =====
+
+function FloatingParticles() {
+  const particles = Array.from({ length: 8 }, (_, i) => ({
+    id: i,
+    size: Math.random() * 6 + 3,
+    x: Math.random() * 100,
+    y: Math.random() * 100,
+    delay: Math.random() * 5,
+    duration: Math.random() * 4 + 6,
+    isPaw: i % 4 === 0,
+  }))
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className={`absolute rounded-full ${p.isPaw ? "text-primary/20" : "bg-primary/10"}`}
+          style={{
+            width: p.isPaw ? p.size * 3 : p.size,
+            height: p.isPaw ? p.size * 3 : p.size,
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+          }}
+        >
+          {p.isPaw ? <PawPrint className="w-full h-full animate-wave-float" style={{ animationDelay: `${p.delay}s` }} /> : (
+            <div className="w-full h-full rounded-full animate-particle" style={{ animationDelay: `${p.delay}s`, animationDuration: `${p.duration}s` }} />
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+
+
+function useTilt3D() {
+  const ref = useRef<HTMLDivElement>(null)
+  const x = useMotionValue(0)
+  const y = useMotionValue(0)
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [8, -8]), { stiffness: 200, damping: 20 })
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-8, 8]), { stiffness: 200, damping: 20 })
+
+  const handleMouse = useCallback((e: React.MouseEvent) => {
+    if (!ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    x.set((e.clientX - rect.left) / rect.width - 0.5)
+    y.set((e.clientY - rect.top) / rect.height - 0.5)
+  }, [x, y])
+
+  const handleLeave = useCallback(() => { x.set(0); y.set(0) }, [x, y])
+
+  return { ref, rotateX, rotateY, handleMouse, handleLeave }
+}
+
+// Animated counter component
+function AnimatedCounter({ value, suffix = "" }: { value: string; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const isInView = useInView(ref, { once: true })
+  return (
+    <span ref={ref} className="inline-block">
+      <motion.span
+        initial={{ opacity: 0, y: 20 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+      >
+        {value}{suffix}
+      </motion.span>
+    </span>
+  )
+}
 
 const features = [
   {
@@ -185,56 +259,109 @@ export function Homepage() {
     return () => clearInterval(interval)
   }, [])
 
+  const heroTilt = useTilt3D()
+
   return (
     <>
       <div className="min-h-screen bg-background overflow-hidden">
         {/* Header */}
         <SiteHeader />
 
-        {/* Hero Section - Redesigned */}
-        <section className="relative overflow-hidden">
-          {/* Animated Background */}
+        {/* Hero Section - 3D Immersive */}
+        <section className="relative overflow-hidden min-h-[90vh] flex items-center">
+          {/* Animated Background with particles */}
           <div className="absolute inset-0 bg-gradient-to-br from-secondary/50 via-background to-muted/50" />
+          <FloatingParticles />
           <div className="absolute top-20 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-20 left-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse delay-1000" />
+          <div className="absolute bottom-20 left-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-pulse" />
 
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 w-full">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div
-                className={`space-y-8 transition-all duration-1000 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+              <motion.div
+                initial={{ opacity: 0, x: -60 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="space-y-8"
               >
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-medium text-sm border border-primary/20">
-                  <Zap className="w-4 h-4" />
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-medium text-sm border border-primary/20"
+                >
+                  <Zap className="w-4 h-4 animate-pulse" />
                   Ứng dụng chăm sóc thú cưng #1 Việt Nam
-                </div>
+                </motion.div>
 
-                <h1 className="text-4xl lg:text-6xl font-bold text-foreground leading-tight">
-                  Chăm sóc{" "}
-                  <span className="text-primary relative">
-                    thông minh
-                    <svg
+                <motion.h1
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.8 }}
+                  className="text-4xl lg:text-6xl font-bold leading-tight"
+                >
+                  <span className="text-foreground">Bạn đồng hành</span>{" "}
+                  <span className="gradient-text relative inline-block">
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.8, type: "spring", bounce: 0.5 }}
+                    >
+                      siêu dễ thương
+                    </motion.span>
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 1.3, type: "spring", bounce: 0.6 }}
+                      className="inline-block ml-2 text-3xl lg:text-5xl"
+                    >
+                      🐾
+                    </motion.span>
+                    <motion.svg
                       className="absolute -bottom-2 left-0 w-full"
                       viewBox="0 0 200 8"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ delay: 1.2, duration: 0.8 }}
                     >
-                      <path
+                      <motion.path
                         d="M1 5.5C47.6667 2.16667 141 -2.4 199 5.5"
                         stroke="#F15A29"
                         strokeWidth="3"
                         strokeLinecap="round"
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ delay: 1.2, duration: 0.8 }}
                       />
-                    </svg>
-                  </span>{" "}
-                  cho thú cưng yêu thương
-                </h1>
+                    </motion.svg>
+                  </span>
+                  <br />
+                  <motion.span
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="text-foreground text-3xl lg:text-5xl"
+                  >
+                    cho boss yêu của bạn ✨
+                  </motion.span>
+                </motion.h1>
 
-                <p className="text-lg text-foreground/70 max-w-lg leading-relaxed">
-                  Nền tảng chăm sóc thú cưng thông minh All IN ONE - AI kiểm tra sức khỏe, quản lý hồ sơ y tế, mua sắm thông minh và đặt dịch vụ - tất cả trong một ứng dụng
-                  duy nhất.
-                </p>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="text-lg text-foreground/70 max-w-lg leading-relaxed"
+                >
+                  Nền tảng chăm sóc thú cưng <span className="font-bold text-primary">All-in-One</span> dành cho các Sen yêu thú cưng 🐶🐱 — AI kiểm tra sức khỏe, hồ sơ y tế, mua sắm thông minh & đặt dịch vụ, tất cả trong một app!
+                </motion.p>
 
-                <div className="flex flex-col sm:flex-row gap-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="flex flex-col sm:flex-row gap-4"
+                >
                   {!user && (
                     <Button
                       size="lg"
@@ -253,73 +380,170 @@ export function Homepage() {
                     <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
                     Xem demo
                   </Button>
-                </div>
+                </motion.div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-4 gap-4 pt-8 border-t border-border/50">
+                {/* Stats with animated counters */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  className="grid grid-cols-4 gap-4 pt-8 border-t border-border/50"
+                >
                   {stats.map((stat, index) => (
-                    <div key={index} className="text-center">
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.9 + index * 0.1 }}
+                      className="text-center group cursor-default"
+                    >
                       <div className="flex items-center justify-center gap-1">
-                        <stat.icon className="w-4 h-4 text-primary" />
-                        <p className="text-xl lg:text-2xl font-bold text-foreground">{stat.number}</p>
+                        <stat.icon className="w-4 h-4 text-primary group-hover:scale-125 transition-transform" />
+                        <p className="text-xl lg:text-2xl font-bold text-foreground">
+                          <AnimatedCounter value={stat.number} />
+                        </p>
                       </div>
                       <p className="text-xs text-foreground/60">{stat.label}</p>
-                    </div>
+                    </motion.div>
                   ))}
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
 
-              {/* Hero Image */}
-              <div
-                className={`relative transition-all duration-1000 delay-300 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+              {/* Hero Image - 3D Flying Pets from Phone */}
+              <motion.div
+                initial={{ opacity: 0, x: 60, rotateY: -15 }}
+                animate={{ opacity: 1, x: 0, rotateY: 0 }}
+                transition={{ duration: 1, delay: 0.4, ease: "easeOut" }}
+                className="relative perspective-2000"
+                onMouseMove={heroTilt.handleMouse}
+                onMouseLeave={heroTilt.handleLeave}
+                ref={heroTilt.ref}
               >
-                <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-3xl blur-3xl" />
-                <div className="relative">
-                  {/* Main Image */}
-                  <div className="bg-card rounded-3xl p-2 shadow-2xl">
-                    <Image
-                      src="/happy-cat-and-dog-pets-app-interface-mockup-colorf.jpg"
-                      alt="TailMates App"
-                      width={400}
-                      height={500}
-                      className="rounded-2xl w-full"
-                    />
-                  </div>
+                <motion.div
+                  style={{ rotateX: heroTilt.rotateX, rotateY: heroTilt.rotateY }}
+                  className="preserve-3d relative"
+                >
+                  {/* Glow behind the phone */}
+                  <div className="absolute -inset-8 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full blur-[50px]" />
 
-                  {/* Floating Cards */}
-                  <div className="absolute -top-4 -right-4 bg-card rounded-2xl p-3 shadow-xl animate-bounce-slow">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-foreground">Sức khỏe tốt!</p>
-                        <p className="text-xs text-foreground/60">AI phân tích</p>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Main phone image with pets flying out */}
+                  <div className="relative">
+                    <motion.div
+                      className="relative z-10"
+                      animate={{ y: [0, -6, 0] }}
+                      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <Image
+                        src="/flying-pets-3d.png"
+                        alt="Thú cưng bay ra từ điện thoại - TailMates App"
+                        width={550}
+                        height={550}
+                        className="w-full drop-shadow-2xl"
+                        priority
+                      />
+                    </motion.div>
 
-                  <div className="absolute -bottom-4 -left-4 bg-card rounded-2xl p-3 shadow-xl animate-bounce-slow delay-500">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Calendar className="w-4 h-4 text-primary" />
+                    {/* Pet emoji accents - entrance only, no infinite loop */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 1, duration: 0.5, type: "spring" }}
+                      className="absolute -top-6 -right-2 text-5xl drop-shadow-lg"
+                    >
+                      🐕
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 1.2, duration: 0.5, type: "spring" }}
+                      className="absolute -top-2 -left-6 text-5xl drop-shadow-lg"
+                    >
+                      🐈
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 1.4, duration: 0.5, type: "spring" }}
+                      className="absolute top-1/4 -right-8 text-4xl drop-shadow-lg"
+                    >
+                      🐦
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 1.6, duration: 0.5, type: "spring" }}
+                      className="absolute bottom-1/4 -left-6 text-4xl drop-shadow-lg"
+                    >
+                      🐹
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 1.8, duration: 0.5, type: "spring" }}
+                      className="absolute -bottom-4 right-1/4 text-4xl drop-shadow-lg"
+                    >
+                      🐠
+                    </motion.div>
+
+                    {/* Single sparkle accent */}
+                    <motion.span
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 2 }}
+                      className="absolute top-1/3 -right-4 text-2xl"
+                    >
+                      ✨
+                    </motion.span>
+
+                    {/* Floating cards around the phone */}
+                    <motion.div
+                      animate={{ y: [0, -10, 0] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute -bottom-6 -left-4 bg-card/90 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-white/20 z-20"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-foreground">Sức khỏe tốt! 💚</p>
+                          <p className="text-xs text-foreground/60">AI phân tích</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-bold text-foreground">Lịch hẹn mới</p>
-                        <p className="text-xs text-foreground/60">Spa hôm nay 14:00</p>
+                    </motion.div>
+
+                    <motion.div
+                      animate={{ y: [0, -8, 0] }}
+                      transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                      className="absolute -bottom-6 -right-4 bg-accent/90 backdrop-blur-md rounded-2xl p-3 shadow-xl text-white z-20"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        <p className="text-xs font-bold">AI Scan 🔍</p>
                       </div>
-                    </div>
+                    </motion.div>
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             </div>
           </div>
         </section>
 
-        {/* Features Section - Redesigned */}
-        <section id="features" className="py-20 lg:py-32 bg-background">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-16">
+        {/* Features Section - 3D Cards */}
+        <section id="features" className="py-20 lg:py-32 bg-background relative">
+          <div className="absolute top-20 left-0 w-72 h-72 bg-accent/10 rounded-full blur-3xl" />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center max-w-3xl mx-auto mb-16"
+            >
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 text-accent font-medium text-sm mb-4">
                 <Sparkles className="w-4 h-4" />
                 Tính năng nổi bật
@@ -330,114 +554,161 @@ export function Homepage() {
               <p className="text-lg text-foreground/70">
                 Từ kiểm tra sức khỏe AI đến mua sắm thông minh, TailMates có đầy đủ tính năng
               </p>
-            </div>
+            </motion.div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 perspective-2000">
               {features.map((feature, index) => {
                 const Icon = feature.icon
                 return (
-                  <Card
+                  <motion.div
                     key={index}
-                    className="group hover:shadow-2xl transition-all duration-500 border-border hover:border-primary/30 hover:-translate-y-2 overflow-hidden"
+                    initial={{ opacity: 0, y: 40, rotateX: 15 }}
+                    whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.15, duration: 0.6 }}
                   >
-                    <CardContent className="p-6 relative">
-                      <div
-                        className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${feature.color} opacity-10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-150 transition-transform duration-500`}
-                      />
-                      <div
-                        className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform`}
-                      >
-                        <Icon className="w-7 h-7 text-white" />
-                      </div>
-                      <h3 className="text-lg font-bold text-foreground mb-2">{feature.title}</h3>
-                      <p className="text-foreground/60 text-sm leading-relaxed">{feature.description}</p>
-                    </CardContent>
-                  </Card>
+                    <Card className="group tilt-card hover:shadow-2xl border-border hover:border-primary/30 overflow-hidden h-full">
+                      <CardContent className="p-6 relative">
+                        <div
+                          className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${feature.color} opacity-10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-[2] transition-transform duration-700`}
+                        />
+                        <div
+                          className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}
+                        >
+                          <Icon className="w-7 h-7 text-white" />
+                        </div>
+                        <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors">{feature.title}</h3>
+                        <p className="text-foreground/60 text-sm leading-relaxed">{feature.description}</p>
+                        {/* Shine effect on hover */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 )
               })}
             </div>
           </div>
         </section>
 
-        {/* How It Works Section - NEW */}
-        <section id="how-it-works" className="py-20 lg:py-32 bg-card">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-16">
+        {/* How It Works Section - 3D Timeline */}
+        <section id="how-it-works" className="py-20 lg:py-32 bg-card relative overflow-hidden">
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center max-w-3xl mx-auto mb-16"
+            >
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-medium text-sm mb-4">
-                <Clock className="w-4 h-4" />
+                <Clock className="w-4 h-4 animate-spin-slow" />
                 Đơn giản & Nhanh chóng
               </div>
               <h2 className="text-3xl lg:text-5xl font-bold text-foreground mb-4">Bắt đầu chỉ trong 2 phút</h2>
               <p className="text-lg text-foreground/70">
                 Không cần phức tạp, chỉ cần vài bước đơn giản để bắt đầu hành trình chăm sóc bé yêu
               </p>
-            </div>
+            </motion.div>
 
-            <div className="grid md:grid-cols-4 gap-8">
+            <div className="grid md:grid-cols-4 gap-8 perspective-1000">
               {howItWorks.map((step, index) => (
-                <div key={index} className="relative">
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 50, rotateY: -20 }}
+                  whileInView={{ opacity: 1, y: 0, rotateY: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.2, duration: 0.7 }}
+                  className="relative"
+                >
                   {index < howItWorks.length - 1 && (
-                    <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-primary/50 to-transparent" />
+                    <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-0.5 overflow-hidden">
+                      <div className="w-full h-full bg-gradient-to-r from-primary/50 to-transparent" />
+
+                    </div>
                   )}
-                  <div className="text-center">
+                  <div className="text-center group">
                     <div className="relative inline-flex mb-4">
-                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/70 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25">
+                      <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/70 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/25 group-hover:shadow-primary/50 group-hover:scale-110 transition-all duration-500">
                         <step.icon className="w-8 h-8 text-white" />
                       </div>
                       <div className="absolute -top-2 -right-2 w-6 h-6 bg-accent text-white text-xs font-bold rounded-full flex items-center justify-center">
                         {step.step}
                       </div>
                     </div>
-                    <h3 className="text-lg font-bold text-foreground mb-2">{step.title}</h3>
+                    <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors">{step.title}</h3>
                     <p className="text-foreground/60 text-sm">{step.description}</p>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Testimonials Section - Enhanced */}
-        <section id="testimonials" className="py-20 lg:py-32 bg-card">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-16">
+        {/* Testimonials Section - 3D Cards */}
+        <section id="testimonials" className="py-20 lg:py-32 bg-card relative overflow-hidden">
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center max-w-3xl mx-auto mb-16"
+            >
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted text-foreground font-medium text-sm mb-4">
                 <MessageCircle className="w-4 h-4" />
                 Đánh giá từ cộng đồng
               </div>
               <h2 className="text-3xl lg:text-5xl font-bold text-foreground mb-4">Được yêu thích bởi các Sen</h2>
               <p className="text-lg text-foreground/70">Hàng nghìn người đã tin tưởng TailMates cho thú cưng của họ</p>
-            </div>
+            </motion.div>
 
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-3 gap-8 perspective-1000">
               {testimonials.map((testimonial, index) => (
-                <Card
+                <motion.div
                   key={index}
-                  className={`border-border transition-all duration-500 hover:shadow-xl hover:-translate-y-1 ${index === activeTestimonial ? "ring-2 ring-primary shadow-xl" : ""
-                    }`}
+                  initial={{ opacity: 0, rotateY: 30, x: 40 }}
+                  whileInView={{ opacity: 1, rotateY: 0, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.2, duration: 0.7 }}
                 >
-                  <CardContent className="p-6">
-                    <div className="flex gap-1 mb-4">
-                      {Array.from({ length: testimonial.rating }).map((_, i) => (
-                        <Star key={i} className="w-5 h-5 fill-primary text-primary" />
-                      ))}
-                    </div>
-                    <p className="text-foreground/80 mb-6 leading-relaxed italic">"{testimonial.content}"</p>
-                    <div className="flex items-center gap-3 pt-4 border-t border-border">
-                      <Image
-                        src={testimonial.avatar || "/placeholder.svg"}
-                        alt={testimonial.name}
-                        width={48}
-                        height={48}
-                        className="rounded-full ring-2 ring-primary/20"
-                      />
-                      <div>
-                        <p className="font-bold text-foreground">{testimonial.name}</p>
-                        <p className="text-sm text-foreground/60">{testimonial.pet}</p>
+                  <Card
+                    className={`tilt-card border-border transition-all duration-500 hover:shadow-xl overflow-hidden ${index === activeTestimonial ? "ring-2 ring-primary shadow-xl scale-[1.02]" : ""}`}
+                  >
+                    <CardContent className="p-6 relative">
+                      <div className="flex gap-1 mb-4">
+                        {Array.from({ length: testimonial.rating }).map((_, i) => (
+                          <motion.div
+                            key={i}
+                            initial={{ opacity: 0, scale: 0 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: index * 0.2 + i * 0.1 }}
+                          >
+                            <Star className="w-5 h-5 fill-primary text-primary" />
+                          </motion.div>
+                        ))}
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      <p className="text-foreground/80 mb-6 leading-relaxed italic">"{testimonial.content}"</p>
+                      <div className="flex items-center gap-3 pt-4 border-t border-border">
+                        <Image
+                          src={testimonial.avatar || "/placeholder.svg"}
+                          alt={testimonial.name}
+                          width={48}
+                          height={48}
+                          className="rounded-full ring-2 ring-primary/20 group-hover:ring-primary/50 transition-all"
+                        />
+                        <div>
+                          <p className="font-bold text-foreground">{testimonial.name}</p>
+                          <p className="text-sm text-foreground/60">{testimonial.pet}</p>
+                        </div>
+                      </div>
+                      {/* Subtle shine on active */}
+                      {index === activeTestimonial && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent animate-shimmer pointer-events-none" />
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -445,30 +716,35 @@ export function Homepage() {
 
         {/* Pricing Section */}
         <section id="pricing" className="py-20 lg:py-32 bg-secondary/30 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
           
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="text-center max-w-3xl mx-auto mb-16 lg:mb-24">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center max-w-3xl mx-auto mb-16 lg:mb-24"
+            >
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-bold text-sm mb-6 uppercase tracking-wider">
-                <Zap className="w-4 h-4" />
+                <Zap className="w-4 h-4 animate-pulse" />
                 Gói dịch vụ
               </div>
               <h2 className="text-3xl lg:text-5xl font-bold text-foreground mb-4 leading-tight">Lựa chọn gói phù hợp với bạn</h2>
               <p className="text-lg text-foreground/70">Nâng tầm trải nghiệm chăm sóc thú cưng với các tính năng độc quyền</p>
-            </div>
+            </motion.div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 gap-y-12">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 gap-y-12 perspective-1000">
               {finalPricingPlans.map((plan: any, index: number) => (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, y: 40, rotateX: 10 }}
+                  whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: index * 0.12, duration: 0.6 }}
                   className="h-full flex flex-col"
                 >
-                  <Card className={`h-full border-none shadow-xl flex flex-col relative transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 rounded-[2.5rem] overflow-hidden ${plan.popular ? "ring-2 ring-primary/20 bg-card z-10 shadow-primary/10" : "bg-card/80 backdrop-blur-sm"}`}>
+                  <Card className={`h-full border-none shadow-xl flex flex-col relative transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 rounded-[2.5rem] overflow-hidden group ${plan.popular ? "ring-2 ring-primary/20 bg-card z-10 shadow-primary/10" : "bg-card/80 backdrop-blur-sm"}`}>
                     {plan.popular && (
                       <div className="absolute -top-1 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-black px-4 py-1.5 rounded-b-xl uppercase tracking-widest shadow-lg">
                         Phổ biến nhất
@@ -529,13 +805,20 @@ export function Homepage() {
           </div>
         </section>
 
-        {/* CTA Section - Enhanced */}
+        {/* CTA Section - Aurora Gradient */}
         <section className="py-20 lg:py-32 bg-gradient-to-r from-navy via-accent to-navy relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-navy via-accent/80 to-primary/30" />
           <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10" />
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/15 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/15 rounded-full blur-3xl" />
 
-          <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center"
+          >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white font-medium text-sm mb-6 backdrop-blur-sm">
               <Heart className="w-4 h-4" />
               Miễn phí trọn đời cho 1 thú cưng
@@ -569,7 +852,7 @@ export function Homepage() {
                 </>
               )}
             </div>
-          </div>
+          </motion.div>
         </section>
 
         {/* Footer - Enhanced */}

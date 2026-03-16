@@ -314,3 +314,201 @@ a {
 .delay-1000 {
   animation-delay: 1000ms;
 }
+
+/* ===== 3D Homepage Effects ===== */
+
+/* Perspective container for 3D transforms */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-2000 {
+  perspective: 2000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* 3D Tilt on hover */
+.tilt-card {
+  transition: transform 0.5s ease, box-shadow 0.5s ease;
+  transform-style: preserve-3d;
+}
+.tilt-card:hover {
+  transform: perspective(800px) rotateX(4deg) rotateY(-4deg) scale(1.02);
+  box-shadow: 12px 12px 30px rgba(0, 0, 0, 0.12), -4px -4px 10px rgba(255, 255, 255, 0.1);
+}
+
+/* Floating particles animation */
+@keyframes particle-float {
+  0%, 100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.6; }
+  25% { transform: translateY(-30px) translateX(15px) scale(1.1); opacity: 1; }
+  50% { transform: translateY(-50px) translateX(-10px) scale(0.9); opacity: 0.7; }
+  75% { transform: translateY(-20px) translateX(20px) scale(1.05); opacity: 0.9; }
+}
+
+.animate-particle {
+  animation: particle-float 8s ease-in-out infinite;
+}
+
+/* Aurora / gradient background anim */
+@keyframes aurora {
+  0% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+  50% { background-position: 100% 50%; filter: hue-rotate(15deg); }
+  100% { background-position: 0% 50%; filter: hue-rotate(0deg); }
+}
+
+.animate-aurora {
+  background-size: 400% 400%;
+  animation: aurora 12s ease infinite;
+}
+
+/* Morphing blob */
+@keyframes morph-blob {
+  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  25% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+  50% { border-radius: 50% 60% 30% 60% / 30% 60% 70% 40%; }
+  75% { border-radius: 60% 40% 60% 30% / 60% 30% 50% 60%; }
+}
+
+.animate-morph {
+  animation: morph-blob 8s ease-in-out infinite;
+}
+
+/* 3D Card flip */
+@keyframes flip-in {
+  0% { transform: perspective(800px) rotateY(90deg); opacity: 0; }
+  100% { transform: perspective(800px) rotateY(0); opacity: 1; }
+}
+
+.animate-flip-in {
+  animation: flip-in 0.8s ease-out forwards;
+}
+
+/* Glow ring pulse */
+@keyframes glow-ring {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(241, 90, 41, 0.2), 0 0 20px rgba(241, 90, 41, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(241, 90, 41, 0.4), 0 0 40px rgba(241, 90, 41, 0.2), 0 0 60px rgba(241, 90, 41, 0.1);
+  }
+}
+
+.animate-glow-ring {
+  animation: glow-ring 3s ease-in-out infinite;
+}
+
+/* Rotate Y */
+@keyframes rotate-y-slow {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(360deg); }
+}
+
+.animate-rotate-y {
+  animation: rotate-y-slow 20s linear infinite;
+  transform-style: preserve-3d;
+}
+
+/* Slide up stagger */
+@keyframes slide-up-3d {
+  0% { transform: perspective(600px) translateY(60px) rotateX(10deg); opacity: 0; }
+  100% { transform: perspective(600px) translateY(0) rotateX(0); opacity: 1; }
+}
+
+.animate-slide-up-3d {
+  animation: slide-up-3d 0.7s ease-out forwards;
+}
+
+/* Sparkle / twinkle */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.animate-twinkle {
+  animation: twinkle 3s ease-in-out infinite;
+}
+
+/* Typing cursor blink */
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-cursor {
+  animation: cursor-blink 1s step-end infinite;
+}
+
+/* Scale breathe */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-breathe {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+/* Wave float for hero paw prints */
+@keyframes wave-float {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0.15; }
+  33% { transform: translateY(-25px) rotate(10deg); opacity: 0.25; }
+  66% { transform: translateY(-10px) rotate(-5deg); opacity: 0.2; }
+  100% { transform: translateY(0) rotate(0deg); opacity: 0.15; }
+}
+
+.animate-wave-float {
+  animation: wave-float 6s ease-in-out infinite;
+}
+
+/* Parallax scroll */
+.parallax-slow {
+  will-change: transform;
+  transition: transform 0.1s ease-out;
+}
+
+/* Glowing border */
+@keyframes border-glow {
+  0%, 100% { border-color: rgba(241, 90, 41, 0.3); }
+  50% { border-color: rgba(241, 90, 41, 0.8); }
+}
+
+.animate-border-glow {
+  animation: border-glow 2.5s ease-in-out infinite;
+}
+
+/* 3D hero image entrance */
+@keyframes hero-3d-enter {
+  0% { transform: perspective(1000px) rotateY(-15deg) rotateX(5deg) scale(0.9); opacity: 0; }
+  100% { transform: perspective(1000px) rotateY(0deg) rotateX(0deg) scale(1); opacity: 1; }
+}
+
+.animate-hero-3d-enter {
+  animation: hero-3d-enter 1.2s ease-out forwards;
+}
+
+/* Gradient shine sweep */
+@keyframes shine-sweep {
+  0% { transform: translateX(-100%) rotate(-45deg); }
+  100% { transform: translateX(100%) rotate(-45deg); }
+}
+
+.group:hover .shine-sweep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: shine-sweep 0.6s ease-in-out;
+}
+
+/* Number counter flip */
+@keyframes count-up {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-count-up {
+  animation: count-up 0.8s ease-out forwards;
+}
