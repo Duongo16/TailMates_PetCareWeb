@@ -64,10 +64,21 @@ export async function GET(req: NextRequest) {
                     created_at: { $gte: startDate, $lte: endDate }
                 }
             },
+            { $unwind: "$items" },
+            {
+                $lookup: {
+                    from: "products",
+                    localField: "items.product_id",
+                    foreignField: "_id",
+                    as: "product"
+                }
+            },
+            { $unwind: { path: "$product", preserveNullAndEmptyArrays: true } },
             {
                 $group: {
                     _id: { $dateToString: { format: "%Y-%m-%d", date: "$created_at" } },
-                    dailyRevenue: { $sum: "$total_amount" },
+                    dailyRevenue: { $sum: { $multiply: ["$items.price", "$items.quantity"] } },
+                    dailyCOGS: { $sum: { $multiply: [{ $ifNull: ["$product.cost_price", 0] }, "$items.quantity"] } },
                     orderCount: { $sum: 1 }
                 }
             },
@@ -110,11 +121,13 @@ export async function GET(req: NextRequest) {
             const bok = bookingRevenueData.find(d => d._id === dateStr)
 
             const revenue = (ord?.dailyRevenue || 0) + (bok?.dailyRevenue || 0)
+            const cogs = ord?.dailyCOGS || 0
+            const commission = Math.round(revenue * commissionRate)
             return {
                 name: format(date, "dd/MM"),
                 date: dateStr,
                 revenue: revenue,
-                netIncome: Math.round(revenue * (1 - commissionRate)),
+                netIncome: Math.round(revenue - cogs - commission),
                 orders: (ord?.orderCount || 0) + (bok?.bookingCount || 0)
             }
         })
@@ -173,6 +186,36 @@ export async function GET(req: NextRequest) {
                     value: { $sum: "$service.price_min" }
                 }
             }
+        ])
+
+        // 2b. Service Performance (Hiệu quả dịch vụ) - Aggregate by individual service
+        const servicePerformance = await Booking.aggregate([
+            {
+                $match: {
+                    merchant_id: merchantId,
+                    status: BookingStatus.COMPLETED,
+                    booking_time: { $gte: startDate, $lte: endDate }
+                }
+            },
+            {
+                $lookup: {
+                    from: "services",
+                    localField: "service_id",
+                    foreignField: "_id",
+                    as: "service"
+                }
+            },
+            { $unwind: "$service" },
+            {
+                $group: {
+                    _id: "$service_id",
+                    name: { $first: "$service.name" },
+                    sales: { $sum: 1 },
+                    revenue: { $sum: "$service.price_min" }
+                }
+            },
+            { $sort: { sales: -1 } },
+            { $limit: 6 }
         ])
 
         const combinedCategories = [...productCategories, ...bookingCategories.map(c => ({ _id: "Dịch vụ", value: c.value }))].reduce((acc: any[], curr) => {

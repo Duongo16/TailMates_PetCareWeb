@@ -396,21 +396,25 @@ export function useNotifications() {
 
 // ==================== Infinite Scroll Hook ====================
 export function useInView({ onInView }: { onInView: () => void }) {
-  const ref = useRef<HTMLDivElement | null>(null)
   const onInViewRef = useRef(onInView)
+  const observerRef = useRef<IntersectionObserver | null>(null)
   onInViewRef.current = onInView
 
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) onInViewRef.current()
-      },
-      { threshold: 0.1 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
+  const ref = useCallback((el: HTMLDivElement | null) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+      observerRef.current = null
+    }
+    if (el) {
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) onInViewRef.current()
+        },
+        { threshold: 0.1 }
+      )
+      observer.observe(el)
+      observerRef.current = observer
+    }
   }, [])
 
   return { ref }

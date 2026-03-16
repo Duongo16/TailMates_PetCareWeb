@@ -97,15 +97,18 @@ export async function POST(request: NextRequest) {
         ? product.images[0].url
         : undefined;
 
+      // Use sale_price if available, otherwise use regular price
+      const actualPrice = product.sale_price && product.sale_price > 0 ? product.sale_price : product.price;
+
       orderItems.push({
         product_id: product._id.toString(),
         name: product.name,
-        price: product.price,
+        price: actualPrice,
         product_image: productImageUrl,
         quantity: item.quantity,
       });
 
-      totalAmount += product.price * item.quantity;
+      totalAmount += actualPrice * item.quantity;
     }
 
     // Ensure we have a merchant
@@ -125,10 +128,10 @@ export async function POST(request: NextRequest) {
       note,
     });
 
-    // Decrease stock
+    // Decrease stock and increase sold count
     for (const item of items) {
       await Product.findByIdAndUpdate(item.product_id, {
-        $inc: { stock_quantity: -item.quantity },
+        $inc: { stock_quantity: -item.quantity, sold_count: item.quantity },
       });
     }
 

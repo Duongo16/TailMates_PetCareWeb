@@ -227,8 +227,26 @@ export function MerchantOverview({ setActiveTab }: MerchantOverviewProps) {
     const completedOrders = orders?.filter((o: any) => ["COMPLETED", "DONE"].includes(o.status)) ?? []
     const ordersRevenue = completedOrders.reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0)
     const totalRevenue = analytics?.summary?.totalRevenue ?? ordersRevenue
-    const commissionFactor = currentPackage?.commission_rate !== undefined ? (1 - currentPackage.commission_rate) : 0.85
-    const netIncome = analytics?.summary?.netIncome ?? Math.round(ordersRevenue * commissionFactor)
+    const commissionRate = currentPackage?.commission_rate ?? 0.15
+
+    // Build a product cost_price map for COGS calculation
+    const productCostMap = useMemo(() => {
+        const map: Record<string, number> = {}
+        products?.forEach((p: any) => { map[p._id] = p.cost_price || 0 })
+        return map
+    }, [products])
+
+    // Calculate COGS from completed orders
+    const fallbackCOGS = useMemo(() => {
+        return completedOrders.reduce((sum: number, o: any) => {
+            return sum + (o.items || []).reduce((itemSum: number, item: any) => {
+                const costPrice = productCostMap[item.product_id?.toString()] || 0
+                return itemSum + costPrice * (item.quantity || 0)
+            }, 0)
+        }, 0)
+    }, [completedOrders, productCostMap])
+
+    const netIncome = analytics?.summary?.netIncome ?? Math.round(ordersRevenue - fallbackCOGS - (ordersRevenue * commissionRate))
     const totalOrders = orders?.length ?? 0
     const pendingOrders = orders?.filter((o: any) => o.status === "PENDING").length ?? 0
     const tmBalance = (user as any)?.tm_balance ?? 0
@@ -242,13 +260,13 @@ export function MerchantOverview({ setActiveTab }: MerchantOverviewProps) {
 
     // ── Revenue chart data ────────────────────────────────────
     const revenueChartData = useMemo(() => {
-        const cFactor = currentPackage?.commission_rate !== undefined ? (1 - currentPackage.commission_rate) : 0.85
+        const cRate = currentPackage?.commission_rate ?? 0.15
 
         if (analytics?.chartData?.length) {
             return analytics.chartData.map((item: any) => ({
                 name: item.name,
                 revenue: item.revenue,
-                netIncome: item.netIncome ?? Math.round(item.revenue * cFactor)
+                netIncome: item.netIncome ?? Math.round(item.revenue - (item.revenue * cRate))
             }))
         }
         // Fallback: build chart from orders data (last 7 days)
@@ -257,41 +275,90 @@ export function MerchantOverview({ setActiveTab }: MerchantOverviewProps) {
             const dayStr = d.toLocaleDateString("vi-VN", { weekday: "short" })
             const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate())
             const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)
-            const dayRevenue = (completedOrders || [])
-                .filter((o: any) => {
-                    const oDate = new Date(o.created_at)
-                    return oDate >= dayStart && oDate < dayEnd
-                })
-                .reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0)
-            return { name: dayStr, revenue: dayRevenue, netIncome: Math.round(dayRevenue * cFactor) }
+            const dayOrders = (completedOrders || []).filter((o: any) => {
+                const oDate = new Date(o.created_at)
+                return oDate >= dayStart && oDate < dayEnd
+            })
+            const dayRevenue = dayOrders.reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0)
+            // Calculate COGS for this day's orders
+            const dayCOGS = dayOrders.reduce((sum: number, o: any) => {
+                return sum + (o.items || []).reduce((itemSum: number, item: any) => {
+                    const costPrice = productCostMap[item.product_id?.toString()] || 0
+                    return itemSum + costPrice * (item.quantity || 0)
+                }, 0)
+            }, 0)
+            return { name: dayStr, revenue: dayRevenue, netIncome: Math.round(dayRevenue - dayCOGS - (dayRevenue * cRate)) }
         })
         return chartDays
-    }, [analytics, currentPackage, completedOrders])
+    }, [analytics, currentPackage, completedOrders, productCostMap])
+
+    // ── Vietnamese category labels ──────────────────────────────
+    const CATEGORY_LABELS: Record<string, string> = {
+        FOOD: "Thức ăn",
+        TOY: "Đồ chơi",
+        MEDICINE: "Thuốc & Y tế",
+        ACCESSORY: "Phụ kiện",
+        HYGIENE: "Vệ sinh",
+        OTHER: "Khác",
+        "Dịch vụ": "Dịch vụ",
+    }
+
+    // ── Category distribution ─────────────────────────────────
+    const categoryData = useMemo(() => {
+        const map: Record<string, number> = {}
+        products?.forEach((p: any) => { map[p.category] = (map[p.category] || 0) + 1 })
+        const entries = Object.entries(map).map(([name, value], i) => ({
+            name: CATEGORY_LABELS[name] || name,
+            value,
+            color: COLORS[i % COLORS.length]
+        }))
+        if (!entries.length) return [{ name: "Chưa có", value: 1, color: "#E5E7EB" }]
+        return entries
+    }, [products])
 
     // ── Service performance (Hiệu quả dịch vụ) ─────────────────
     const servicePerformance = useMemo(() => {
         if (analytics?.servicePerformance?.length) return analytics.servicePerformance
-        return []
-    }, [analytics])
-
-    // ── Order conversion funnel ───────────────────────────────
+        // Fallback: compute from bookings data
+        if (!bookings?.length) return []
+        const serviceMap: Record<string, { name: string; sales: number; revenue: number }> = {}
+        bookings
+            .filter((b: any) => ["COMPLETED", "DONE"].includes(b.status))
+            .forEach((b: any) => {
+                const serviceId = b.service_id?._id?.toString() || b.service_id?.toString()
+                if (!serviceId) return
+                if (!serviceMap[serviceId]) {
+                    serviceMap[serviceId] = {
+                        name: b.service_id?.name || "Dịch vụ",
+                        sales: 0,
+                        revenue: 0,
+                    }
+                }
+                serviceMap[serviceId].sales += 1
+                serviceMap[serviceId].revenue += b.service_id?.price_min || 0
+            })
+        return Object.values(serviceMap).sort((a, b) => b.sales - a.sales).slice(0, 6)
+    }, [analytics, bookings])
     const funnelData = useMemo(() => {
         if (!orders?.length) return [
             { name: "Tổng đơn", value: 0, color: "#6B7280" },
-            { name: "Xác nhận", value: 0, color: "#3B6DB3" },
-            { name: "Đang giao", value: 0, color: "#F59E0B" },
+            { name: "Chờ xử lý", value: 0, color: "#F59E0B" },
+            { name: "Đã xác nhận", value: 0, color: "#3B6DB3" },
+            { name: "Đang giao", value: 0, color: "#8B5CF6" },
             { name: "Hoàn thành", value: 0, color: "#10B981" },
             { name: "Đã huỷ", value: 0, color: "#EF4444" },
         ]
         const total = orders.length
-        const confirmed = orders.filter((o: any) => ["CONFIRMED", "SHIPPING", "COMPLETED", "DONE"].includes(o.status)).length
-        const shipping = orders.filter((o: any) => ["SHIPPING", "COMPLETED", "DONE"].includes(o.status)).length
+        const pending = orders.filter((o: any) => o.status === "PENDING").length
+        const confirmed = orders.filter((o: any) => o.status === "CONFIRMED").length
+        const shipping = orders.filter((o: any) => o.status === "SHIPPING").length
         const completed = orders.filter((o: any) => ["COMPLETED", "DONE"].includes(o.status)).length
         const cancelled = orders.filter((o: any) => o.status === "CANCELLED").length
         return [
             { name: "Tổng đơn", value: total, color: "#6B7280" },
-            { name: "Xác nhận", value: confirmed, color: "#3B6DB3" },
-            { name: "Đang giao", value: shipping, color: "#F59E0B" },
+            { name: "Chờ xử lý", value: pending, color: "#F59E0B" },
+            { name: "Đã xác nhận", value: confirmed, color: "#3B6DB3" },
+            { name: "Đang giao", value: shipping, color: "#8B5CF6" },
             { name: "Hoàn thành", value: completed, color: "#10B981" },
             { name: "Đã huỷ", value: cancelled, color: "#EF4444" },
         ]
@@ -300,15 +367,6 @@ export function MerchantOverview({ setActiveTab }: MerchantOverviewProps) {
     const conversionRate = orders?.length
         ? Math.round((orders.filter((o: any) => ["COMPLETED", "DONE"].includes(o.status)).length / orders.length) * 100)
         : 0
-
-    // ── Category distribution ─────────────────────────────────
-    const categoryData = useMemo(() => {
-        const map: Record<string, number> = {}
-        products?.forEach((p: any) => { map[p.category] = (map[p.category] || 0) + 1 })
-        const entries = Object.entries(map).map(([name, value], i) => ({ name, value, color: COLORS[i % COLORS.length] }))
-        if (!entries.length) return [{ name: "Chưa có", value: 1, color: "#E5E7EB" }]
-        return entries
-    }, [products])
 
     // ── Top products ──────────────────────────────────────────
     const topProducts = useMemo(() => {

@@ -29,6 +29,7 @@ const CATEGORIES = [
 
 const SORT_OPTIONS = [
   { value: "newest", label: "Mới nhất" },
+  { value: "best_selling", label: "Bán chạy nhất" },
   { value: "price_asc", label: "Giá thấp → cao" },
   { value: "price_desc", label: "Giá cao → thấp" },
 ]
@@ -73,7 +74,9 @@ export function Marketplace() {
   const sortedProducts = useMemo(() => {
     if (!products?.products) return []
     const sorted = [...products.products]
-    if (sortBy === "price_asc") {
+    if (sortBy === "best_selling") {
+      sorted.sort((a, b) => (b.sold_count || 0) - (a.sold_count || 0))
+    } else if (sortBy === "price_asc") {
       sorted.sort((a, b) => a.price - b.price)
     } else if (sortBy === "price_desc") {
       sorted.sort((a, b) => b.price - a.price)
@@ -433,6 +436,12 @@ export function Marketplace() {
                   <span className="text-sm text-foreground/60">{selectedProduct.rating || 5.0}</span>
                   <span className="text-sm text-foreground/60">|</span>
                   <span className="text-sm text-foreground/60">Còn {selectedProduct.stock_quantity}</span>
+                  {selectedProduct.sold_count > 0 && (
+                    <>
+                      <span className="text-sm text-foreground/60">|</span>
+                      <span className="text-sm text-foreground/60">Đã bán {selectedProduct.sold_count >= 1000 ? `${(selectedProduct.sold_count / 1000).toFixed(1)}k` : selectedProduct.sold_count}</span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -722,6 +731,12 @@ function ProductCard({
           <div className="flex items-center gap-1 my-1">
             <Star className="w-3 h-3 fill-orange text-orange" />
             <span className="text-xs text-navy/60">{product.merchant_id?.merchant_profile?.rating || 5.0}</span>
+            {product.sold_count > 0 && (
+              <>
+                <span className="text-xs text-navy/40">|</span>
+                <span className="text-xs text-navy/60">Đã bán {product.sold_count >= 1000 ? `${(product.sold_count / 1000).toFixed(1)}k` : product.sold_count}</span>
+              </>
+            )}
           </div>
           <div className="mt-1">
             {product.sale_price ? (

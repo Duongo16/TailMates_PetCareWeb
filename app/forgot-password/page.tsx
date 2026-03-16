@@ -67,10 +67,10 @@ export default function ForgotPasswordPage() {
   }
 
   // === Step 2: Verify OTP ===
-  const handleVerifyOtp = async (e?: React.FormEvent) => {
+  const handleVerifyOtp = async (e?: React.FormEvent, otpOverride?: string) => {
     e?.preventDefault()
     setError("")
-    const otpValue = otp.join("")
+    const otpValue = otpOverride || otp.join("")
 
     if (otpValue.length !== 6) {
       setError("Vui lòng nhập đầy đủ 6 chữ số OTP")
@@ -163,10 +163,11 @@ export default function ForgotPasswordPage() {
       otpInputRefs.current[index + 1]?.focus()
     }
 
-    // Auto-submit when all filled
-    if (newOtp.every((v) => v) && newOtp.join("").length === 6) {
+    // Auto-submit when all filled - pass OTP directly to avoid stale state
+    const otpString = newOtp.join("")
+    if (newOtp.every((v) => v) && otpString.length === 6) {
       setTimeout(() => {
-        handleVerifyOtp()
+        handleVerifyOtp(undefined, otpString)
       }, 200)
     }
   }
@@ -192,10 +193,11 @@ export default function ForgotPasswordPage() {
     const nextIndex = Math.min(pastedData.length, 5)
     otpInputRefs.current[nextIndex]?.focus()
 
-    // Auto-submit if all filled
+    // Auto-submit if all filled - pass OTP directly to avoid stale state
+    const otpString = newOtp.join("")
     if (newOtp.every((v) => v)) {
       setTimeout(() => {
-        handleVerifyOtp()
+        handleVerifyOtp(undefined, otpString)
       }, 200)
     }
   }

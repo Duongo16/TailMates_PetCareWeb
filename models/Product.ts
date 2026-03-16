@@ -36,10 +36,12 @@ export interface IProduct extends Document {
   name: string;
   category: ProductCategory;
   price: number;
+  cost_price: number;
   sale_price?: number;
   description?: string;
   images: ICloudinaryImage[];
   stock_quantity: number;
+  sold_count: number;
   ai_tags: string[];
   is_active: boolean;
   specifications?: IProductSpecifications;
@@ -128,6 +130,11 @@ const ProductSchema = new Schema<IProduct>(
       required: [true, "Price is required"],
       min: 0,
     },
+    cost_price: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     sale_price: {
       type: Number,
       min: 0,
@@ -137,6 +144,11 @@ const ProductSchema = new Schema<IProduct>(
     },
     images: [CloudinaryImageSchema],
     stock_quantity: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    sold_count: {
       type: Number,
       default: 0,
       min: 0,

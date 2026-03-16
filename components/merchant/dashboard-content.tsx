@@ -251,6 +251,7 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
     name: "",
     category: "FOOD",
     price: "",
+    cost_price: "",
     sale_price: "",
     stock: "",
     description: "",
@@ -379,6 +380,7 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
         name: newProduct.name,
         category: newProduct.category,
         price: Number(newProduct.price),
+        cost_price: newProduct.cost_price ? Number(newProduct.cost_price) : 0,
         sale_price: newProduct.sale_price ? Number(newProduct.sale_price) : undefined,
         stock_quantity: Number(newProduct.stock),
         description: newProduct.description,
@@ -425,7 +427,7 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
         setShowAddProduct(false)
         refetchProducts()
         setNewProduct({
-          name: "", category: "FOOD", price: "", sale_price: "", stock: "", description: "", image_url: "", image_public_id: "",
+          name: "", category: "FOOD", price: "", cost_price: "", sale_price: "", stock: "", description: "", image_url: "", image_public_id: "",
           targetSpecies: "", lifeStage: "", breedSize: "", healthTags: [],
           protein: "", fat: "", fiber: "", moisture: "", calories: "", ingredients: "", isSterilized: false,
           caloric_density_amount: "", caloric_density_unit: "kcal/kg", texture: "", primary_protein_source: "",
@@ -461,6 +463,7 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
         name: editingProduct.name,
         category: editingProduct.category,
         price: Number(editingProduct.price),
+        cost_price: editingProduct.cost_price ? Number(editingProduct.cost_price) : 0,
         sale_price: editingProduct.sale_price ? Number(editingProduct.sale_price) : undefined,
         stock_quantity: Number(editingProduct.stock_quantity),
         description: editingProduct.description,
@@ -834,12 +837,22 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Giá (VND) *</Label>
+                    <Label>Giá bán (VND) *</Label>
                     <Input
                       type="number"
                       value={newProduct.price}
                       onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                       placeholder="0"
+                      className="rounded-xl mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label>Giá vốn (VND)</Label>
+                    <Input
+                      type="number"
+                      value={newProduct.cost_price}
+                      onChange={(e) => setNewProduct({ ...newProduct, cost_price: e.target.value })}
+                      placeholder="0 (Tuỳ chọn)"
                       className="rounded-xl mt-1"
                     />
                   </div>
@@ -1097,11 +1110,20 @@ export function MerchantDashboardContent({ activeTab, setActiveTab }: MerchantDa
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Giá (VND) *</Label>
+                      <Label>Giá bán (VND) *</Label>
                       <Input
                         type="number"
                         value={editingProduct.price}
                         onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value })}
+                        className="rounded-xl mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label>Giá vốn (VND)</Label>
+                      <Input
+                        type="number"
+                        value={editingProduct.cost_price || ""}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, cost_price: e.target.value })}
                         className="rounded-xl mt-1"
                       />
                     </div>
