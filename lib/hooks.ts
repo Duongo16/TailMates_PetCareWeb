@@ -338,7 +338,7 @@ export function useNotifications() {
     if (!pusherClient) return
 
     const channel = pusherClient.subscribe(`user-${userId}`)
-    
+
     channel.bind("notification", (data: any) => {
       const newNotification = {
         ...data,
@@ -346,10 +346,10 @@ export function useNotifications() {
         isRead: false,
         createdAt: new Date(data.created_at || Date.now()),
       }
-      
+
       setNotifications(prev => [newNotification, ...prev.slice(0, 19)])
       setUnreadCount(prev => prev + 1)
-      
+
       // Optional: show toast for new social notification
       import("sonner").then(({ toast }) => {
         toast.info(data.title, {
@@ -396,28 +396,31 @@ export function useNotifications() {
 
 // ==================== Infinite Scroll Hook ====================
 export function useInView({ onInView }: { onInView: () => void }) {
+  const [node, setNode] = useState<HTMLElement | null>(null)
   const onInViewRef = useRef(onInView)
-  const observerRef = useRef<IntersectionObserver | null>(null)
   onInViewRef.current = onInView
 
-  const ref = useCallback((el: HTMLDivElement | null) => {
-    if (observerRef.current) {
-      observerRef.current.disconnect()
-      observerRef.current = null
+  useEffect(() => {
+    if (!node) return
+    
+    console.log("Observer attached to sentinel")
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          console.log("Sentinel in view, triggering onInView")
+          onInViewRef.current()
+        }
+      },
+      { threshold: 0 }
+    )
+    observer.observe(node)
+    return () => {
+      console.log("Observer disconnected from sentinel")
+      observer.disconnect()
     }
-    if (el) {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) onInViewRef.current()
-        },
-        { threshold: 0.1 }
-      )
-      observer.observe(el)
-      observerRef.current = observer
-    }
-  }, [])
+  }, [node])
 
-  return { ref }
+  return { ref: setNode }
 }
 
 // ==================== Social Network Hooks ====================
