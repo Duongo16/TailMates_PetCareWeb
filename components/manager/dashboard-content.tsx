@@ -897,7 +897,7 @@ export function ManagerDashboardContent({ activeTab, setActiveTab }: ManagerDash
                         <ChevronDown className="w-4 h-4 rotate-90" />
                       </Button>
                       
-                      {Array.from({ length: subsData.pagination.total_pages || 1 }, (_, i) => i + 1).map((p) => (
+                      {Array.from({ length: Math.ceil((subsData.pagination.total_items || 0) / 10) || 1 }, (_, i) => i + 1).map((p) => (
                         <Button
                           key={p}
                           variant={subscriptionPage === p ? "default" : "outline"}
@@ -919,7 +919,7 @@ export function ManagerDashboardContent({ activeTab, setActiveTab }: ManagerDash
                       <Button
                         variant="ghost"
                         size="icon"
-                        disabled={subscriptionPage === (subsData.pagination.total_pages || 1)}
+                        disabled={subscriptionPage === (Math.ceil((subsData.pagination.total_items || 0) / 10) || 1)}
                         onClick={() => {
                           setSubscriptionPage(prev => prev + 1)
                           window.scrollTo({ top: 0, behavior: 'smooth' })
