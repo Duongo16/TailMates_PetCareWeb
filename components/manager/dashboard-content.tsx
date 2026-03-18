@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { useManagerStats, useManagerMerchants, usePackages, useManagerBanners, useManagerSubscriptions } from "@/lib/hooks"
+import { useManagerStats, useManagerMerchants, usePackages, useManagerBanners, useManagerSubscriptions, useSocialFeed } from "@/lib/hooks"
 import { useAuth } from "@/lib/auth-context"
 import { managerAPI, packagesAPI, bannersAPI } from "@/lib/api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -61,6 +61,9 @@ import {
   ChevronDown,
   Check,
   X,
+  Zap,
+  Newspaper,
+  ChevronRight,
 } from "lucide-react"
 import Image from "next/image"
 import dynamic from "next/dynamic"
@@ -207,10 +210,11 @@ const BenefitsEditor = ({ benefits, onChange }: { benefits: any[], onChange: (be
 }
 
 export function ManagerDashboardContent({ activeTab, setActiveTab }: ManagerDashboardContentProps) {
+  const [subscriptionPage, setSubscriptionPage] = useState(1)
   const { data: statsData, isLoading: statsLoading } = useManagerStats()
   const { data: merchantsData, isLoading: merchantsLoading, refetch: refetchMerchants } = useManagerMerchants()
   const { data: packages, isLoading: packagesLoading, refetch: refetchPackages } = usePackages()
-  const { data: subsData, isLoading: subsLoading } = useManagerSubscriptions()
+  const { data: subsData, isLoading: subsLoading } = useManagerSubscriptions({ page: subscriptionPage, limit: 10 })
   const { data: bannersData, isLoading: bannersLoading, refetch: refetchBanners } = useManagerBanners()
   const { user, refreshUser } = useAuth()
 
@@ -777,17 +781,61 @@ export function ManagerDashboardContent({ activeTab, setActiveTab }: ManagerDash
             )}
           </TabsContent>
 
-          <TabsContent value="history" className="mt-0">
+          <TabsContent value="history" className="mt-0 space-y-6">
             {subsLoading ? (
               <div className="flex flex-col items-center justify-center p-20 gap-4">
                 <Loader2 className="animate-spin w-10 h-10 text-primary" />
                 <p className="text-foreground/50">Đang tải lịch sử đăng ký...</p>
               </div>
             ) : (
+              <div className="space-y-6">
+                {/* Summary Section */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="border-none shadow-sm bg-blue-50/50 backdrop-blur-md">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600">
+                        <DollarSign className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-blue-600/70 uppercase tracking-widest">Tổng doanh thu gói</p>
+                        <p className="text-xl font-black text-blue-900">{formatPrice(statsData?.packages?.total_revenue || 0)}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-none shadow-sm bg-purple-50/50 backdrop-blur-md">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center text-purple-600">
+                        <Crown className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-purple-600/70 uppercase tracking-widest">Tổng lượt đăng ký</p>
+                        <p className="text-xl font-black text-purple-900">{(statsData?.packages?.subscription_count || 0).toLocaleString()}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="border-none shadow-sm bg-orange-50/50 backdrop-blur-md">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center text-orange-600">
+                        <Zap className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-orange-600/70 uppercase tracking-widest">Gói phổ biến nhất</p>
+                        <p className="text-lg font-black text-orange-900 truncate max-w-[150px]">
+                          {statsData?.packages?.performance?.[0] 
+                            ? (packages?.find((p: any) => p._id === statsData.packages.performance[0]._id)?.name || "N/A")
+                            : "N/A"}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               <Card className="rounded-2xl overflow-hidden border-none shadow-sm">
                 <Table>
                   <TableHeader className="bg-secondary/30">
                     <TableRow>
+                      <TableHead className="w-[60px] font-bold">STT</TableHead>
                       <TableHead className="font-bold">Khách hàng</TableHead>
                       <TableHead className="font-bold">Gói dịch vụ</TableHead>
                       <TableHead className="font-bold">Số tiền</TableHead>
@@ -796,8 +844,11 @@ export function ManagerDashboardContent({ activeTab, setActiveTab }: ManagerDash
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {subsData?.subscriptions?.map((sub: any) => (
+                    {subsData?.subscriptions?.map((sub: any, index: number) => (
                       <TableRow key={sub._id} className="hover:bg-secondary/10 transition-colors">
+                        <TableCell className="text-center font-medium text-foreground/60">
+                          {(subscriptionPage - 1) * 10 + index + 1}
+                        </TableCell>
                         <TableCell>
                           <p className="font-bold text-foreground">{sub.user_id?.full_name || "N/A"}</p>
                           <p className="text-xs text-foreground/50">{sub.user_id?.email}</p>
@@ -820,17 +871,222 @@ export function ManagerDashboardContent({ activeTab, setActiveTab }: ManagerDash
                     ))}
                     {!subsData?.subscriptions?.length && (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-40 text-center text-foreground/40 italic">
+                        <TableCell colSpan={6} className="h-40 text-center text-foreground/40 italic">
                           Chưa có lượt đăng ký nào
                         </TableCell>
                       </TableRow>
                     )}
                   </TableBody>
                 </Table>
-              </Card>
+                {subsData?.pagination && (
+                  <div className="flex items-center justify-between p-4 border-t bg-secondary/10">
+                    <p className="text-sm text-foreground/60">
+                      Tổng cộng {subsData.pagination.total_items} lượt đăng ký
+                    </p>
+                    <div className="flex gap-1.5 items-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={subscriptionPage === 1}
+                        onClick={() => {
+                          setSubscriptionPage(prev => Math.max(1, prev - 1))
+                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }}
+                        className="h-8 w-8 rounded-lg"
+                      >
+                        <ChevronDown className="w-4 h-4 rotate-90" />
+                      </Button>
+                      
+                      {Array.from({ length: subsData.pagination.total_pages || 1 }, (_, i) => i + 1).map((p) => (
+                        <Button
+                          key={p}
+                          variant={subscriptionPage === p ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => {
+                            setSubscriptionPage(p)
+                            window.scrollTo({ top: 0, behavior: 'smooth' })
+                          }}
+                          className={`h-8 w-8 p-0 rounded-lg transition-all ${
+                            subscriptionPage === p 
+                              ? "bg-primary text-white shadow-md shadow-primary/20 scale-105" 
+                              : "hover:bg-primary/10 hover:text-primary hover:border-primary/30"
+                          }`}
+                        >
+                          {p}
+                        </Button>
+                      ))}
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={subscriptionPage === (subsData.pagination.total_pages || 1)}
+                        onClick={() => {
+                          setSubscriptionPage(prev => prev + 1)
+                          window.scrollTo({ top: 0, behavior: 'smooth' })
+                        }}
+                        className="h-8 w-8 rounded-lg"
+                      >
+                        <ChevronDown className="w-4 h-4 -rotate-90" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                </Card>
+              </div>
             )}
           </TabsContent>
         </Tabs>
+      </div>
+    )
+  }
+
+  // Social Summary Tab
+  if (activeTab === "social") {
+    const { posts, isLoading: socialLoading } = useSocialFeed()
+
+    const totalReactions = useMemo(() => {
+      return posts.reduce((acc, post) => acc + (post.reactionsCount || 0), 0)
+    }, [posts])
+
+    const totalComments = useMemo(() => {
+      return posts.reduce((acc, post) => acc + (post.commentsCount || 0), 0)
+    }, [posts])
+
+    return (
+      <div className="space-y-6 px-1">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-black text-foreground">Tổng quan Mạng xã hội</h2>
+            <p className="text-sm text-foreground/50 font-medium">Theo dõi hoạt động của người dùng trên nền tảng</p>
+          </div>
+        </div>
+
+        {/* Social Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-none shadow-sm bg-indigo-50/50 backdrop-blur-md">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600">
+                <Newspaper className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-indigo-600/70 uppercase tracking-widest">Bài viết gần đây</p>
+                <p className="text-xl font-black text-indigo-900">{posts.length}+</p>
+                <p className="text-[10px] text-indigo-400 font-bold mt-0.5 mt-0.5">Cập nhật thời gian thực</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm bg-pink-50/50 backdrop-blur-md">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-pink-100 flex items-center justify-center text-pink-600">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-pink-600/70 uppercase tracking-widest">Tổng tương tác</p>
+                <p className="text-xl font-black text-pink-900">{totalReactions.toLocaleString()}</p>
+                <p className="text-[10px] text-pink-400 font-bold mt-0.5">Likes, Hearts, ...</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm bg-teal-50/50 backdrop-blur-md">
+            <CardContent className="p-4 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-teal-100 flex items-center justify-center text-teal-600">
+                <Plus className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-teal-600/70 uppercase tracking-widest">Bình luận</p>
+                <p className="text-xl font-black text-teal-900">{totalComments.toLocaleString()}</p>
+                <p className="text-[10px] text-teal-400 font-bold mt-0.5">Thảo luận sôi nổi</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Latest Activity Table */}
+        <Card className="rounded-2xl overflow-hidden border-none shadow-sm">
+          <CardHeader className="bg-white/50 border-b border-secondary/20">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <Activity className="w-5 h-5 text-primary" /> Bài viết mới nhất
+            </CardTitle>
+          </CardHeader>
+          <Table>
+            <TableHeader className="bg-secondary/30">
+              <TableRow>
+                <TableHead className="font-bold">Người đăng</TableHead>
+                <TableHead className="font-bold">Nội dung</TableHead>
+                <TableHead className="font-bold">Tương tác</TableHead>
+                <TableHead className="font-bold text-center">Bình luận</TableHead>
+                <TableHead className="font-bold">Thời gian</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {socialLoading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-40 text-center">
+                    <Loader2 className="animate-spin w-8 h-8 mx-auto text-primary" />
+                    <p className="text-xs text-foreground/40 mt-2">Đang tải dữ liệu...</p>
+                  </TableCell>
+                </TableRow>
+              ) : posts.length > 0 ? (
+                posts.slice(0, 10).map((post: any) => (
+                  <TableRow key={post._id} className="hover:bg-secondary/10 transition-colors">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold">
+                          {post.user_id?.full_name?.charAt(0) || "U"}
+                        </div>
+                        <div>
+                          <p className="font-bold text-xs truncate max-w-[120px]">{post.user_id?.full_name || "N/A"}</p>
+                          <p className="text-[10px] text-foreground/40 font-medium">@{post.user_id?.username || "user"}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <p className="text-xs line-clamp-1 max-w-[300px] text-foreground/70">{post.content || "Không có nội dung"}</p>
+                      {post.images?.length > 0 && (
+                        <Badge variant="outline" className="text-[10px] p-0 h-auto font-medium text-primary mt-1 border-none bg-transparent">
+                          <ImageIcon className="w-3 h-3 mr-1" /> {post.images.length} ảnh
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold px-2 py-0">
+                          {post.reactionsCount || 0}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="secondary" className="bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-bold px-2 py-0">
+                        {post.commentsCount || 0}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-[10px] font-medium text-foreground/40">
+                      {new Date(post.created_at).toLocaleString("vi-VN", { dateStyle: "short", timeStyle: "short" })}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-40 text-center text-foreground/40 italic">
+                    Chưa có bài viết nào
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+          <div className="p-4 border-t bg-secondary/10 text-center">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl h-8 text-xs font-bold border-indigo-100 text-indigo-600 hover:bg-indigo-50"
+              onClick={() => window.location.href = "/social"}
+            >
+              Xem chi tiết tại Mạng xã hội <ChevronRight className="w-3 h-3 ml-1.5" />
+            </Button>
+          </div>
+        </Card>
       </div>
     )
   }

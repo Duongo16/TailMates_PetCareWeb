@@ -5,10 +5,10 @@ import { ManagerDashboardContent } from "@/components/manager/dashboard-content"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
-import { Home, TrendingUp, Package, Store, ImageIcon, Settings, Loader2, Newspaper } from "lucide-react"
+import { Home, TrendingUp, Package, Store, ImageIcon, Settings, Loader2, Newspaper, Users } from "lucide-react"
 import BlogApproval from "@/components/manager/blog-approval"
 
-type ManagerTab = "dashboard" | "revenue" | "merchants" | "packages" | "banners" | "blog" | "settings"
+type ManagerTab = "dashboard" | "revenue" | "merchants" | "packages" | "banners" | "blog" | "social" | "settings"
 
 const tabs = [
   { id: "dashboard" as ManagerTab, label: "Tổng quan", icon: Home },
@@ -18,6 +18,7 @@ const tabs = [
   { id: "content-group", label: "Nội dung", icon: Newspaper, children: [
     { id: "banners" as ManagerTab, label: "Banner", icon: ImageIcon },
     { id: "blog" as ManagerTab, label: "Quản lý Blog", icon: Newspaper },
+    { id: "social" as ManagerTab, label: "Mạng xã hội", icon: Users },
   ]},
   { id: "settings" as ManagerTab, label: "Cài đặt", icon: Settings },
 ]
