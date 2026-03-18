@@ -253,7 +253,7 @@ export function usePackages() {
 }
 
 export function useManagerSubscriptions(params?: { page?: number; limit?: number }) {
-  return useFetch<{ subscriptions: any[]; pagination: any }>(
+  return useFetch<{ subscriptions: any[]; total_revenue: number; pagination: any }>(
     () => import("@/lib/api").then((m) => m.managerAPI.listSubscriptions(params)),
     [params?.page, params?.limit]
   )

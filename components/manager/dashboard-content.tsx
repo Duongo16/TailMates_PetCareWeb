@@ -798,7 +798,7 @@ export function ManagerDashboardContent({ activeTab, setActiveTab }: ManagerDash
                       </div>
                       <div>
                         <p className="text-[10px] font-bold text-blue-600/70 uppercase tracking-widest">Tổng doanh thu gói</p>
-                        <p className="text-xl font-black text-blue-900">{formatPrice(statsData?.packages?.total_revenue || 0)}</p>
+                        <p className="text-xl font-black text-blue-900">{formatPrice(subsData?.total_revenue || 0)}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -810,7 +810,7 @@ export function ManagerDashboardContent({ activeTab, setActiveTab }: ManagerDash
                       </div>
                       <div>
                         <p className="text-[10px] font-bold text-purple-600/70 uppercase tracking-widest">Tổng lượt đăng ký</p>
-                        <p className="text-xl font-black text-purple-900">{(statsData?.packages?.subscription_count || 0).toLocaleString()}</p>
+                        <p className="text-xl font-black text-purple-900">{(subsData?.pagination?.total || 0).toLocaleString()}</p>
                       </div>
                     </CardContent>
                   </Card>
@@ -881,7 +881,7 @@ export function ManagerDashboardContent({ activeTab, setActiveTab }: ManagerDash
                 {subsData?.pagination && (
                   <div className="flex items-center justify-between p-4 border-t bg-secondary/10">
                     <p className="text-sm text-foreground/60">
-                      Tổng cộng {subsData.pagination.total_items} lượt đăng ký
+                      Tổng cộng {subsData.pagination.total || 0} lượt đăng ký
                     </p>
                     <div className="flex gap-1.5 items-center">
                       <Button
@@ -897,7 +897,7 @@ export function ManagerDashboardContent({ activeTab, setActiveTab }: ManagerDash
                         <ChevronDown className="w-4 h-4 rotate-90" />
                       </Button>
                       
-                      {Array.from({ length: Math.ceil((subsData.pagination.total_items || 0) / 10) || 1 }, (_, i) => i + 1).map((p) => (
+                      {Array.from({ length: subsData.pagination.pages || 1 }, (_, i) => i + 1).map((p) => (
                         <Button
                           key={p}
                           variant={subscriptionPage === p ? "default" : "outline"}
@@ -919,7 +919,7 @@ export function ManagerDashboardContent({ activeTab, setActiveTab }: ManagerDash
                       <Button
                         variant="ghost"
                         size="icon"
-                        disabled={subscriptionPage === (Math.ceil((subsData.pagination.total_items || 0) / 10) || 1)}
+                        disabled={subscriptionPage === (subsData.pagination.pages || 1)}
                         onClick={() => {
                           setSubscriptionPage(prev => prev + 1)
                           window.scrollTo({ top: 0, behavior: 'smooth' })

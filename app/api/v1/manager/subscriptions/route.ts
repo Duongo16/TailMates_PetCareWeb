@@ -32,9 +32,17 @@ export async function GET(request: NextRequest) {
             .lean();
 
         const total = await SubscriptionLog.countDocuments();
+        
+        // Calculate total revenue from all successful subscriptions
+        const totalRevenueResult = await SubscriptionLog.aggregate([
+            { $match: { status: "SUCCESS" } },
+            { $group: { _id: null, total: { $sum: "$amount" } } }
+        ]);
+        const totalRevenue = totalRevenueResult[0]?.total || 0;
 
         return apiResponse.success({
             subscriptions,
+            total_revenue: totalRevenue,
             pagination: {
                 total,
                 page,
