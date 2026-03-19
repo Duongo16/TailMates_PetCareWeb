@@ -33,6 +33,7 @@ interface IMerchantProfile {
   revenue_stats: number;
   website?: string;
   banners?: ICloudinaryImage[];
+  gallery?: ICloudinaryImage[];
   categories?: string[];
   working_hours?: string;
   social_links?: {
@@ -105,6 +106,7 @@ const MerchantProfileSchema = new Schema<IMerchantProfile>(
     revenue_stats: { type: Number, default: 0 },
     website: { type: String },
     banners: [CloudinaryImageSchema],
+    gallery: [CloudinaryImageSchema],
     categories: [{ type: String }],
     working_hours: { type: String },
     social_links: {

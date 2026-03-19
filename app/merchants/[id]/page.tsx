@@ -21,16 +21,22 @@ import {
     Facebook,
     Instagram,
     ExternalLink,
-    MessageSquare
+    MessageSquare,
+    Pencil,
+    X,
+    Camera,
 } from "lucide-react"
 import Image from "next/image"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
+import { useAuth } from "@/lib/auth-context"
 
 export default function MerchantDetailPage() {
     const { id } = useParams()
     const router = useRouter()
+    const { user } = useAuth()
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
+    const [lightboxImage, setLightboxImage] = useState<string | null>(null)
 
     const formatUrl = (url: string) => {
         if (!url) return ""
@@ -123,14 +129,24 @@ export default function MerchantDetailPage() {
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <Button variant="outline" size="icon" className="rounded-xl">
-                            <Share2 className="w-4 h-4" />
+                <div className="flex items-center gap-3">
+                    {user && user.id === merchant._id && (
+                        <Button
+                            variant="outline"
+                            className="rounded-xl gap-2"
+                            onClick={() => router.push("/dashboard/merchant?tab=settings")}
+                        >
+                            <Pencil className="w-4 h-4" />
+                            Chỉnh sửa trang
                         </Button>
-                        <Button variant="outline" size="icon" className="rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive">
-                            <Heart className="w-4 h-4" />
-                        </Button>
-                    </div>
+                    )}
+                    <Button variant="outline" size="icon" className="rounded-xl">
+                        <Share2 className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" className="rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive">
+                        <Heart className="w-4 h-4" />
+                    </Button>
+                </div>
                 </div>
 
                 {/* Gallery/Banners */}
@@ -242,6 +258,38 @@ export default function MerchantDetailPage() {
                                 )}
                             </div>
                         </section>
+
+                        {/* Gallery Section */}
+                        {merchant_profile.gallery && merchant_profile.gallery.length > 0 && (
+                            <section>
+                                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                                    <Badge className="w-2 h-6 rounded-full bg-primary p-0" />
+                                    <Camera className="w-5 h-5 text-primary" />
+                                    Thư viện ảnh
+                                    <Badge variant="outline" className="ml-2 text-primary border-primary/20">
+                                        {merchant_profile.gallery.length} ảnh
+                                    </Badge>
+                                </h2>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {merchant_profile.gallery.map((img: any, index: number) => (
+                                        <motion.div
+                                            key={index}
+                                            className="relative aspect-square rounded-2xl overflow-hidden shadow-lg cursor-pointer group"
+                                            whileHover={{ scale: 1.02 }}
+                                            onClick={() => setLightboxImage(img.url)}
+                                        >
+                                            <Image
+                                                src={img.url}
+                                                alt={`Gallery ${index + 1}`}
+                                                fill
+                                                className="object-cover group-hover:scale-110 transition-transform duration-500"
+                                            />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
                     </div>
 
                     {/* Right Column - Sidebar */}
@@ -363,7 +411,41 @@ export default function MerchantDetailPage() {
                         </Card>
                     </div>
                 </div>
-            </main >
+            </main>
+
+            {/* Lightbox */}
+            <AnimatePresence>
+                {lightboxImage && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 cursor-pointer"
+                        onClick={() => setLightboxImage(null)}
+                    >
+                        <button
+                            className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors z-10"
+                            onClick={() => setLightboxImage(null)}
+                        >
+                            <X className="w-8 h-8" />
+                        </button>
+                        <motion.div
+                            initial={{ scale: 0.9 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0.9 }}
+                            className="relative max-w-4xl max-h-[85vh] w-full h-full"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <Image
+                                src={lightboxImage}
+                                alt="Gallery fullscreen"
+                                fill
+                                className="object-contain"
+                            />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div >
     )
 }

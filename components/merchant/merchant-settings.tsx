@@ -37,6 +37,7 @@ export function MerchantSettings({ onUpdate }: MerchantSettingsProps) {
         working_hours: "",
         categories: [] as string[],
         banners: [] as { url: string; public_id?: string }[],
+        gallery: [] as { url: string; public_id?: string }[],
         social_links: {
             facebook: "",
             instagram: "",
@@ -75,6 +76,7 @@ export function MerchantSettings({ onUpdate }: MerchantSettingsProps) {
                 working_hours: user.merchant_profile?.working_hours || "",
                 categories: user.merchant_profile?.categories || [],
                 banners: user.merchant_profile?.banners || [],
+                gallery: user.merchant_profile?.gallery || [],
                 social_links: {
                     facebook: user.merchant_profile?.social_links?.facebook || "",
                     instagram: user.merchant_profile?.social_links?.instagram || "",
@@ -100,6 +102,7 @@ export function MerchantSettings({ onUpdate }: MerchantSettingsProps) {
                     working_hours: shopData.working_hours,
                     categories: shopData.categories,
                     banners: shopData.banners,
+                    gallery: shopData.gallery,
                     social_links: shopData.social_links,
                     rating: user?.merchant_profile?.rating || 0,
                     revenue_stats: user?.merchant_profile?.revenue_stats || 0,
@@ -401,6 +404,47 @@ export function MerchantSettings({ onUpdate }: MerchantSettingsProps) {
                                                     if (img) {
                                                         const newBanner = { url: img.url, public_id: img.public_id };
                                                         setShopData(prev => ({ ...prev, banners: [...prev.banners, newBanner] }));
+                                                    }
+                                                }}
+                                            />
+                                        </DialogContent>
+                                    </Dialog>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Gallery */}
+                        <div className="pt-4 border-t space-y-2">
+                            <Label className="text-xs">Thư viện ảnh (Gallery, tối đa 10 ảnh)</Label>
+                            <p className="text-[10px] text-foreground/40">Ảnh showcase cửa hàng, cơ sở vật chất, không gian...</p>
+                            <div className="grid grid-cols-4 gap-2">
+                                {shopData.gallery.map((img, index) => (
+                                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border bg-muted">
+                                        <Image src={img.url} alt={`Gallery ${index}`} fill className="object-cover" />
+                                        <button
+                                            onClick={() => setShopData({ ...shopData, gallery: shopData.gallery.filter((_, i) => i !== index) })}
+                                            className="absolute top-1 right-1 p-0.5 bg-black/50 text-white rounded-full hover:bg-black/70"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                                {shopData.gallery.length < 10 && (
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <button className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center text-foreground/40 hover:text-primary hover:border-primary transition-colors">
+                                                <Plus className="w-5 h-5" />
+                                            </button>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-md">
+                                            <DialogHeader>
+                                                <DialogTitle>Thêm ảnh gallery</DialogTitle>
+                                            </DialogHeader>
+                                            <ImageUpload
+                                                onChange={(img) => {
+                                                    if (img) {
+                                                        const newImg = { url: img.url, public_id: img.public_id };
+                                                        setShopData(prev => ({ ...prev, gallery: [...prev.gallery, newImg] }));
                                                     }
                                                 }}
                                             />

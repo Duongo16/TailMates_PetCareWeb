@@ -413,6 +413,24 @@ export function DashboardHeader({
                     </DropdownMenuItem>
                   </>
                 )}
+                {user?.role === "merchant" && (
+                  <>
+                    <DropdownMenuItem 
+                      onClick={() => router.push(`/merchants/${user.id}`)}
+                      className="focus:bg-primary/5 focus:text-primary cursor-pointer transition-colors"
+                    >
+                      <User className="w-4 h-4 mr-2" />
+                      Trang cửa hàng
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => handleTabClick("settings")}
+                      className="focus:bg-primary/5 focus:text-primary cursor-pointer transition-colors"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Chỉnh sửa cửa hàng
+                    </DropdownMenuItem>
+                  </>
+                )}
                 {user?.role === "manager" && (
                   <DropdownMenuItem 
                     onClick={() => router.push("/dashboard/manager/terms-policies")}

@@ -36,6 +36,7 @@ export interface User {
     revenue_stats: number
     website?: string
     banners?: { url: string; public_id?: string }[]
+    gallery?: { url: string; public_id?: string }[]
     categories?: string[]
     working_hours?: string
     social_links?: {

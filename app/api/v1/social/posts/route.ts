@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const limit = Math.min(parseInt(searchParams.get("limit") || "10"), 50);
-    const cursor = searchParams.get("cursor"); // ObjectId của post cuối trang trước
+    const cursor = searchParams.get("cursor"); // Timestamp hoặc ObjectId của post cuối trang trước
+    const cursorId = searchParams.get("cursor_id"); // ObjectId (dùng khi cursor là timestamp)
     const userId = searchParams.get("user_id"); // Lọc theo 1 user cụ thể
 
     // Lấy danh sách bạn bè để filter privacy FRIENDS
@@ -63,11 +64,40 @@ export async function GET(request: NextRequest) {
 
     // Cursor-based pagination: lấy posts cũ hơn cursor
     if (cursor) {
-      query._id = { $lt: new mongoose.Types.ObjectId(cursor) };
+      // Support both formats:
+      // 1) Mobile: cursor = timestamp (ISO string), cursor_id = ObjectId
+      // 2) Web: cursor = ObjectId string
+      const isTimestamp = cursor.includes("T") || cursor.includes("-");
+
+      if (isTimestamp && cursorId) {
+        // Compound cursor: get posts older than (created_at, _id)
+        const cursorDate = new Date(cursor);
+        const cursorOid = new mongoose.Types.ObjectId(cursorId);
+        query.$or = [
+          ...(query.$or || []),
+        ];
+        // Override with compound condition for proper chronological pagination
+        query.$and = [
+          { $or: query.$or },
+          {
+            $or: [
+              { created_at: { $lt: cursorDate } },
+              { created_at: cursorDate, _id: { $lt: cursorOid } },
+            ],
+          },
+        ];
+        delete query.$or;
+      } else if (isTimestamp) {
+        // Fallback: cursor is only a timestamp without cursor_id
+        query.created_at = { $lt: new Date(cursor) };
+      } else {
+        // Web format: cursor is an ObjectId
+        query._id = { $lt: new mongoose.Types.ObjectId(cursor) };
+      }
     }
 
     const posts = await SocialPost.find(query)
-      .sort({ _id: -1 }) // Mới nhất trước
+      .sort({ created_at: -1, _id: -1 }) // Mới nhất trước (compound sort for cursor pagination)
       .limit(limit + 1) // Lấy thêm 1 để check có trang tiếp không
       .populate("author_id", "full_name avatar _id")
       .populate("pet_tags", "name species avatar_url _id")
@@ -76,9 +106,9 @@ export async function GET(request: NextRequest) {
     const hasMore = posts.length > limit;
     if (hasMore) posts.pop();
 
-    const nextCursor = hasMore && posts.length > 0
-      ? (posts[posts.length - 1] as any)._id.toString()
-      : null;
+    const lastPost = hasMore && posts.length > 0 ? (posts[posts.length - 1] as any) : null;
+    const nextCursor = lastPost ? lastPost._id.toString() : null;
+    const nextCursorTimestamp = lastPost ? (lastPost.created_at?.toISOString?.() || lastPost.created_at) : null;
 
     const postIds = posts.map((p) => p._id);
     const userReactions = await Reaction.find({
@@ -101,6 +131,9 @@ export async function GET(request: NextRequest) {
       pagination: {
         has_more: hasMore,
         next_cursor: nextCursor,
+        next_cursor_id: nextCursor,
+        cursor: nextCursorTimestamp,
+        cursor_id: nextCursor,
         limit,
       },
     });

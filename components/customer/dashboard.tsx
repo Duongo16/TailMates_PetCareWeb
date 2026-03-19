@@ -6,30 +6,20 @@ import { useAuth } from "@/lib/auth-context"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { Textarea } from "@/components/ui/textarea"
 import {
-  Sparkles,
   ChevronRight,
   ChevronLeft,
-  AlertCircle,
-  CheckCircle2,
   Calendar,
   ShoppingBag,
-  Bell,
   Heart,
   TrendingUp,
-  Clock,
-  Star,
   Loader2,
   Zap,
   FileText,
   Coins,
 } from "lucide-react"
 import Image from "next/image"
-import { aiAPI } from "@/lib/api"
 import { BannerCarousel } from "@/components/ui/banner-carousel"
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/ui/motion-wrappers"
 
@@ -38,13 +28,6 @@ interface CustomerDashboardProps {
   onTabChange?: (tab: string) => void
 }
 
-const healthQuestions = [
-  { id: "eating", label: "Bé có ăn uống bình thường không?" },
-  { id: "active", label: "Bé có hoạt động năng động không?" },
-  { id: "poop", label: "Phân của bé có bình thường không?" },
-  { id: "sleep", label: "Bé có ngủ đủ giấc không?" },
-  { id: "temp", label: "Nhiệt độ cơ thể có bình thường không?" },
-]
 
 
 
@@ -54,61 +37,7 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
   const { pets, bookings, orders, isLoading: petsLoading } = useDashboardData()
   const { data: packages } = useCustomerPackages()
 
-  const [magicModalOpen, setMagicModalOpen] = useState(false)
-  const [checklist, setChecklist] = useState<Record<string, boolean>>({})
-  const [showResult, setShowResult] = useState(false)
   const [currentPetIndex, setCurrentPetIndex] = useState(0)
-  const [aiSymptoms, setAiSymptoms] = useState("")
-  const [aiResponse, setAiResponse] = useState<string | null>(null)
-  const [aiLoading, setAiLoading] = useState(false)
-
-  const handleChecklistChange = (id: string, checked: boolean) => {
-    setChecklist((prev) => ({ ...prev, [id]: checked }))
-  }
-
-  const handleSubmitChecklist = async () => {
-    if (!pets || pets.length === 0) return
-
-    setAiLoading(true)
-    const currentPet = pets[currentPetIndex]
-
-    // Build symptoms from checklist
-    const symptoms = Object.entries(checklist)
-      .filter(([_, checked]) => !checked)
-      .map(([id]) => {
-        const q = healthQuestions.find(q => q.id === id)
-        return q ? `Không: ${q.label}` : ""
-      })
-      .filter(Boolean)
-      .join(". ")
-
-    const symptomsText = symptoms || aiSymptoms || "Kiểm tra sức khỏe định kỳ"
-
-    try {
-      const response = await aiAPI.consultation(currentPet._id, symptomsText)
-      if (response.success && response.data) {
-        setAiResponse((response.data as any).ai_advice)
-      } else {
-        setAiResponse("Không thể nhận được phản hồi từ AI. Vui lòng thử lại.")
-      }
-    } catch (error) {
-      setAiResponse("Lỗi kết nối. Vui lòng thử lại sau.")
-    } finally {
-      setAiLoading(false)
-      setShowResult(true)
-    }
-  }
-
-  const resetModal = () => {
-    setChecklist({})
-    setShowResult(false)
-    setMagicModalOpen(false)
-    setAiSymptoms("")
-    setAiResponse(null)
-  }
-
-  const healthScore = Object.values(checklist).filter(Boolean).length
-  const isHealthy = healthScore >= 4
 
   const nextPet = () => {
     if (pets) {
@@ -152,7 +81,7 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
 
   return (
     <div className="space-y-4">
-      {/* Greeting Section with Magic Button */}
+      {/* Greeting Section */}
       <FadeIn className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <motion.div
@@ -182,20 +111,6 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
             <p className="text-foreground/60 text-sm">Hôm nay bé cưng của bạn thế nào?</p>
           </div>
         </div>
-        {/* Magic Button - Compact Version */}
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Button
-            onClick={() => setMagicModalOpen(true)}
-            className="magic-button bg-gradient-to-r from-primary via-primary/90 to-accent text-white hover:opacity-90 font-bold px-4 py-5 rounded-2xl text-sm shadow-xl transition-transform hidden sm:flex"
-            disabled={!pets || pets.length === 0}
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            Nút Diệu Kỳ
-          </Button>
-        </motion.div>
       </FadeIn>
 
       {/* Banner Carousel */}
@@ -471,121 +386,7 @@ export function CustomerDashboard({ onPetSelect, onTabChange }: CustomerDashboar
         </div>
       </div>
 
-      <Dialog open={magicModalOpen} onOpenChange={resetModal}>
-        <DialogContent className="w-[95vw] max-w-md rounded-3xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              {showResult ? "Kết quả AI" : "Kiểm tra sức khỏe"}
-            </DialogTitle>
-            <DialogDescription>
-              {showResult
-                ? `Phân tích sức khỏe cho ${pets?.[currentPetIndex]?.name || "thú cưng"}`
-                : "Trả lời các câu hỏi về thú cưng của bạn"
-              }
-            </DialogDescription>
-          </DialogHeader>
 
-          {!showResult ? (
-            <div className="space-y-4">
-              {healthQuestions.map((q, index) => (
-                <div
-                  key={q.id}
-                  className="flex items-center gap-3 p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer animate-fade-in-up"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                  onClick={() => handleChecklistChange(q.id, !checklist[q.id])}
-                >
-                  <Checkbox
-                    id={q.id}
-                    checked={checklist[q.id] || false}
-                    onCheckedChange={(checked) => handleChecklistChange(q.id, checked as boolean)}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                  />
-                  <label htmlFor={q.id} className="text-foreground cursor-pointer flex-1">
-                    {q.label}
-                  </label>
-                </div>
-              ))}
-
-              <Textarea
-                placeholder="Mô tả thêm triệu chứng (nếu có)..."
-                value={aiSymptoms}
-                onChange={(e) => setAiSymptoms(e.target.value)}
-                className="min-h-[80px]"
-              />
-
-              <Button
-                onClick={handleSubmitChecklist}
-                className="w-full rounded-xl py-6 font-bold shadow-lg shadow-primary/25"
-                disabled={aiLoading}
-              >
-                {aiLoading ? (
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                ) : (
-                  <Sparkles className="w-5 h-5 mr-2" />
-                )}
-                {aiLoading ? "Đang phân tích..." : "Xem kết quả AI"}
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4 animate-fade-in-up">
-              <Card
-                className={`border-2 ${isHealthy ? "border-green-400 bg-green-50" : "border-primary bg-primary/10"}`}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    {isHealthy ? (
-                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <CheckCircle2 className="w-6 h-6 text-green-500" />
-                      </div>
-                    ) : (
-                      <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-                        <AlertCircle className="w-6 h-6 text-primary" />
-                      </div>
-                    )}
-                    <div>
-                      <h3 className="font-bold text-foreground text-lg">
-                        {isHealthy ? "Bé khỏe mạnh!" : "Cần chú ý!"}
-                      </h3>
-                      <p className="text-sm text-foreground/60">Điểm sức khỏe: {healthScore}/5</p>
-                    </div>
-                  </div>
-                  <div className="w-full bg-secondary rounded-full h-3 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-1000 ${isHealthy ? "bg-green-500" : "bg-primary"}`}
-                      style={{ width: `${(healthScore / 5) * 100}%` }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-secondary/50">
-                <CardContent className="p-4">
-                  <h4 className="font-bold text-foreground mb-2 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    Lời khuyên từ AI
-                  </h4>
-                  <div className="text-foreground/80 text-sm leading-relaxed whitespace-pre-wrap">
-                    {aiResponse || "Đang tải..."}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="flex gap-3">
-                <Button onClick={resetModal} variant="outline" className="flex-1 rounded-xl py-6 bg-transparent">
-                  Đóng
-                </Button>
-                <Button className="flex-1 rounded-xl py-6">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Đặt lịch khám
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
