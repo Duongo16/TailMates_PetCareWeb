@@ -941,9 +941,10 @@ export const pawmatchAPI = {
 export const socialAPI = {
   // ── Posts ──────────────────────────────────────────────
   /** Lấy feed bài viết (cursor-based pagination) */
-  getFeed: (params?: { cursor?: string; limit?: number; user_id?: string }) => {
+  getFeed: (params?: { cursor?: string; cursor_id?: string; limit?: number; user_id?: string }) => {
     const searchParams = new URLSearchParams();
     if (params?.cursor) searchParams.append("cursor", params.cursor);
+    if (params?.cursor_id) searchParams.append("cursor_id", params.cursor_id);
     if (params?.limit) searchParams.append("limit", params.limit.toString());
     if (params?.user_id) searchParams.append("user_id", params.user_id);
     return fetchWithAuth<any>(`/social/posts?${searchParams.toString()}`);

@@ -403,19 +403,16 @@ export function useInView({ onInView }: { onInView: () => void }) {
   useEffect(() => {
     if (!node) return
     
-    console.log("Observer attached to sentinel")
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          console.log("Sentinel in view, triggering onInView")
           onInViewRef.current()
         }
       },
-      { threshold: 0 }
+      { threshold: 0, rootMargin: "200px" }
     )
     observer.observe(node)
     return () => {
-      console.log("Observer disconnected from sentinel")
       observer.disconnect()
     }
   }, [node])
@@ -430,7 +427,11 @@ export function useSocialFeed(userId?: string) {
   const [isFetchingMore, setIsFetchingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
-  const [cursor, setCursor] = useState<string | null>(null)
+
+  // Use refs for mutable state to avoid stale closures in fetchMore
+  const cursorRef = useRef<string | null>(null)
+  const cursorIdRef = useRef<string | null>(null)
+  const hasMoreRef = useRef(true)
   const isFetchingRef = useRef(false)
 
   const fetchInitial = useCallback(async () => {
@@ -441,8 +442,11 @@ export function useSocialFeed(userId?: string) {
       const res = await socialAPI.getFeed({ limit: 10, user_id: userId })
       if (res.success && res.data) {
         setPosts(res.data.posts || [])
-        setHasMore(res.data.pagination?.has_more ?? false)
-        setCursor(res.data.pagination?.next_cursor ?? null)
+        const nextHasMore = res.data.pagination?.has_more ?? false
+        setHasMore(nextHasMore)
+        hasMoreRef.current = nextHasMore
+        cursorRef.current = res.data.pagination?.next_cursor ?? null
+        cursorIdRef.current = res.data.pagination?.next_cursor_id ?? null
       } else {
         setError(res.message || "Failed to load feed")
       }
@@ -454,16 +458,28 @@ export function useSocialFeed(userId?: string) {
   }, [userId])
 
   const fetchMore = useCallback(async () => {
-    if (!hasMore || !cursor || isFetchingRef.current) return
+    // Read from refs to always get latest values
+    if (!hasMoreRef.current || !cursorRef.current || isFetchingRef.current) return
     isFetchingRef.current = true
     setIsFetchingMore(true)
     try {
       const { socialAPI } = await import("@/lib/api")
-      const res = await socialAPI.getFeed({ cursor, limit: 10, user_id: userId })
+      const res = await socialAPI.getFeed({
+        cursor: cursorRef.current,
+        cursor_id: cursorIdRef.current || undefined,
+        limit: 10,
+        user_id: userId,
+      })
       if (res.success && res.data) {
-        setPosts((prev) => [...prev, ...(res.data.posts || [])])
-        setHasMore(res.data.pagination?.has_more ?? false)
-        setCursor(res.data.pagination?.next_cursor ?? null)
+        const newPosts = res.data.posts || []
+        if (newPosts.length > 0) {
+          setPosts((prev) => [...prev, ...newPosts])
+        }
+        const nextHasMore = res.data.pagination?.has_more ?? false
+        setHasMore(nextHasMore)
+        hasMoreRef.current = nextHasMore
+        cursorRef.current = res.data.pagination?.next_cursor ?? null
+        cursorIdRef.current = res.data.pagination?.next_cursor_id ?? null
       }
     } catch (err) {
       /* silent */
@@ -471,7 +487,7 @@ export function useSocialFeed(userId?: string) {
       isFetchingRef.current = false
       setIsFetchingMore(false)
     }
-  }, [hasMore, cursor, userId])
+  }, [userId])
 
   useEffect(() => {
     fetchInitial()
