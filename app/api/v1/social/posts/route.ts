@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const limit = Math.min(parseInt(searchParams.get("limit") || "10"), 50);
-    const cursor = searchParams.get("cursor"); // ObjectId của post cuối trang trước
+    const cursor = searchParams.get("cursor"); // ISO timestamp of last post's created_at
+    const cursorId = searchParams.get("cursor_id"); // _id tiebreaker
     const userId = searchParams.get("user_id"); // Lọc theo 1 user cụ thể
 
     // Lấy danh sách bạn bè để filter privacy FRIENDS
@@ -36,22 +37,16 @@ export async function GET(request: NextRequest) {
         )
       );
 
-    // Xây dựng query
-    const query: any = {
-      $or: [
-        { privacy: "PUBLIC" },
-        { privacy: "FRIENDS", author_id: { $in: friendIds } },
-        { privacy: { $in: ["PUBLIC", "FRIENDS", "PRIVATE"] }, author_id: user!._id },
-      ],
-    };
+    // Xây dựng privacy filter
+    let privacyFilter: any[];
 
-    // Nếu xem profile của 1 user cụ thể
     if (userId) {
+      // Xem profile của 1 user cụ thể
       const targetId = new mongoose.Types.ObjectId(userId);
       const isFriend = friendIds.some((id: any) => id.toString() === userId);
       const isOwn = user!._id.toString() === userId;
 
-      query.$or = isOwn
+      privacyFilter = isOwn
         ? [{ author_id: targetId }]
         : isFriend
         ? [
@@ -59,15 +54,41 @@ export async function GET(request: NextRequest) {
             { author_id: targetId, privacy: "FRIENDS" },
           ]
         : [{ author_id: targetId, privacy: "PUBLIC" }];
+    } else {
+      // Feed chung
+      privacyFilter = [
+        { privacy: "PUBLIC" },
+        { privacy: "FRIENDS", author_id: { $in: friendIds } },
+        { privacy: { $in: ["PUBLIC", "FRIENDS", "PRIVATE"] }, author_id: user!._id },
+      ];
     }
 
-    // Cursor-based pagination: lấy posts cũ hơn cursor
+    // Xây dựng query: kết hợp privacy filter + cursor bằng $and
+    const query: any = { $or: privacyFilter };
+
+    // Cursor-based pagination: lấy posts cũ hơn cursor (dùng created_at)
     if (cursor) {
-      query._id = { $lt: new mongoose.Types.ObjectId(cursor) };
+      const cursorDate = new Date(cursor);
+      if (cursorId && mongoose.Types.ObjectId.isValid(cursorId)) {
+        // Tiebreaker: nếu cùng created_at, lấy _id nhỏ hơn
+        query.$and = [
+          {
+            $or: [
+              { created_at: { $lt: cursorDate } },
+              {
+                created_at: cursorDate,
+                _id: { $lt: new mongoose.Types.ObjectId(cursorId) },
+              },
+            ],
+          },
+        ];
+      } else {
+        query.created_at = { $lt: cursorDate };
+      }
     }
 
     const posts = await SocialPost.find(query)
-      .sort({ _id: -1 }) // Mới nhất trước
+      .sort({ created_at: -1, _id: -1 }) // Mới nhất trước, _id tiebreaker
       .limit(limit + 1) // Lấy thêm 1 để check có trang tiếp không
       .populate("author_id", "full_name avatar _id")
       .populate("pet_tags", "name species avatar_url _id")
@@ -76,8 +97,13 @@ export async function GET(request: NextRequest) {
     const hasMore = posts.length > limit;
     if (hasMore) posts.pop();
 
-    const nextCursor = hasMore && posts.length > 0
-      ? (posts[posts.length - 1] as any)._id.toString()
+    // Cursor = created_at + _id của post cuối cùng
+    const lastPost = posts.length > 0 ? (posts[posts.length - 1] as any) : null;
+    const nextCursor = hasMore && lastPost
+      ? lastPost.created_at.toISOString()
+      : null;
+    const nextCursorId = hasMore && lastPost
+      ? lastPost._id.toString()
       : null;
 
     const postIds = posts.map((p) => p._id);
@@ -101,6 +127,7 @@ export async function GET(request: NextRequest) {
       pagination: {
         has_more: hasMore,
         next_cursor: nextCursor,
+        next_cursor_id: nextCursorId,
         limit,
       },
     });
