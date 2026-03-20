@@ -304,7 +304,7 @@ export function ManagerOverview({ setActiveTab }: ManagerOverviewProps) {
             </div>
 
             {/* ── Section 2: KPI Detail Cards ── */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 <KpiCard
                     icon={DollarSign}
                     label="Doanh thu Order"
@@ -351,14 +351,6 @@ export function ManagerOverview({ setActiveTab }: ManagerOverviewProps) {
                     iconBg="bg-indigo-50"
                     iconColor="text-indigo-600"
                     onClick={() => setActiveTab("revenue")}
-                />
-                <KpiCard
-                    icon={Briefcase}
-                    label="Partners"
-                    value="24" // Mock
-                    sub="Doanh nghiệp lớn"
-                    iconBg="bg-slate-50"
-                    iconColor="text-slate-600"
                 />
             </div>
 

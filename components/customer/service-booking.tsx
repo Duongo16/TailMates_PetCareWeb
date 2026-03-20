@@ -280,79 +280,82 @@ export function ServiceBooking() {
 
   if (servicesLoading || bookingsLoading || petsLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center py-20">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#f15a29] to-[#ff8c42] flex items-center justify-center shadow-lg shadow-[#f15a29]/20 animate-pulse">
+            <Loader2 className="w-6 h-6 animate-spin text-white" />
+          </div>
+          <span className="text-xs font-bold text-[#5a6178]/50">Đang tải dữ liệu...</span>
+        </div>
       </div>
     )
   }
 
+  // Upcoming bookings for sidebar
+  const upcomingBookings = useMemo(() => {
+    if (!bookings) return []
+    const now = new Date()
+    return bookings
+      .filter((b: any) => new Date(b.booking_time) >= now && b.status !== "CANCELLED")
+      .sort((a: any, b: any) => new Date(a.booking_time).getTime() - new Date(b.booking_time).getTime())
+      .slice(0, 3)
+  }, [bookings])
+
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-100px)] lg:h-[calc(100vh-140px)] overflow-hidden gap-4">
-      {/* Calendar Section */}
-      <Card className="rounded-[30px] border-none shadow-[0_10px_25px_-5px_rgba(241,90,41,0.1)] bg-white shrink-0 lg:w-[340px] lg:self-start lg:sticky lg:top-0 overflow-y-auto">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-bold text-[#2d3561] flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#f15a29]" />
+      {/* Calendar Sidebar */}
+      <div className="shrink-0 lg:w-[340px] lg:self-start flex flex-col gap-3 overflow-y-auto no-scrollbar">
+        {/* Calendar Card */}
+        <div className="rounded-[28px] bg-gradient-to-br from-white via-white to-[#fff5f0]/60 shadow-[0_8px_30px_-4px_rgba(241,90,41,0.12)] border border-white/80 backdrop-blur-sm p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-extrabold text-[#2d3561] flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#f15a29] to-[#ff8c42] flex items-center justify-center shadow-md shadow-[#f15a29]/20">
+                <Calendar className="w-4 h-4 text-white" />
+              </div>
               Lịch của tôi
             </h2>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full hover:bg-[#fff5f0]"
-                onClick={() => handleMonthChange('prev')}
-              >
-                <ChevronLeft className="w-5 h-5 text-[#f15a29]" />
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-xl hover:bg-[#f15a29]/10" onClick={() => handleMonthChange('prev')}>
+                <ChevronLeft className="w-4 h-4 text-[#f15a29]" />
               </Button>
-              <span className="font-bold text-sm min-w-[120px] text-center text-[#2d3561]">
+              <span className="font-black text-xs min-w-[100px] text-center text-[#2d3561]">
                 {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
               </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full hover:bg-[#fff5f0]"
-                onClick={() => handleMonthChange('next')}
-              >
-                <ChevronRight className="w-5 h-5 text-[#f15a29]" />
+              <Button variant="ghost" size="icon" className="h-7 w-7 rounded-xl hover:bg-[#f15a29]/10" onClick={() => handleMonthChange('next')}>
+                <ChevronRight className="w-4 h-4 text-[#f15a29]" />
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-1 mb-2">
+          <div className="grid grid-cols-7 gap-0.5 mb-1.5">
             {weekdays.map((day) => (
-              <div key={day} className="text-center text-[10px] uppercase font-bold text-[#2d3561]/40">
+              <div key={day} className="text-center text-[9px] uppercase font-black text-[#2d3561]/30 py-1">
                 {day}
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-0.5">
             {calendarDays.map((day, index) => {
               if (!day) return <div key={`empty-${index}`} className="h-9" />
-
               const isToday = day.toDateString() === new Date().toDateString()
               const bookingsByStatus = getBookingsByStatusForDate.get(day.toDateString()) || []
               const hasBookings = bookingsByStatus.length > 0
-
               return (
                 <button
                   key={day.toISOString()}
                   onClick={() => handleDayClick(day)}
-                  className={`h-9 rounded-2xl flex flex-col items-center justify-center transition-all relative
-                    ${isToday ? "bg-[#f15a29]/10 border-2 border-[#f15a29]/20" : "hover:bg-[#fff5f0]/50 border-2 border-transparent"}
+                  className={`h-9 rounded-xl flex flex-col items-center justify-center transition-all duration-200 relative group/day
+                    ${isToday ? "bg-gradient-to-br from-[#f15a29] to-[#ff8c42] shadow-md shadow-[#f15a29]/20" : hasBookings ? "hover:bg-[#f15a29]/5" : "hover:bg-gray-50"}
                     ${hasBookings ? "cursor-pointer" : "cursor-default"}`}
                 >
-                  <span className={`text-xs font-bold ${isToday ? "text-[#f15a29]" : "text-[#2d3561]"}`}>
+                  <span className={`text-[11px] font-bold ${isToday ? "text-white" : "text-[#2d3561]"}`}>
                     {day.getDate()}
                   </span>
                   {hasBookings && (
-                    <div className="absolute bottom-1.5 flex gap-0.5">
+                    <div className="absolute bottom-1 flex gap-0.5">
                       {bookingsByStatus.slice(0, 3).map((statusInfo, i) => (
-                        <div
-                          key={i}
-                          className={`w-1.5 h-1.5 rounded-full ${STATUS_COLORS[statusInfo.status as keyof typeof STATUS_COLORS] || 'bg-gray-400'}`}
-                        />
+                        <div key={i} className={`w-1 h-1 rounded-full ${isToday ? "bg-white/70" : ""} ${!isToday ? STATUS_COLORS[statusInfo.status as keyof typeof STATUS_COLORS] || 'bg-gray-400' : ''}`} />
                       ))}
                     </div>
                   )}
@@ -360,162 +363,206 @@ export function ServiceBooking() {
               )
             })}
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Status Legend */}
+          <div className="flex items-center gap-3 mt-3 pt-3 border-t border-[#f15a29]/5">
+            {Object.entries(STATUS_LABELS).map(([key, label]) => (
+              <div key={key} className="flex items-center gap-1">
+                <div className={`w-2 h-2 rounded-full ${STATUS_COLORS[key as keyof typeof STATUS_COLORS]}`} />
+                <span className="text-[8px] font-bold text-[#5a6178]/60">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Upcoming Appointments Mini Card */}
+        {upcomingBookings.length > 0 && (
+          <div className="rounded-[28px] bg-gradient-to-br from-[#2d3561] to-[#3d4a7a] p-4 shadow-lg">
+            <h3 className="text-xs font-black text-white/90 mb-3 flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-[#ffd4b8]" />
+              Lịch hẹn sắp tới
+            </h3>
+            <div className="space-y-2">
+              {upcomingBookings.map((booking: any) => (
+                <div key={booking._id} className="flex items-center gap-3 p-2.5 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/5">
+                  <div className={`w-1 h-8 rounded-full shrink-0 ${STATUS_COLORS[booking.status as keyof typeof STATUS_COLORS] || 'bg-gray-400'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-bold text-white truncate">{booking.service_id?.name || "Dịch vụ"}</p>
+                    <p className="text-[9px] text-white/50 font-medium flex items-center gap-1 mt-0.5">
+                      <Clock className="w-2.5 h-2.5" />
+                      {new Date(booking.booking_time).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })} • {new Date(booking.booking_time).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  <Badge className={`text-[7px] rounded-full px-1.5 py-0.5 border-none font-bold ${STATUS_CLASSES[booking.status as keyof typeof STATUS_CLASSES] || 'bg-gray-100 text-gray-600'}`}>
+                    {STATUS_LABELS[booking.status as keyof typeof STATUS_LABELS]}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Services Section */}
-      <div className="flex-1 flex flex-col lg:min-w-0 bg-white rounded-[30px] shadow-[0_10px_25px_-5px_rgba(241,90,41,0.15)] overflow-hidden transition-all duration-500">
-        <div className="p-4 pb-2 border-b border-[#fff5f0]/30 shrink-0">
-          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between mb-2">
-            <h2 className="text-lg font-bold text-[#2d3561] flex items-center gap-2 w-full sm:w-auto">
-              <Store className="w-5 h-5 text-[#f15a29]" />
+      <div className="flex-1 flex flex-col lg:min-w-0 bg-gradient-to-br from-white via-white to-[#fffaf7] rounded-[28px] shadow-[0_8px_30px_-4px_rgba(241,90,41,0.12)] border border-white/80 overflow-hidden transition-all duration-500">
+        <div className="p-4 pb-3 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between mb-3">
+            <h2 className="text-base font-extrabold text-[#2d3561] flex items-center gap-2 w-full sm:w-auto">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#f15a29] to-[#ff8c42] flex items-center justify-center shadow-md shadow-[#f15a29]/20">
+                <Store className="w-4 h-4 text-white" />
+              </div>
               Dịch vụ đặt chỗ
+              <span className="text-[10px] font-bold text-[#5a6178]/40 ml-1">({filteredAndSortedServices.length})</span>
             </h2>
-            <div className="relative w-full sm:max-w-[250px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2d3561]/30" />
+            <div className="relative w-full sm:max-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#f15a29]/40" />
               <Input
                 placeholder="Tìm dịch vụ..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 rounded-full bg-[#fff5f0]/50 border-none h-10 text-sm focus-visible:ring-[#f15a29]"
+                className="pl-9 rounded-2xl bg-[#f15a29]/[0.04] border border-[#f15a29]/10 h-9 text-xs font-medium focus-visible:ring-[#f15a29] focus-visible:border-[#f15a29]/30 placeholder:text-[#5a6178]/30"
               />
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-2 py-1">
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-[130px] rounded-full bg-[#fff5f0]/50 border-none h-8 text-[11px] font-bold text-[#2d3561] focus:ring-[#f15a29] transition-all hover:bg-[#fff5f0]">
-                <SelectValue placeholder="Danh mục" />
-              </SelectTrigger>
-              <SelectContent className="rounded-2xl border-none shadow-xl bg-white/95 backdrop-blur-sm">
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat} className="text-[11px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] transition-colors rounded-xl mx-1 my-0.5">
-                    {cat === "all" ? "Tất cả dịch vụ" : cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Category Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilterCategory(cat)}
+                className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold transition-all duration-200
+                  ${filterCategory === cat
+                    ? "bg-gradient-to-r from-[#f15a29] to-[#ff8c42] text-white shadow-md shadow-[#f15a29]/20"
+                    : "bg-[#f15a29]/[0.04] text-[#5a6178] hover:bg-[#f15a29]/10 hover:text-[#f15a29] border border-[#f15a29]/5"}`}
+              >
+                {cat === "all" ? "🏠 Tất cả" : cat === "Spa & Grooming" ? "✨ Spa" : cat === "Y tế" ? "🏥 Y tế" : "🎓 Huấn luyện"}
+              </button>
+            ))}
+
+            <div className="w-px h-5 bg-[#f15a29]/10 mx-1 shrink-0" />
 
             <Select value={priceRange} onValueChange={setPriceRange}>
-              <SelectTrigger className="w-[120px] rounded-full bg-[#fff5f0]/50 border-none h-8 text-[11px] font-bold text-[#2d3561] focus:ring-[#f15a29] transition-all hover:bg-[#fff5f0]">
-                <SelectValue placeholder="Giá cả" />
+              <SelectTrigger className="w-[100px] rounded-full bg-[#f15a29]/[0.04] border-[#f15a29]/5 h-7 text-[10px] font-bold text-[#5a6178] focus:ring-[#f15a29] hover:bg-[#f15a29]/10 shrink-0">
+                <SelectValue placeholder="Giá" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-none shadow-xl bg-white/95 backdrop-blur-sm">
-                <SelectItem value="all" className="text-[11px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Tất cả giá</SelectItem>
-                <SelectItem value="under-200" className="text-[11px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Dưới 200k</SelectItem>
-                <SelectItem value="200-500" className="text-[11px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">200k - 500k</SelectItem>
-                <SelectItem value="over-500" className="text-[11px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Trên 500k</SelectItem>
+                <SelectItem value="all" className="text-[10px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Tất cả giá</SelectItem>
+                <SelectItem value="under-200" className="text-[10px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Dưới 200k</SelectItem>
+                <SelectItem value="200-500" className="text-[10px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">200k - 500k</SelectItem>
+                <SelectItem value="over-500" className="text-[10px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Trên 500k</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[120px] rounded-full bg-[#fff5f0]/50 border-none h-8 text-[11px] font-bold text-[#2d3561] focus:ring-[#f15a29] transition-all hover:bg-[#fff5f0]">
+              <SelectTrigger className="w-[100px] rounded-full bg-[#f15a29]/[0.04] border-[#f15a29]/5 h-7 text-[10px] font-bold text-[#5a6178] focus:ring-[#f15a29] hover:bg-[#f15a29]/10 shrink-0">
                 <SelectValue placeholder="Sắp xếp" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-none shadow-xl bg-white/95 backdrop-blur-sm">
-                <SelectItem value="default" className="text-[11px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Mặc định</SelectItem>
-                <SelectItem value="price-asc" className="text-[11px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Giá thấp nhất</SelectItem>
-                <SelectItem value="price-desc" className="text-[11px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Giá cao nhất</SelectItem>
-                <SelectItem value="name-asc" className="text-[11px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Tên A-Z</SelectItem>
+                <SelectItem value="default" className="text-[10px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Mặc định</SelectItem>
+                <SelectItem value="price-asc" className="text-[10px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Giá thấp</SelectItem>
+                <SelectItem value="price-desc" className="text-[10px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Giá cao</SelectItem>
+                <SelectItem value="name-asc" className="text-[10px] font-bold text-[#5a6178] focus:bg-[#fff5f0] focus:text-[#f15a29] rounded-xl mx-1 my-0.5">Tên A-Z</SelectItem>
               </SelectContent>
             </Select>
 
             {(filterCategory !== "all" || priceRange !== "all" || sortBy !== "default") && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <button
                 onClick={() => { setFilterCategory("all"); setPriceRange("all"); setSortBy("default") }}
-                className="h-8 rounded-full text-[10px] font-extrabold text-[#f15a29] hover:bg-red-50"
+                className="shrink-0 flex items-center gap-1 text-[9px] font-bold text-[#f15a29] hover:text-[#d94e20] transition-colors px-2 py-1 rounded-full hover:bg-[#f15a29]/5"
               >
-                Làm mới
-              </Button>
+                <XCircle className="w-3 h-3" /> Xóa bộ lọc
+              </button>
             )}
           </div>
         </div>
 
         {/* Scrollable Grid Container */}
-        <div className="flex-1 overflow-y-auto no-scrollbar p-4 flex flex-col">
-          <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 flex-1">
+        <div className="flex-1 overflow-y-auto no-scrollbar p-4 pt-2 flex flex-col">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 flex-1">
             {displayedServices.map((service: any) => (
               <div
                 key={service._id}
-                className="group relative flex flex-col bg-white rounded-[25px] border border-[#fff5f0]/50 hover:border-[#ffdab9] shadow-[0_4px_10px_-2px_rgba(0,0,0,0.03)] hover:shadow-[0_15px_30px_-5px_rgba(241,90,41,0.15)] transition-all duration-300 transform hover:-translate-y-1 cursor-pointer overflow-hidden p-1.5"
+                className="group relative flex flex-col bg-white rounded-[22px] border border-[#f15a29]/[0.06] hover:border-[#f15a29]/20 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_30px_-5px_rgba(241,90,41,0.15)] transition-all duration-300 hover:-translate-y-1 cursor-pointer overflow-hidden"
                 onClick={() => setSelectedService(service)}
               >
-                <div className="aspect-square rounded-[20px] overflow-hidden bg-[#fff5f0]/30 mb-2">
+                {/* Image with overlay */}
+                <div className="aspect-[4/3] overflow-hidden bg-[#fff5f0]/30 relative">
                   <Image
                     src={service.image?.url || "/placeholder.svg"}
                     alt={service.name}
-                    width={150}
+                    width={200}
                     height={150}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
+                  {/* Duration badge on image */}
+                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1 shadow-sm">
+                    <Clock className="w-2.5 h-2.5 text-[#f15a29]" />
+                    <span className="text-[9px] font-bold text-[#2d3561]">{service.duration_minutes}p</span>
+                  </div>
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#f15a29]/90 via-[#f15a29]/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-3">
+                    <span className="text-white text-[11px] font-black tracking-wide flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-4 py-1.5">
+                      Đặt ngay →
+                    </span>
+                  </div>
                 </div>
                 
-                <div className="px-1 flex-1 flex flex-col">
+                <div className="p-2.5 flex-1 flex flex-col">
                   <h4 className="font-bold text-[#2d3561] text-[11px] line-clamp-1 mb-1 leading-tight">
                     {service.name}
                   </h4>
                   
-                  <div className="flex items-center gap-1 mb-2 opacity-70">
+                  <div className="flex items-center gap-1 mb-1.5 opacity-60">
                     <Store className="w-2.5 h-2.5 text-[#f15a29]" />
                     <span className="text-[9px] font-bold text-[#5a6178] truncate">
                       {service.merchant_id?.merchant_profile?.shop_name || "Pet shop"}
                     </span>
                   </div>
                   
-                  <div className="mt-auto">
-                    <div className="flex items-center justify-between gap-1 mb-1.5 overflow-hidden">
-                       <Badge variant="secondary" className="bg-[#e0f2fe] text-[#3b6db3] text-[9px] rounded-full px-1.5 py-0 h-4 flex items-center gap-0.5 border-none shrink-0">
-                        <Clock className="w-2.5 h-2.5" />
-                        {service.duration_minutes}m
-                      </Badge>
-                      <span className="font-extrabold text-[#f15a29] text-[11px] whitespace-nowrap">
-                        {Math.floor(service.price_min / 1000)}k
-                        <small className="text-[8px] font-normal ml-0.5">₫</small>
-                      </span>
-                    </div>
-                    
-                    <Button 
-                      className="w-full rounded-xl h-7 bg-[#f15a29] hover:bg-[#f15a29]/90 text-white text-[10px] font-bold shadow-sm border-none"
-                    >
-                      Đặt ngay
-                    </Button>
+                  <div className="mt-auto flex items-center justify-between">
+                    <span className="font-black text-[#f15a29] text-sm">
+                      {Math.floor(service.price_min / 1000)}k
+                      <small className="text-[8px] font-normal text-[#5a6178] ml-0.5">₫</small>
+                    </span>
                   </div>
                 </div>
               </div>
             ))}
 
             {displayedServices.length === 0 && (
-              <div className="col-span-full flex flex-col items-center justify-center py-12 text-center opacity-50">
-                <Search className="w-10 h-10 mb-3 text-[#f15a29]/30" />
-                <p className="text-[#2d3561]/60 font-bold text-sm">Không tìm thấy dịch vụ nào đâu~</p>
+              <div className="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 rounded-full bg-[#f15a29]/5 flex items-center justify-center mb-4">
+                  <Search className="w-7 h-7 text-[#f15a29]/25" />
+                </div>
+                <p className="text-[#2d3561]/50 font-bold text-sm">Không tìm thấy dịch vụ nào đâu~</p>
+                <p className="text-[#5a6178]/30 text-xs mt-1">Thử thay đổi bộ lọc nhé!</p>
               </div>
             )}
           </div>
 
           {/* Pagination Bar */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-6 pb-4">
+            <div className="flex items-center justify-center gap-1.5 mt-4 pb-3">
               <Button
                 variant="ghost"
                 size="icon"
                 disabled={currentPage === 1}
                 onClick={() => setCurrentPage(prev => prev - 1)}
-                className="h-8 w-8 rounded-full bg-[#fff5f0] text-[#f15a29] hover:bg-[#ffdab9] disabled:opacity-30"
+                className="h-7 w-7 rounded-xl bg-[#f15a29]/5 text-[#f15a29] hover:bg-[#f15a29]/15 disabled:opacity-20"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3.5 h-3.5" />
               </Button>
               
-              <div className="flex items-center gap-1.5 px-4 h-8 bg-[#fff5f0]/50 rounded-full border border-[#fff5f0]">
+              <div className="flex items-center gap-1 px-2">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`w-6 h-6 rounded-full text-[10px] font-black transition-all
+                    className={`w-7 h-7 rounded-xl text-[10px] font-black transition-all duration-200
                       ${currentPage === page 
-                        ? "bg-[#f15a29] text-white shadow-sm scale-110" 
-                        : "text-[#2d3561]/40 hover:text-[#f15a29]"}`}
+                        ? "bg-gradient-to-br from-[#f15a29] to-[#ff8c42] text-white shadow-md shadow-[#f15a29]/20 scale-110" 
+                        : "text-[#2d3561]/30 hover:text-[#f15a29] hover:bg-[#f15a29]/5"}`}
                   >
                     {page}
                   </button>
@@ -527,9 +574,9 @@ export function ServiceBooking() {
                 size="icon"
                 disabled={currentPage === totalPages}
                 onClick={() => setCurrentPage(prev => prev + 1)}
-                className="h-8 w-8 rounded-full bg-[#fff5f0] text-[#f15a29] hover:bg-[#ffdab9] disabled:opacity-30"
+                className="h-7 w-7 rounded-xl bg-[#f15a29]/5 text-[#f15a29] hover:bg-[#f15a29]/15 disabled:opacity-20"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-3.5 h-3.5" />
               </Button>
             </div>
           )}
@@ -538,48 +585,50 @@ export function ServiceBooking() {
 
       {/* Day Appointments Popup */}
       <Dialog open={showDayAppointments} onOpenChange={setShowDayAppointments}>
-        <DialogContent className="max-w-md rounded-[30px] border-none shadow-2xl p-6 overflow-hidden bg-white">
-          <DialogHeader className="mb-4">
-            <DialogTitle className="flex items-center gap-3 text-lg font-bold text-[#2d3561]">
-              <div className="w-10 h-10 rounded-2xl bg-[#fff5f0] flex items-center justify-center">
-                <Calendar className="w-5 h-5 text-[#f15a29]" />
-              </div>
-              Lịch hẹn {selectedCalendarDay?.toLocaleDateString("vi-VN")}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 max-h-[60vh] overflow-y-auto no-scrollbar pr-1">
+        <DialogContent className="max-w-md rounded-[28px] border-none shadow-2xl p-0 overflow-hidden bg-white">
+          <div className="bg-gradient-to-r from-[#f15a29] to-[#ff8c42] p-5 pb-4">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3 text-base font-black text-white">
+                <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-white" />
+                </div>
+                Lịch hẹn {selectedCalendarDay?.toLocaleDateString("vi-VN")}
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+          <div className="p-5 space-y-2.5 max-h-[55vh] overflow-y-auto no-scrollbar">
             {selectedCalendarDay && getBookingsForDate(selectedCalendarDay).map((booking: any) => (
               <div
                 key={booking._id}
-                className="flex items-start gap-4 p-4 rounded-[25px] border border-[#fff5f0] bg-[#fff5f0]/20 hover:bg-[#fff5f0]/40 transition-colors"
+                className="flex items-center gap-3 p-3.5 rounded-2xl border border-[#f15a29]/5 bg-[#f15a29]/[0.02] hover:bg-[#f15a29]/[0.05] transition-colors"
               >
-                <div className={`w-1.5 h-12 rounded-full shrink-0 ${STATUS_COLORS[booking.status as keyof typeof STATUS_COLORS] || 'bg-gray-200'}`} />
+                <div className={`w-1 h-10 rounded-full shrink-0 ${STATUS_COLORS[booking.status as keyof typeof STATUS_COLORS] || 'bg-gray-200'}`} />
                 
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-[#2d3561] text-sm truncate">{booking.service_id?.name || "Dịch vụ"}</h4>
+                  <h4 className="font-bold text-[#2d3561] text-[13px] truncate">{booking.service_id?.name || "Dịch vụ"}</h4>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs px-2 py-0.5 bg-white rounded-full border border-[#fff5f0] font-bold text-[#5a6178]">
+                    <span className="text-[10px] px-2 py-0.5 bg-white rounded-full border border-[#f15a29]/10 font-bold text-[#5a6178]">
                       {booking.pet_id?.species === "Dog" ? "🐶" : booking.pet_id?.species === "Cat" ? "🐱" : "🐾"} {booking.pet_id?.name}
                     </span>
-                    <span className="text-xs text-[#5a6178] font-medium flex items-center gap-1">
+                    <span className="text-[10px] text-[#5a6178]/60 font-medium flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {new Date(booking.booking_time).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
                 </div>
 
-                <Badge className={`text-[10px] rounded-full px-3 py-1 border-none font-bold uppercase ${STATUS_CLASSES[booking.status as keyof typeof STATUS_CLASSES] || 'bg-gray-100 text-gray-600'}`}>
+                <Badge className={`text-[8px] rounded-full px-2 py-0.5 border-none font-bold ${STATUS_CLASSES[booking.status as keyof typeof STATUS_CLASSES] || 'bg-gray-100 text-gray-600'}`}>
                   {STATUS_LABELS[booking.status as keyof typeof STATUS_LABELS]}
                 </Badge>
               </div>
             ))}
 
             {selectedCalendarDay && getBookingsForDate(selectedCalendarDay).length === 0 && (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-[#fff5f0] rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Calendar className="w-8 h-8 text-[#f15a29]/30" />
+              <div className="text-center py-10">
+                <div className="w-14 h-14 bg-[#f15a29]/5 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Calendar className="w-6 h-6 text-[#f15a29]/20" />
                 </div>
-                <p className="text-[#5a6178] font-bold">Trống lịch rồi bạn ơi~</p>
+                <p className="text-[#5a6178]/50 font-bold text-sm">Trống lịch rồi bạn ơi~</p>
               </div>
             )}
           </div>
