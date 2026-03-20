@@ -287,9 +287,9 @@ export function ServiceBooking() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-100px)] lg:h-[calc(100vh-140px)] -mt-4 lg:-mt-2 overflow-hidden gap-4">
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-100px)] lg:h-[calc(100vh-140px)] overflow-hidden gap-4">
       {/* Calendar Section */}
-      <Card className="rounded-[30px] border-none shadow-[0_10px_25px_-5px_rgba(241,90,41,0.1)] bg-white shrink-0">
+      <Card className="rounded-[30px] border-none shadow-[0_10px_25px_-5px_rgba(241,90,41,0.1)] bg-white shrink-0 lg:w-[340px] lg:self-start lg:sticky lg:top-0 overflow-y-auto">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-lg font-bold text-[#2d3561] flex items-center gap-2">
@@ -329,7 +329,7 @@ export function ServiceBooking() {
 
           <div className="grid grid-cols-7 gap-1">
             {calendarDays.map((day, index) => {
-              if (!day) return <div key={`empty-${index}`} className="h-10" />
+              if (!day) return <div key={`empty-${index}`} className="h-9" />
 
               const isToday = day.toDateString() === new Date().toDateString()
               const bookingsByStatus = getBookingsByStatusForDate.get(day.toDateString()) || []
@@ -339,7 +339,7 @@ export function ServiceBooking() {
                 <button
                   key={day.toISOString()}
                   onClick={() => handleDayClick(day)}
-                  className={`h-12 rounded-2xl flex flex-col items-center justify-center transition-all relative
+                  className={`h-9 rounded-2xl flex flex-col items-center justify-center transition-all relative
                     ${isToday ? "bg-[#f15a29]/10 border-2 border-[#f15a29]/20" : "hover:bg-[#fff5f0]/50 border-2 border-transparent"}
                     ${hasBookings ? "cursor-pointer" : "cursor-default"}`}
                 >
@@ -364,7 +364,7 @@ export function ServiceBooking() {
       </Card>
 
       {/* Services Section */}
-      <div className="flex-1 flex flex-col min-h-0 bg-white rounded-[30px] shadow-[0_10px_25px_-5px_rgba(241,90,41,0.15)] overflow-hidden transition-all duration-500">
+      <div className="flex-1 flex flex-col lg:min-w-0 bg-white rounded-[30px] shadow-[0_10px_25px_-5px_rgba(241,90,41,0.15)] overflow-hidden transition-all duration-500">
         <div className="p-4 pb-2 border-b border-[#fff5f0]/30 shrink-0">
           <div className="flex flex-col sm:flex-row gap-3 items-center justify-between mb-2">
             <h2 className="text-lg font-bold text-[#2d3561] flex items-center gap-2 w-full sm:w-auto">
