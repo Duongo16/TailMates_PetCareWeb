@@ -278,6 +278,16 @@ export function ServiceBooking() {
     }
   }
 
+  // Upcoming bookings for sidebar
+  const upcomingBookings = useMemo(() => {
+    if (!bookings) return []
+    const now = new Date()
+    return bookings
+      .filter((b: any) => new Date(b.booking_time) >= now && b.status !== "CANCELLED")
+      .sort((a: any, b: any) => new Date(a.booking_time).getTime() - new Date(b.booking_time).getTime())
+      .slice(0, 3)
+  }, [bookings])
+
   if (servicesLoading || bookingsLoading || petsLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -290,16 +300,6 @@ export function ServiceBooking() {
       </div>
     )
   }
-
-  // Upcoming bookings for sidebar
-  const upcomingBookings = useMemo(() => {
-    if (!bookings) return []
-    const now = new Date()
-    return bookings
-      .filter((b: any) => new Date(b.booking_time) >= now && b.status !== "CANCELLED")
-      .sort((a: any, b: any) => new Date(a.booking_time).getTime() - new Date(b.booking_time).getTime())
-      .slice(0, 3)
-  }, [bookings])
 
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-100px)] lg:h-[calc(100vh-140px)] overflow-hidden gap-4">
