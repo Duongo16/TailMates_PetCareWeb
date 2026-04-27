@@ -1,7 +1,9 @@
 version: '3.8'
 services:
   web:
-    image: tailmates
+    build: .
+    image: tailmates-web
+    container_name: tailmates-web
     ports:
       - "4000:3000"
     env_file:
